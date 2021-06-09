@@ -12,8 +12,9 @@
 /app/release/
 /android/build/
 /captures
-/app/release/
-/app/build/
-/android/build/
 .externalNativeBuild
 /app/.cxx
+
+/logger/build
+/logger/release/
+/logger/.cxx

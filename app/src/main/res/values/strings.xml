@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">AndroidFeatureSet</string>
     <string name="accessibility_desc">@string/app_name</string>
+    <string name="camera_feature_sz">相机功能</string>
 </resources>

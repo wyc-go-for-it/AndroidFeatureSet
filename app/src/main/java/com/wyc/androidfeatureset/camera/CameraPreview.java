@@ -1,13 +1,25 @@
 package com.wyc.androidfeatureset.camera;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Point;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.hardware.Camera;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
+
+import com.wyc.logger.Logger;
 
 import java.io.IOException;
 
@@ -23,9 +35,11 @@ import java.io.IOException;
  * @UpdateRemark: 更新说明
  * @Version: 1.0
  */
-public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
-    private static final String TAG = "CameraPreview";
+public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback,CameraManager.OnFocusSuccessListener, CameraManager.OnPictureTakenListener {
     private CameraManager mCameraManager;
+    private final RectF mFocusArea;
+    private final Paint mFocusPaint;
+    private Bitmap picture;
     public CameraPreview(Context context) {
         this(context,null);
     }
@@ -41,18 +55,58 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     public CameraPreview(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
 
+        mFocusPaint = new Paint();
+        mFocusPaint.setColor(Color.GREEN);
+        mFocusPaint.setStyle(Paint.Style.STROKE);
+        mFocusPaint.setStrokeWidth(2f);
+
+        mFocusArea = new RectF();
         getHolder().addCallback(this);
     }
 
-    public void setCamera(CameraManager c){
-        mCameraManager = c;
+    @SuppressLint("ClickableViewAccessibility")
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN){
+            float x = event.getX(),y = event.getY();
+            float x_ratio =x / getWidth(),y_ratio = y / getHeight();
+            Logger.d("x_ratio:%f,y_ratio:%f",x_ratio,y_ratio);
+
+            int size = 300;
+            mCameraManager.focus(x_ratio,y_ratio,size);
+
+            float half_s = size / 2f;
+            mFocusArea.set(Math.max(x - half_s,getLeft()),Math.max(y - half_s,getTop()),Math.min(x + half_s,getRight()),Math.min(y + half_s,getBottom()));
+            picture = null;
+            invalidate();
+        }
+        return super.onTouchEvent(event);
     }
 
+    @Override
+    protected void onDraw(Canvas canvas) {
+        if (picture != null){
+            canvas.drawBitmap(picture,0,0,null);
+        }else
+        if (!mFocusArea.isEmpty()){
+            canvas.drawRect(mFocusArea,mFocusPaint);
+        }
+     }
+
+    public void setCamera(CameraManager c){
+        mCameraManager = c;
+        mCameraManager.setFocusSuccessListener(this);
+    }
 
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
+        setWillNotDraw(false);
+
+
+
         mCameraManager.setPreviewDisplay(holder);
         mCameraManager.startPreview();
+        mCameraManager.autoFocus();
     }
 
     @Override
@@ -67,10 +121,30 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         }
         mCameraManager.setPreviewDisplay(holder);
         mCameraManager.startPreview();
+        mCameraManager.autoFocus();
     }
 
     @Override
     public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
         mCameraManager.releaseCamera();
+    }
+
+    @Override
+    public void success(Camera camera) {
+        if (!mFocusArea.isEmpty()){
+            mFocusArea.setEmpty();
+            postInvalidate();
+        }
+    }
+
+    public void takePicture(){
+        mCameraManager.takePicture(this);
+    }
+
+    @Override
+    public void pictureTaken(Bitmap pic) {
+        picture = pic;
+        invalidate();
+        mCameraManager.startPreview();
     }
 }

@@ -17,6 +17,7 @@ import android.os.Environment;
 import android.provider.Settings;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.wyc.androidfeatureset.R;
@@ -25,11 +26,14 @@ import java.io.IOException;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 public class CaptureActivity extends AppCompatActivity {
     private static final int CAMERA_PERMISSION = 1000;
     @BindView(R.id.preview)
     CameraPreview preview;
+    @BindView(R.id.pic_view)
+    ImageView pic_view;
     private CameraManager cameraManager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +47,11 @@ public class CaptureActivity extends AppCompatActivity {
             cameraManager.initCamera();
         }
         preview.setCamera(cameraManager);
+    }
+
+    @OnClick(R.id.pic_btn)
+    void takePicture(){
+        preview.takePicture();
     }
 
     @Override

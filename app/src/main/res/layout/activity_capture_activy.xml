@@ -15,22 +15,33 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <ImageView
+    <com.wyc.androidfeatureset.camera.CircleImage
         android:id="@+id/pic_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_width="68dp"
+        android:layout_height="68dp"
+        android:layout_marginEnd="48dp"
+        android:clickable="true"
+        app:layout_constraintBottom_toBottomOf="@id/pic_btn"
+        app:layout_constraintEnd_toStartOf="@id/pic_btn" />
 
     <Button
         android:id="@+id/pic_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="48dp"
         android:layout_marginBottom="88dp"
         android:text="@string/picture_btn"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/swt_btn"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:layout_marginStart="48dp"
+        android:layout_marginBottom="88dp"
+        android:background="@drawable/swt"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/pic_btn" />
 </androidx.constraintlayout.widget.ConstraintLayout>

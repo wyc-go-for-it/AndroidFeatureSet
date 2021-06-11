@@ -35,11 +35,10 @@ import java.io.IOException;
  * @UpdateRemark: 更新说明
  * @Version: 1.0
  */
-public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback,CameraManager.OnFocusSuccessListener, CameraManager.OnPictureTakenListener {
+public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback,CameraManager.OnFocusSuccessListener{
     private CameraManager mCameraManager;
     private final RectF mFocusArea;
     private final Paint mFocusPaint;
-    private Bitmap picture;
     public CameraPreview(Context context) {
         this(context,null);
     }
@@ -77,7 +76,6 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
             float half_s = size / 2f;
             mFocusArea.set(Math.max(x - half_s,getLeft()),Math.max(y - half_s,getTop()),Math.min(x + half_s,getRight()),Math.min(y + half_s,getBottom()));
-            picture = null;
             invalidate();
         }
         return super.onTouchEvent(event);
@@ -85,9 +83,6 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if (picture != null){
-            canvas.drawBitmap(picture,0,0,null);
-        }else
         if (!mFocusArea.isEmpty()){
             canvas.drawRect(mFocusArea,mFocusPaint);
         }
@@ -101,8 +96,6 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
         setWillNotDraw(false);
-
-
 
         mCameraManager.setPreviewDisplay(holder);
         mCameraManager.startPreview();
@@ -119,6 +112,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         } catch (Exception e){
             e.printStackTrace();
         }
+        mCameraManager.setPreviewSize(width,height);
         mCameraManager.setPreviewDisplay(holder);
         mCameraManager.startPreview();
         mCameraManager.autoFocus();
@@ -137,14 +131,10 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         }
     }
 
-    public void takePicture(){
-        mCameraManager.takePicture(this);
+    public void takePicture(CameraManager.OnPictureTakenListener l){
+        mCameraManager.takePicture(l);
     }
-
-    @Override
-    public void pictureTaken(Bitmap pic) {
-        picture = pic;
-        invalidate();
-        mCameraManager.startPreview();
+    public void switchCamera(){
+        mCameraManager.switchCamera(getHolder());
     }
 }

@@ -9,6 +9,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.net.Uri;
 import android.os.Build;
@@ -51,7 +52,16 @@ public class CaptureActivity extends AppCompatActivity {
 
     @OnClick(R.id.pic_btn)
     void takePicture(){
-        preview.takePicture();
+        preview.takePicture(pic -> pic_view.setImageBitmap(pic));
+    }
+    @OnClick(R.id.pic_view)
+    void clickPic(){
+        Toast.makeText(this,"hello",Toast.LENGTH_SHORT).show();
+    }
+
+    @OnClick(R.id.swt_btn)
+    void switchCamera(){
+        preview.switchCamera();
     }
 
     @Override

@@ -260,13 +260,15 @@ public class CameraManager {
     public void setPreviewSize(int w,int h){
         if (openSuccess()){
             Camera.Parameters param = mCamera.getParameters();
-            Point point = findBestPreviewSizeValue(param,new Point(w,h));
-            param.setPreviewSize(point.x,point.y);
-            param.setPreviewFrameRate(5);//一秒5帧
+            param.setPreviewSize(w,h);
+            mCamera.setParameters(param);
         }
     }
 
-    private Point findBestPreviewSizeValue(Camera.Parameters parameters, Point screenResolution) {
+    public Point findBestPreviewSizeValue(int x,int y) {
+        if (!openSuccess())return new Point(-1,-1);
+
+        Camera.Parameters parameters = mCamera.getParameters();
         List<Camera.Size> rawSupportedSizes = parameters.getSupportedPreviewSizes();
         if (rawSupportedSizes == null) {
             Camera.Size defaultSize = parameters.getPreviewSize();
@@ -277,14 +279,17 @@ public class CameraManager {
             return new Point(defaultSize.width, defaultSize.height);
         }
 
-        double screenAspectRatio = screenResolution.x / (double) screenResolution.y;
+        double screenAspectRatio = x / (double) y;
 
         formatPreviewSizes(rawSupportedSizes);
+
+        boolean isCandidatePortrait = x < y;
 
         // Find a suitable size, with max resolution
         int maxResolution = 0;
         Camera.Size maxResPreviewSize = null;
         for (Camera.Size size : rawSupportedSizes) {
+
             int realWidth = size.width;
             int realHeight = size.height;
             int resolution = realWidth * realHeight;
@@ -292,7 +297,6 @@ public class CameraManager {
                 continue;
             }
 
-            boolean isCandidatePortrait = realWidth < realHeight;
             int maybeFlippedWidth = isCandidatePortrait ? realHeight : realWidth;
             int maybeFlippedHeight = isCandidatePortrait ? realWidth : realHeight;
             double aspectRatio = maybeFlippedWidth / (double) maybeFlippedHeight;
@@ -301,7 +305,7 @@ public class CameraManager {
                 continue;
             }
 
-            if (maybeFlippedWidth == screenResolution.x && maybeFlippedHeight == screenResolution.y) {
+            if (maybeFlippedWidth == x && maybeFlippedHeight == y) {
                 Point exactPoint = new Point(realWidth, realHeight);
                 Logger.d("Found preview size exactly matching screen size: " + exactPoint);
                 return exactPoint;
@@ -372,7 +376,7 @@ public class CameraManager {
         final Camera.CameraInfo cameraInfo = new android.hardware.Camera.CameraInfo();
         Camera.getCameraInfo(mCameraId, cameraInfo);
         Logger.d("cameraInfo facing:%d,cameraInfo orientation:%d",cameraInfo.facing,cameraInfo.orientation);
-        int rotation = ((WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRotation();
+        int rotation =  mContext.getDisplay().getRotation();
         Logger.d("display rotation :%d",rotation);
         int degrees = 0;
         switch (rotation) {

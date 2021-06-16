@@ -16,6 +16,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 
@@ -39,6 +40,8 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private CameraManager mCameraManager;
     private final RectF mFocusArea;
     private final Paint mFocusPaint;
+    private int mWidth = -1,mHeight = -1;
+    private Point mPreSize;
     public CameraPreview(Context context) {
         this(context,null);
     }
@@ -61,6 +64,39 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
         mFocusArea = new RectF();
         getHolder().addCallback(this);
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        if (-1 == mWidth || -1 == mHeight) {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        } else {
+            setMeasuredDimension(mWidth, mHeight);
+        }
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        if (changed){
+            int width = getWidth(),height = getHeight();
+            mPreSize = mCameraManager.findBestPreviewSizeValue(width,height);
+            if (height >= width)
+                resize(Math.max(height * mPreSize.y/mPreSize.x,width),height);
+            else
+                resize(width,width * mPreSize.x/mPreSize.y);
+        }
+    }
+
+    public void resize(int width, int height) {
+        final ViewGroup.LayoutParams layoutParams = getLayoutParams();
+        layoutParams.width = layoutParams.width - width -  getWidth();
+
+        mWidth = width;
+        mHeight = height;
+        getHolder().setFixedSize(width, height);
+        requestLayout();
+        invalidate();
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -96,7 +132,6 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
         setWillNotDraw(false);
-
         mCameraManager.setPreviewDisplay(holder);
         mCameraManager.startPreview();
         mCameraManager.autoFocus();
@@ -104,6 +139,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
+        Logger.d("surfaceChanged width:%d,height:%d",width,height);
         if (holder.getSurface() == null){
             return;
         }
@@ -112,8 +148,11 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         } catch (Exception e){
             e.printStackTrace();
         }
-        mCameraManager.setPreviewSize(width,height);
         mCameraManager.setPreviewDisplay(holder);
+
+        if (mPreSize != null)
+            mCameraManager.setPreviewSize(mPreSize.x,mPreSize.y);
+
         mCameraManager.startPreview();
         mCameraManager.autoFocus();
     }

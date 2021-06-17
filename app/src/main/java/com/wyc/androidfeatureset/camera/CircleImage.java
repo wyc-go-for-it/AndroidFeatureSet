@@ -2,6 +2,7 @@ package com.wyc.androidfeatureset.camera;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -16,6 +17,15 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatImageView;
+
+import java.io.ByteArrayOutputStream;
+
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.ObservableEmitter;
+import io.reactivex.rxjava3.core.ObservableOnSubscribe;
+import io.reactivex.rxjava3.functions.Consumer;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
  * @ProjectName: AndroidFeatureSet
@@ -62,6 +72,7 @@ public class CircleImage extends AppCompatImageView {
             super.onDraw(canvas);
         }
     }
+
     private void drawRoundByXferMode(Canvas canvas, Bitmap bitmap) {
 
         int bitmapWidth = bitmap.getWidth();

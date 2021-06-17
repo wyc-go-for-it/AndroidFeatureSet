@@ -9,16 +9,31 @@ import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.Camera;
+import android.os.Environment;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import com.wyc.logger.Logger;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.annotations.NonNull;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.ObservableEmitter;
+import io.reactivex.rxjava3.core.ObservableOnSubscribe;
+import io.reactivex.rxjava3.functions.Consumer;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 import static android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK;
 import static android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT;
@@ -186,15 +201,27 @@ public class CameraManager {
     private final Camera.PictureCallback pictureCallback = new Camera.PictureCallback() {
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
-            if (mPictureTakenListener != null){
-/*                BitmapFactory.Options options = new BitmapFactory.Options();
-                options.inSampleSize = 2;*/
-                mPictureTakenListener.pictureTaken(adjustPhotoRotation(BitmapFactory.decodeByteArray(data,0,data.length),getCameraDisplayOrientation()));
-                camera.startPreview();
-                capturing = false;
-            }
+            Observable.create((ObservableOnSubscribe<Bitmap>) emitter -> {
+                Bitmap bitmap = adjustPhotoRotation(BitmapFactory.decodeByteArray(data,0,data.length),getCameraDisplayOrientation());
+                savePic(bitmap);
+                emitter.onNext(bitmap);
+            }).observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.io()).subscribe(bitmap -> {
+                if (mPictureTakenListener != null){
+                    mPictureTakenListener.pictureTaken(bitmap);
+                    mPictureTakenListener.finish();
+                    camera.startPreview();
+                    capturing = false;
+                }
+            }, throwable -> Toast.makeText(mContext,throwable.getMessage(),Toast.LENGTH_SHORT).show());
         }
     };
+    private void savePic(Bitmap pic) throws IOException{
+        final String file_name = new SimpleDateFormat("yyyyMMddHHmmss",Locale.CHINA).format(new Date()) + ".jpg";
+        final String dir = mContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES).getAbsolutePath();
+        try (OutputStream outputStream = new FileOutputStream(new File(dir,file_name))){
+            pic.compress(Bitmap.CompressFormat.JPEG,100,outputStream);
+        }
+    }
 
     Bitmap adjustPhotoRotation(Bitmap bitmap, final int orientationDegree) {
         Matrix matrix = new Matrix();
@@ -225,7 +252,9 @@ public class CameraManager {
     }
 
     public interface OnPictureTakenListener {
+        void start();
         void pictureTaken(Bitmap pic);
+        void finish();
     }
 
     private void setPictureTakenListener(OnPictureTakenListener l){
@@ -235,6 +264,7 @@ public class CameraManager {
     public void takePicture(OnPictureTakenListener listener){
         if (!capturing && openSuccess()){
             capturing = true;
+            listener.start();
             setPictureTakenListener(listener);
             setPictureSize();
             mCamera.takePicture(null,null,pictureCallback);
@@ -352,13 +382,8 @@ public class CameraManager {
         parameters.setPictureFormat(PixelFormat.JPEG);
         List<Camera.Size> pic_sizes = parameters.getSupportedPictureSizes();
         formatPictureSizes(pic_sizes);
-        Camera.Size sizeObj;
-        int size = pic_sizes.size();
-        if (size >= 3){
-            sizeObj = pic_sizes.get(size - 3);
-        }else {
-            sizeObj = pic_sizes.get(size - 1);
-        }
+        Camera.Size sizeObj = pic_sizes.get(0);
+
         parameters.setPictureSize(sizeObj.width, sizeObj.height);
         mCamera.setParameters(parameters);
     }

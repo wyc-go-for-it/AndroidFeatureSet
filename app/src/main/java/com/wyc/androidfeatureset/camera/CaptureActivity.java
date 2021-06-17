@@ -34,7 +34,7 @@ public class CaptureActivity extends AppCompatActivity {
     @BindView(R.id.preview)
     CameraPreview preview;
     @BindView(R.id.pic_view)
-    ImageView pic_view;
+    CircleImage pic_view;
     private CameraManager cameraManager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,11 +48,18 @@ public class CaptureActivity extends AppCompatActivity {
             cameraManager.initCamera();
         }
         preview.setCamera(cameraManager);
+
+        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
     }
 
     @OnClick(R.id.pic_btn)
     void takePicture(){
-        preview.takePicture(pic -> pic_view.setImageBitmap(pic));
+        preview.takePicture(new CameraPreview.Subscribe(preview) {
+            @Override
+            public void pictureTaken(Bitmap pic) {
+                pic_view.setImageBitmap(pic);
+            }
+        });
     }
     @OnClick(R.id.pic_view)
     void clickPic(){
@@ -85,6 +92,7 @@ public class CaptureActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == CAMERA_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
             }
         } else {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);

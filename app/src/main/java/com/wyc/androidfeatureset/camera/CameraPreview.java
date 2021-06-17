@@ -1,5 +1,7 @@
 package com.wyc.androidfeatureset.camera;
 
+import android.animation.Animator;
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -7,6 +9,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.PathMeasure;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -17,12 +21,18 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
 import com.wyc.logger.Logger;
 
 import java.io.IOException;
+
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.ObservableOnSubscribe;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
  * @ProjectName: AndroidFeatureSet
@@ -42,6 +52,13 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private final Paint mFocusPaint;
     private int mWidth = -1,mHeight = -1;
     private Point mPreSize;
+
+    private ValueAnimator animator;
+    private float mCurValue;
+    private PathMeasure mPathMeasure;
+    private Path mDstPath,mCirclePath;
+    private boolean isStartAnimator;
+
     public CameraPreview(Context context) {
         this(context,null);
     }
@@ -58,12 +75,71 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         super(context, attrs, defStyleAttr, defStyleRes);
 
         mFocusPaint = new Paint();
-        mFocusPaint.setColor(Color.GREEN);
+        mFocusPaint.setAntiAlias(true);
         mFocusPaint.setStyle(Paint.Style.STROKE);
-        mFocusPaint.setStrokeWidth(2f);
 
         mFocusArea = new RectF();
         getHolder().addCallback(this);
+
+        initAnimator();
+    }
+    private void initAnimator(){
+        animator = ValueAnimator.ofFloat(0,2);
+        animator.setRepeatCount(ValueAnimator.INFINITE);
+        animator.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                isStartAnimator = true;
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                isStartAnimator = false;
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                isStartAnimator = false;
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+        animator.addUpdateListener(animation -> {
+            mCurValue = animation.getAnimatedFraction();
+            invalidate();
+        });
+        animator.setDuration(1000);
+
+        mCirclePath = new Path();
+        mPathMeasure = new PathMeasure();
+        mDstPath = new Path();
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        if (!mFocusArea.isEmpty()){
+            mFocusPaint.setColor(Color.GREEN);
+            mFocusPaint.setStrokeWidth(2f);
+            canvas.drawRect(mFocusArea,mFocusPaint);
+        }
+        if (isStartAnimator){
+            mFocusPaint.setColor(Color.RED);
+            mFocusPaint.setStrokeWidth(5f);
+            drawWait(canvas);
+        }
+    }
+    private void drawWait(Canvas canvas){
+        float len = mPathMeasure.getLength();
+        float stop = mCurValue * len;
+        float start = stop - ((1 - mCurValue) *len);
+
+        mDstPath.reset();
+        mDstPath.moveTo(getX()/ 2,getY() / 2);
+        mPathMeasure.getSegment(start,stop ,mDstPath,true);
+        canvas.drawPath(mDstPath,mFocusPaint);
     }
 
     @Override
@@ -73,6 +149,8 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         } else {
             setMeasuredDimension(mWidth, mHeight);
         }
+        mCirclePath.addCircle(getMeasuredWidth() >> 1,getMeasuredHeight() >> 1,48,Path.Direction.CW);
+        mPathMeasure.setPath(mCirclePath,false);
     }
 
     @Override
@@ -103,26 +181,21 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_DOWN){
-            float x = event.getX(),y = event.getY();
-            float x_ratio =x / getWidth(),y_ratio = y / getHeight();
-            Logger.d("x_ratio:%f,y_ratio:%f",x_ratio,y_ratio);
+            if (!isStartAnimator){
+                float x = event.getX(),y = event.getY();
+                float x_ratio =x / getWidth(),y_ratio = y / getHeight();
+                Logger.d("x_ratio:%f,y_ratio:%f",x_ratio,y_ratio);
 
-            int size = 300;
-            mCameraManager.focus(x_ratio,y_ratio,size);
+                int size = 300;
+                mCameraManager.focus(x_ratio,y_ratio,size);
 
-            float half_s = size / 2f;
-            mFocusArea.set(Math.max(x - half_s,getLeft()),Math.max(y - half_s,getTop()),Math.min(x + half_s,getRight()),Math.min(y + half_s,getBottom()));
-            invalidate();
+                float half_s = size / 2f;
+                mFocusArea.set(Math.max(x - half_s,getLeft()),Math.max(y - half_s,getTop()),Math.min(x + half_s,getRight()),Math.min(y + half_s,getBottom()));
+                invalidate();
+            }
         }
         return super.onTouchEvent(event);
     }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        if (!mFocusArea.isEmpty()){
-            canvas.drawRect(mFocusArea,mFocusPaint);
-        }
-     }
 
     public void setCamera(CameraManager c){
         mCameraManager = c;
@@ -170,9 +243,26 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         }
     }
 
-    public void takePicture(CameraManager.OnPictureTakenListener l){
-        mCameraManager.takePicture(l);
+    public void takePicture(Subscribe s){
+        mCameraManager.takePicture(s);
     }
+
+    public static abstract class Subscribe implements CameraManager.OnPictureTakenListener{
+        private final CameraPreview view;
+        public Subscribe(CameraPreview v){
+            view = v;
+        }
+        @Override
+        public final void start() {
+            view.animator.start();
+        }
+
+        @Override
+        public final void finish() {
+            view.animator.end();
+        }
+    }
+
     public void switchCamera(){
         mCameraManager.switchCamera(getHolder());
     }

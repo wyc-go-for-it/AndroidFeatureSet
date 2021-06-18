@@ -1,9 +1,11 @@
 package com.wyc.androidfeatureset.camera;
 
+import android.Manifest;
 import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -24,6 +26,7 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 
 import com.wyc.logger.Logger;
 
@@ -78,10 +81,18 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         mFocusPaint.setAntiAlias(true);
         mFocusPaint.setStyle(Paint.Style.STROKE);
 
+        initCameraManager();
         mFocusArea = new RectF();
         getHolder().addCallback(this);
 
         initAnimator();
+    }
+    private void initCameraManager(){
+        mCameraManager = new CameraManager(getContext());
+        mCameraManager.setFocusSuccessListener(this);
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED){
+            mCameraManager.initCamera();
+        }
     }
     private void initAnimator(){
         animator = ValueAnimator.ofFloat(0,2);
@@ -197,30 +208,18 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         return super.onTouchEvent(event);
     }
 
-    public void setCamera(CameraManager c){
-        mCameraManager = c;
-        mCameraManager.setFocusSuccessListener(this);
-    }
-
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
         setWillNotDraw(false);
-        mCameraManager.setPreviewDisplay(holder);
-        mCameraManager.startPreview();
-        mCameraManager.autoFocus();
+        mCameraManager.initCamera();
     }
 
     @Override
     public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
+        if (holder.getSurface() == null)return;
         Logger.d("surfaceChanged width:%d,height:%d",width,height);
-        if (holder.getSurface() == null){
-            return;
-        }
-        try {
-            mCameraManager.stopPreview();
-        } catch (Exception e){
-            e.printStackTrace();
-        }
+
+        mCameraManager.stopPreview();
         mCameraManager.setPreviewDisplay(holder);
 
         if (mPreSize != null)
@@ -236,7 +235,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     }
 
     @Override
-    public void success(Camera camera) {
+    public void onFocusSuccess(Camera camera) {
         if (!mFocusArea.isEmpty()){
             mFocusArea.setEmpty();
             postInvalidate();
@@ -265,5 +264,8 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     public void switchCamera(){
         mCameraManager.switchCamera(getHolder());
+    }
+    public String getPicDir(){
+        return mCameraManager.getPicDir();
     }
 }

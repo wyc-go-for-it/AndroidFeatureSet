@@ -42,6 +42,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 public class CircleImage extends AppCompatImageView {
     private Paint mPaint;
     private Matrix mMatrix;
+    private float mRotationVal;
     public CircleImage(@NonNull Context context) {
         this(context,null);
     }
@@ -91,8 +92,10 @@ public class CircleImage extends AppCompatImageView {
 
         mPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
         float minScale = Math.min(viewWidth / (float) bitmapWidth, viewHeight / (float) bitmapHeight);
+
         mMatrix.reset();
         mMatrix.setScale(minScale, minScale);
+        mMatrix.postRotate(mRotationVal,viewWidth >> 1,viewHeight >> 1);
         mMatrix.postTranslate((viewWidth - (int) (bitmapWidth * minScale)) >> 1,(int)(viewHeight - bitmapHeight * minScale) >> 1);
         canvas.drawBitmap(bitmap, mMatrix, mPaint);
         mPaint.setXfermode(null);
@@ -104,5 +107,11 @@ public class CircleImage extends AppCompatImageView {
         mPaint.setStyle(Paint.Style.FILL);
 
         canvas.restore();
+    }
+    public void setMatrix(float a){
+        if ((int)mRotationVal != (int)a){
+            mRotationVal = a;
+            postInvalidate();
+        }
     }
 }

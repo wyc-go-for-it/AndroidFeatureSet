@@ -1,6 +1,8 @@
 package com.wyc.androidfeatureset.camera;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -9,10 +11,10 @@ import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.Camera;
+import android.net.Uri;
 import android.os.Environment;
 import android.view.Surface;
 import android.view.SurfaceHolder;
-import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.wyc.logger.Logger;
@@ -21,18 +23,17 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.ObservableEmitter;
 import io.reactivex.rxjava3.core.ObservableOnSubscribe;
-import io.reactivex.rxjava3.functions.Consumer;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 import static android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK;
@@ -56,13 +57,14 @@ public class CameraManager {
 
     private final Context mContext;
     private Camera mCamera;
-    private int mCameraId = CAMERA_FACING_BACK ;
+    private int mCameraId ;
     private OnFocusSuccessListener mFocusSuccessListener;
     private OnPictureTakenListener mPictureTakenListener;
     private volatile boolean capturing;
 
     public CameraManager(Context context){
         mContext = context;
+        getCameraId();
     }
 
     public void focus(float x,float y,int area){
@@ -103,22 +105,6 @@ public class CameraManager {
         }
     }
 
-
-    private void clearCameraFocus() {
-        if (openSuccess()){
-            mCamera.cancelAutoFocus();
-            Camera.Parameters parameters = mCamera.getParameters();
-            parameters.setFocusAreas(null);
-            parameters.setMeteringAreas(null);
-            try {
-                mCamera.setParameters(parameters);
-            } catch (Exception e) {
-                e.printStackTrace();
-                Logger.d("failed to set focus parameters:%s",e.getMessage());
-            }
-        }
-    }
-
     public void stopPreview(){
         if (openSuccess()){
             try {
@@ -132,6 +118,15 @@ public class CameraManager {
 
     public void startPreview(){
         if (openSuccess()){
+            mCamera.setPreviewCallback(new Camera.PreviewCallback() {
+                @Override
+                public void onPreviewFrame(byte[] data, Camera camera) {
+                    Logger.d("onPreviewFrame" + data);
+                    for (int i = 0,len = data.length;i < len;i ++){
+                        data[i] = (byte) (data[i] + 128);
+                    }
+                }
+            });
             mCamera.startPreview();
         }
     }
@@ -142,25 +137,34 @@ public class CameraManager {
         }
     }
 
-    public void cancelFocus(){
-        if (openSuccess())mCamera.cancelAutoFocus();
-    }
-
     public void releaseCamera(){
         if (openSuccess()){
+            mCamera.stopPreview();
             mCamera.release();
+            mCamera = null;
         }
     }
 
     public void initCamera(){
-        if (checkCameraHardware()){
+        if (checkCameraHardware() && mCamera == null){
             try {
                 mCamera = Camera.open(mCameraId);
+                setPictureSize();
             }catch (Exception e){
                 e.printStackTrace();
                 Logger.e("Error open camera:%s",e.getMessage());
             }
         }
+    }
+    private void saveCameraId(){
+        final SharedPreferences preferences= mContext.getSharedPreferences("cameraId", Context.MODE_PRIVATE);
+        final SharedPreferences.Editor editor= preferences.edit();
+        editor.putInt("id",mCameraId);
+        editor.apply();
+    }
+    private void getCameraId(){
+        final SharedPreferences preferences= mContext.getSharedPreferences("cameraId", Context.MODE_PRIVATE);
+        mCameraId = preferences.getInt("id",CAMERA_FACING_BACK);
     }
 
     private void switchCameraId(){
@@ -171,6 +175,7 @@ public class CameraManager {
             }else if (mCameraId == CAMERA_FACING_FRONT){
                 mCameraId = CAMERA_FACING_BACK;
             }
+            saveCameraId();
         }
     }
 
@@ -178,7 +183,7 @@ public class CameraManager {
         Logger.d("AutoFocus:%s",success);
         if (success){
             if (mFocusSuccessListener != null)
-                mFocusSuccessListener.success(camera);
+                mFocusSuccessListener.onFocusSuccess(camera);
         }
     };
 
@@ -188,10 +193,11 @@ public class CameraManager {
         initCamera();
         setPreviewDisplay(holder);
         startPreview();
+        autoFocus();
     }
 
     public interface OnFocusSuccessListener{
-        void success(Camera camera);
+        void onFocusSuccess(Camera camera);
     }
 
     public void setFocusSuccessListener(OnFocusSuccessListener listener) {
@@ -201,26 +207,53 @@ public class CameraManager {
     private final Camera.PictureCallback pictureCallback = new Camera.PictureCallback() {
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
-            Observable.create((ObservableOnSubscribe<Bitmap>) emitter -> {
+            Observable.create((ObservableOnSubscribe<PictureInfo>) emitter -> {
                 Bitmap bitmap = adjustPhotoRotation(BitmapFactory.decodeByteArray(data,0,data.length),getCameraDisplayOrientation());
-                savePic(bitmap);
-                emitter.onNext(bitmap);
-            }).observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.io()).subscribe(bitmap -> {
+                Uri uri = picUri();
+                final PictureInfo info = new PictureInfo(bitmap,uri);
+                emitter.onNext(info);
+                savePic(bitmap,uri);
+            }).observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.io()).subscribe(info -> {
                 if (mPictureTakenListener != null){
-                    mPictureTakenListener.pictureTaken(bitmap);
+                    mPictureTakenListener.pictureTaken(info);
                     mPictureTakenListener.finish();
-                    camera.startPreview();
-                    capturing = false;
                 }
-            }, throwable -> Toast.makeText(mContext,throwable.getMessage(),Toast.LENGTH_SHORT).show());
+                startPreview();
+                capturing = false;
+            }, throwable ->{
+                throwable.printStackTrace();
+                Toast.makeText(mContext,throwable.getMessage(),Toast.LENGTH_SHORT).show();
+            });
         }
     };
-    private void savePic(Bitmap pic) throws IOException{
-        final String file_name = new SimpleDateFormat("yyyyMMddHHmmss",Locale.CHINA).format(new Date()) + ".jpg";
-        final String dir = mContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES).getAbsolutePath();
-        try (OutputStream outputStream = new FileOutputStream(new File(dir,file_name))){
+    public static class PictureInfo implements Serializable{
+        private final Bitmap bitmap;
+        private final Uri uri;
+        public PictureInfo(Bitmap b,Uri r){
+            bitmap = b;
+            uri = r;
+        }
+
+        public Bitmap getBitmap() {
+            return bitmap;
+        }
+
+        public Uri getUri() {
+            return uri;
+        }
+    }
+    private void savePic(Bitmap pic,Uri uri) throws IOException{
+        try (OutputStream outputStream = mContext.getContentResolver().openOutputStream(uri)){
             pic.compress(Bitmap.CompressFormat.JPEG,100,outputStream);
         }
+        Logger.d("savePic of uri:%s",uri);
+    }
+    private Uri picUri(){
+        final String file_name = new SimpleDateFormat("yyyyMMddHHmmss",Locale.CHINA).format(new Date()) + ".jpg";
+        return Uri.fromFile(new File(getPicDir(),file_name));
+    }
+    public String getPicDir(){
+        return mContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES).getAbsolutePath();
     }
 
     Bitmap adjustPhotoRotation(Bitmap bitmap, final int orientationDegree) {
@@ -253,7 +286,7 @@ public class CameraManager {
 
     public interface OnPictureTakenListener {
         void start();
-        void pictureTaken(Bitmap pic);
+        void pictureTaken(PictureInfo info);
         void finish();
     }
 
@@ -266,7 +299,6 @@ public class CameraManager {
             capturing = true;
             listener.start();
             setPictureTakenListener(listener);
-            setPictureSize();
             mCamera.takePicture(null,null,pictureCallback);
         }
     }

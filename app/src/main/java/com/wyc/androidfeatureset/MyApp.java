@@ -1,7 +1,9 @@
 package com.wyc.androidfeatureset;
 
 import android.app.Application;
+import android.os.StrictMode;
 
+import com.squareup.leakcanary.LeakCanary;
 import com.wyc.logger.AndroidLogAdapter;
 import com.wyc.logger.Logger;
 
@@ -21,6 +23,11 @@ public class MyApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        if (BuildConfig.DEBUG) {
+            StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().detectAll().penaltyLog().build());
+            StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder().detectAll().penaltyLog().build());
+        }
+        LeakCanary.install(this);
         Logger.addLogAdapter(new AndroidLogAdapter());
     }
 }

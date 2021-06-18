@@ -45,4 +45,7 @@ dependencies {
     implementation 'io.reactivex.rxjava3:rxandroid:3.0.0'
     implementation 'io.reactivex.rxjava3:rxjava:3.0.0'
 
+    debugApi 'com.squareup.leakcanary:leakcanary-android:1.6'
+    releaseApi 'com.squareup.leakcanary:leakcanary-android-no-op:1.6'
+    testImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.6'
 }

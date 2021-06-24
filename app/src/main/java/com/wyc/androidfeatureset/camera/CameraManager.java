@@ -12,10 +12,14 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.Camera;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.view.Surface;
 import android.view.SurfaceHolder;
+import android.view.WindowManager;
 import android.widget.Toast;
+
+import androidx.annotation.RequiresApi;
 
 import com.wyc.logger.Logger;
 
@@ -139,9 +143,11 @@ public class CameraManager {
 
     public void releaseCamera(){
         if (openSuccess()){
+            mCamera.setPreviewCallback(null);
             mCamera.stopPreview();
             mCamera.release();
             mCamera = null;
+            Logger.d("releaseCamera...");
         }
     }
 
@@ -433,7 +439,7 @@ public class CameraManager {
         final Camera.CameraInfo cameraInfo = new android.hardware.Camera.CameraInfo();
         Camera.getCameraInfo(mCameraId, cameraInfo);
         Logger.d("cameraInfo facing:%d,cameraInfo orientation:%d",cameraInfo.facing,cameraInfo.orientation);
-        int rotation =  mContext.getDisplay().getRotation();
+        int rotation =  ((WindowManager)mContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRotation();
         Logger.d("display rotation :%d",rotation);
         int degrees = 0;
         switch (rotation) {

@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
@@ -61,14 +62,17 @@ public class CameraManager {
 
     private final Context mContext;
     private Camera mCamera;
-    private int mCameraId ;
+    private int mCameraId = CAMERA_FACING_BACK;
     private OnFocusSuccessListener mFocusSuccessListener;
     private OnPictureTakenListener mPictureTakenListener;
+    private OnPreviewListener mPreviewListener;
     private volatile boolean capturing;
+    private Camera.Size mPreviewSize;
+    private int mPreviewFormat;
+    private byte[] mBuffer;
 
     public CameraManager(Context context){
         mContext = context;
-        getCameraId();
     }
 
     public void focus(float x,float y,int area){
@@ -122,15 +126,17 @@ public class CameraManager {
 
     public void startPreview(){
         if (openSuccess()){
-            mCamera.setPreviewCallback(new Camera.PreviewCallback() {
-                @Override
-                public void onPreviewFrame(byte[] data, Camera camera) {
-                    Logger.d("onPreviewFrame" + data);
-                    for (int i = 0,len = data.length;i < len;i ++){
-                        data[i] = (byte) (data[i] + 128);
-                    }
-                }
+            int size = mPreviewSize.height * mPreviewSize.width;
+            size = size * ImageFormat.getBitsPerPixel(mPreviewFormat) / 8;
+            mBuffer = new byte[size];
+            mCamera.addCallbackBuffer(mBuffer);
+            mCamera.setPreviewCallbackWithBuffer((data, camera) -> {
+                if (mPreviewListener != null)
+                    mPreviewListener.preview(data,mPreviewFormat,mPreviewSize.width,mPreviewSize.height);
+
+                if (mCamera != null)mCamera.addCallbackBuffer(mBuffer);
             });
+
             mCamera.startPreview();
         }
     }
@@ -143,11 +149,11 @@ public class CameraManager {
 
     public void releaseCamera(){
         if (openSuccess()){
-            mCamera.setPreviewCallback(null);
+            mCamera.setPreviewCallbackWithBuffer(null);
             mCamera.stopPreview();
             mCamera.release();
             mCamera = null;
-            Logger.d("releaseCamera...");
+            Logger.d("Camera released...");
         }
     }
 
@@ -156,21 +162,12 @@ public class CameraManager {
             try {
                 mCamera = Camera.open(mCameraId);
                 setPictureSize();
+                Logger.d("Camera opened...");
             }catch (Exception e){
                 e.printStackTrace();
                 Logger.e("Error open camera:%s",e.getMessage());
             }
         }
-    }
-    private void saveCameraId(){
-        final SharedPreferences preferences= mContext.getSharedPreferences("cameraId", Context.MODE_PRIVATE);
-        final SharedPreferences.Editor editor= preferences.edit();
-        editor.putInt("id",mCameraId);
-        editor.apply();
-    }
-    private void getCameraId(){
-        final SharedPreferences preferences= mContext.getSharedPreferences("cameraId", Context.MODE_PRIVATE);
-        mCameraId = preferences.getInt("id",CAMERA_FACING_BACK);
     }
 
     private void switchCameraId(){
@@ -181,7 +178,6 @@ public class CameraManager {
             }else if (mCameraId == CAMERA_FACING_FRONT){
                 mCameraId = CAMERA_FACING_BACK;
             }
-            saveCameraId();
         }
     }
 
@@ -300,6 +296,13 @@ public class CameraManager {
         this.mPictureTakenListener = l;
     }
 
+    public interface OnPreviewListener{
+        void preview(byte[] data,int format,int w,int h);
+    }
+    private void setPreviewListener(OnPreviewListener l){
+        mPreviewListener = l;
+    }
+
     public void takePicture(OnPictureTakenListener listener){
         if (!capturing && openSuccess()){
             capturing = true;
@@ -330,6 +333,9 @@ public class CameraManager {
             Camera.Parameters param = mCamera.getParameters();
             param.setPreviewSize(w,h);
             mCamera.setParameters(param);
+
+            mPreviewSize = mCamera.getParameters().getPreviewSize();
+            mPreviewFormat = param.getPreviewFormat();
         }
     }
 
@@ -461,5 +467,19 @@ public class CameraManager {
 
     private boolean openSuccess(){
         return mCamera != null;
+    }
+
+    public int getCameraId() {
+        return mCameraId;
+    }
+
+    public void setCameraId(int id) {
+        this.mCameraId = id;
+    }
+    public void setPreviewCb(OnPreviewListener l){
+        setPreviewListener(l);
+    }
+    public int getPreviewFormat(){
+        return mPreviewFormat;
     }
 }

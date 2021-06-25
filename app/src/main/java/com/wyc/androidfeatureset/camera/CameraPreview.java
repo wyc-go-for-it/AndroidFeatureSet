@@ -10,6 +10,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ImageFormat;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PathMeasure;
@@ -17,6 +18,8 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.hardware.Camera;
+import android.os.Bundle;
+import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -26,9 +29,15 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 import com.wyc.logger.Logger;
+
+import org.opencv.android.Utils;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
 
@@ -90,10 +99,26 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private void initCameraManager(){
         mCameraManager = new CameraManager(getContext());
         mCameraManager.setFocusSuccessListener(this);
-        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED){
-            mCameraManager.initCamera();
-        }
     }
+
+    @Nullable
+    @Override
+    protected Parcelable onSaveInstanceState() {
+        Bundle bundle = new Bundle();
+        bundle.putInt("cameraId",mCameraManager.getCameraId());
+        bundle.putParcelable("super",super.onSaveInstanceState());
+        return bundle;
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Parcelable state) {
+        Bundle bundle = (Bundle)state;
+        Parcelable s = bundle.getParcelable("super");
+        int id = bundle.getInt("cameraId");
+        mCameraManager.setCameraId(id);
+        super.onRestoreInstanceState(s);
+    }
+
     private void initAnimator(){
         animator = ValueAnimator.ofFloat(0,2);
         animator.setRepeatCount(ValueAnimator.INFINITE);
@@ -167,14 +192,6 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
-        if (changed){
-            int width = getWidth(),height = getHeight();
-            mPreSize = mCameraManager.findBestPreviewSizeValue(width,height);
-            if (height >= width)
-                resize(Math.max(height * mPreSize.y/mPreSize.x,width),height);
-            else
-                resize(width,width * mPreSize.x/mPreSize.y);
-        }
     }
 
     public void resize(int width, int height) {
@@ -212,6 +229,12 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
         setWillNotDraw(false);
         mCameraManager.initCamera();
+        int width = getWidth(),height = getHeight();
+        mPreSize = mCameraManager.findBestPreviewSizeValue(width,height);
+        if (height >= width)
+            resize(Math.max(height * mPreSize.y/mPreSize.x,width),height);
+        else
+            resize(width,width * mPreSize.x/mPreSize.y);
     }
 
     @Override
@@ -267,5 +290,8 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     }
     public String getPicDir(){
         return mCameraManager.getPicDir();
+    }
+    public void setPreviewBack(CameraManager.OnPreviewListener cb){
+        mCameraManager.setPreviewCb(cb);
     }
 }

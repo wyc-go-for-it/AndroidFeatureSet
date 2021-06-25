@@ -1,50 +1,49 @@
 package com.wyc.androidfeatureset.camera;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.hardware.Camera;
+import android.graphics.ImageFormat;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.StatFs;
-import android.provider.Settings;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.wyc.androidfeatureset.R;
 import com.wyc.logger.Logger;
 
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+import org.opencv.core.Rect;
+import org.opencv.imgproc.Imgproc;
+
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.Arrays;
-import java.util.Comparator;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.ObservableEmitter;
 import io.reactivex.rxjava3.core.ObservableOnSubscribe;
-import io.reactivex.rxjava3.functions.Consumer;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class CaptureActivity extends AppCompatActivity implements SensorEventListener {
@@ -58,6 +57,13 @@ public class CaptureActivity extends AppCompatActivity implements SensorEventLis
     CameraPreview preview;
     @BindView(R.id.pic_view)
     CircleImage thumbnail_view;
+    @BindView(R.id.small_preview)
+    ImageView small_preview;
+
+    private Bitmap mCacheBitmap;
+    private Mat mYuvFrameData;
+    private Mat mRgba;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,8 +74,35 @@ public class CaptureActivity extends AppCompatActivity implements SensorEventLis
 
         initThumb();
         initSensor();
+
      }
 
+    private final BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
+        @Override
+        public void onManagerConnected(int status) {
+            if (status == LoaderCallbackInterface.SUCCESS){
+                preview.setPreviewBack((data, format, w, h) -> {
+                    if (mCacheBitmap == null){
+                        mCacheBitmap = Bitmap.createBitmap(w,h, Bitmap.Config.ARGB_8888);
+                    }
+                    if (mYuvFrameData == null)mYuvFrameData = new Mat(h + h / 2,w, CvType.CV_8UC1);
+                    if (mRgba == null)mRgba = new Mat();
+
+                    mYuvFrameData.put(0,0,data);
+
+                    if (format == ImageFormat.NV21)
+                        Imgproc.cvtColor(mYuvFrameData, mRgba, Imgproc.COLOR_YUV2RGBA_NV21, 4);
+                    else if (format == ImageFormat.YV12)
+                        Imgproc.cvtColor(mYuvFrameData, mRgba, Imgproc.COLOR_YUV2RGB_I420, 4);  // COLOR_YUV2RGBA_YV12 produces inverted colors
+
+
+                    Utils.matToBitmap(mRgba,mCacheBitmap);
+
+                    small_preview.setImageBitmap(mCacheBitmap);
+                });
+            }
+        }
+    };
      private void initSensor(){
          mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
          mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
@@ -121,6 +154,13 @@ public class CaptureActivity extends AppCompatActivity implements SensorEventLis
     protected void onResume() {
         super.onResume();
         mSensorManager.registerListener(this,mSensor,SensorManager.SENSOR_DELAY_NORMAL);
+        if (!OpenCVLoader.initDebug()) {
+            Logger.d("Internal OpenCV library not found. Using OpenCV Manager for initialization");
+            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback);
+        } else {
+            Logger.d("OpenCV library found inside package. Using it!");
+            mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+        }
     }
 
     @Override

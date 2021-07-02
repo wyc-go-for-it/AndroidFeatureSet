@@ -332,6 +332,7 @@ public class CameraManager {
         if (openSuccess()){
             Camera.Parameters param = mCamera.getParameters();
             param.setPreviewSize(w,h);
+            //param.setPreviewFormat(ImageFormat.YV12);
             mCamera.setParameters(param);
 
             mPreviewSize = mCamera.getParameters().getPreviewSize();

@@ -7,13 +7,13 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
+import android.graphics.Rect;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -29,10 +29,9 @@ import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
-import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.Rect;
+
 import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
@@ -45,6 +44,8 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.ObservableOnSubscribe;
 import io.reactivex.rxjava3.schedulers.Schedulers;
+
+
 
 public class CaptureActivity extends AppCompatActivity implements SensorEventListener {
     private static final int CAMERA_PERMISSION = 1000;
@@ -60,6 +61,7 @@ public class CaptureActivity extends AppCompatActivity implements SensorEventLis
     @BindView(R.id.small_preview)
     ImageView small_preview;
 
+    private byte[] mCacheMatrix;
     private Bitmap mCacheBitmap;
     private Mat mYuvFrameData;
     private Mat mRgba;
@@ -82,13 +84,65 @@ public class CaptureActivity extends AppCompatActivity implements SensorEventLis
         public void onManagerConnected(int status) {
             if (status == LoaderCallbackInterface.SUCCESS){
                 preview.setPreviewBack((data, format, w, h) -> {
-                    if (mCacheBitmap == null){
-                        mCacheBitmap = Bitmap.createBitmap(w,h, Bitmap.Config.ARGB_8888);
+
+                    w = (w + 16 -1) & (-16);
+
+                    int left = (w >> 1) & ~1,top = (h>> 1) & ~1;
+                    Rect rect = new Rect(left,top,w,h);
+
+                    int width = rect.width();
+                    int height = rect.height();
+
+                    // If the caller asks for the entire underlying image, save the copy and give them the
+                    // original data. The docs specifically warn that result.length must be ignored.
+                    if (width == w && height == h) {
+
                     }
-                    if (mYuvFrameData == null)mYuvFrameData = new Mat(h + h / 2,w, CvType.CV_8UC1);
+
+                    int area = width * (height + height / 2);
+                    if (mCacheMatrix == null){
+                        mCacheMatrix = new byte[area];
+                    }
+                    int inputOffset = 0;
+
+
+/*                    y_size = stride * height
+                    c_stride = ALIGN(stride/2, 16)
+                    c_size = c_stride * height/2
+                    size = y_size + c_size * 2
+                    cr_offset = y_size
+                    cb_offset = y_size + c_size*/
+
+                    //y
+                    for (int y = 0; y < height; y++) {
+                        int outputOffset = y * width;
+                        System.arraycopy(data, inputOffset, mCacheMatrix, outputOffset, width);
+                        inputOffset += w;
+                    }
+
+                    int c_stride = ((w >> 1) + 16 -1) & (-16);
+                    //v
+                    int vOffset = w * h;
+                    for (int y =  height; y < height + height / 4; y++) {
+                        System.arraycopy(data, vOffset, mCacheMatrix, y * width, width);
+                        vOffset +=  w;
+                    }
+                    //u
+                    //vOffset = w * h + c_stride * h / 2;
+                    for (int y =  height + height / 4; y < height + height / 2; y++) {
+                        System.arraycopy(data, vOffset, mCacheMatrix, y * width, width);
+                        vOffset += w  ;
+                    }
+
+                    com.wyc.androidfeatureset.Utils.flipYUV_420ByDiagonalY_axis(mCacheMatrix,width,height);
+
+                    if (mCacheBitmap == null){
+                        mCacheBitmap = Bitmap.createBitmap(rect.width(),rect.height(), Bitmap.Config.ARGB_8888);
+                    }
+                    if (mYuvFrameData == null)mYuvFrameData = new Mat(rect.height() + rect.height() / 2,rect.width(), CvType.CV_8UC1);
                     if (mRgba == null)mRgba = new Mat();
 
-                    mYuvFrameData.put(0,0,data);
+                    mYuvFrameData.put(0,0,mCacheMatrix);
 
                     if (format == ImageFormat.NV21)
                         Imgproc.cvtColor(mYuvFrameData, mRgba, Imgproc.COLOR_YUV2RGBA_NV21, 4);
@@ -103,6 +157,7 @@ public class CaptureActivity extends AppCompatActivity implements SensorEventLis
             }
         }
     };
+
      private void initSensor(){
          mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
          mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);

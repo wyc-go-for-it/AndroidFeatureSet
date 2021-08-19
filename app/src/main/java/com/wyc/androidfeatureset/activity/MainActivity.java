@@ -6,6 +6,7 @@ import android.os.Bundle;
 
 import com.wyc.androidfeatureset.R;
 import com.wyc.androidfeatureset.camera.CaptureActivity;
+import com.wyc.androidfeatureset.provider.ProviderActivity;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -22,5 +23,9 @@ public class MainActivity extends AppCompatActivity {
     @OnClick(R.id.camera_feature_btn)
     void camera(){
         CaptureActivity.start(this);
+    }
+    @OnClick(R.id.provider_btn)
+    void provider(){
+        ProviderActivity.start(this);
     }
 }

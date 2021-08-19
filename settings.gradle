@@ -1,3 +1,7 @@
+include ':appNotification'
+include ':appAIDLClient'
+include ':appAIDLService'
+include ':appProvider'
 include ':image-manipulations'
 include ':tutorial-1-camerapreview'
 include ':tutorial-2-mixedprocessing'

@@ -1,5 +1,9 @@
 package com.wyc.androidfeatureset;
 
+import android.util.Log;
+
+import com.wyc.androidfeatureset.print.App;
+
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -12,6 +16,6 @@ import static org.junit.Assert.*;
 public class ExampleUnitTest {
     @Test
     public void addition_isCorrect() {
-        assertEquals(4, 2 + 2);
+       App.main(null);
     }
 }

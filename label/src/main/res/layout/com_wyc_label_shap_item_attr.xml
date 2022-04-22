@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/com_wyc_label_round_shape"
+    android:padding="@dimen/com_wyc_label_margin_8">
+
+    <RadioGroup
+        android:id="@+id/style"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <RadioButton
+            android:id="@+id/fill"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/com_wyc_label_margin_12"
+            android:text="@string/com_wyc_label_fill"
+            android:textColor="@color/com_wyc_label_text_color"
+            android:textSize="@dimen/com_wyc_label_font_size_14" />
+
+        <RadioButton
+            android:id="@+id/border"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/com_wyc_label_margin_12"
+            android:layout_marginEnd="@dimen/com_wyc_label_margin_12"
+            android:text="@string/com_wyc_label_border"
+            android:textColor="@color/com_wyc_label_text_color"
+            android:textSize="@dimen/com_wyc_label_font_size_14" />
+
+        <RadioButton
+            android:id="@+id/dot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/com_wyc_label_margin_12"
+            android:text="@string/dot"
+            android:textColor="@color/com_wyc_label_text_color"
+            android:textSize="@dimen/com_wyc_label_font_size_14" />
+    </RadioGroup>
+
+    <TextView
+        android:id="@+id/dot_width_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/com_wyc_label_margin_18"
+        android:text="@string/com_wyc_label_dot_width"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/style" />
+
+    <com.wyc.label.MySeekBar
+        android:id="@+id/dot_width"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="@id/dot_width_label"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/dot_width_label"
+        app:layout_constraintTop_toTopOf="@id/dot_width_label" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/dot_group"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="dot_width_label,dot_width"
+        tools:layout_editor_absoluteX="8dp"
+        tools:layout_editor_absoluteY="8dp" />
+
+    <TextView
+        android:id="@+id/border_width_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/com_wyc_label_margin_18"
+        android:text="@string/com_wyc_label_border_width"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/dot_width" />
+
+    <com.wyc.label.MySeekBar
+        android:id="@+id/border_width"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="@id/border_width_label"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/border_width_label"
+        app:layout_constraintTop_toTopOf="@id/border_width_label" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/border_width_group"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="border_width_label,border_width"
+        tools:layout_editor_absoluteX="8dp"
+        tools:layout_editor_absoluteY="8dp" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

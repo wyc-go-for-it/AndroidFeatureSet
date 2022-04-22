@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <data >
+        <variable
+            name="setting"
+            type="com.wyc.label.LabelPrintSetting" />
+    </data>
+
+    <com.wyc.label.ItemPaddingLinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/white"
+        android:orientation="vertical"
+        android:padding="@dimen/com_wyc_label_margin_5"
+        app:ItemPadding="@dimen/com_wyc_label_margin_5">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/com_wyc_label_height_45"
+            android:background="@drawable/com_wyc_label_round_style"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:padding="5dp"
+                android:text="@string/com_wyc_label_print_way"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_16" />
+
+            <TextView
+                android:id="@+id/way_tv"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center_vertical|end"
+                android:text="@{setting.way.description}"
+                android:tag="@{setting.way.ordinal()}"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_16"
+                app:drawableEndCompat="@drawable/com_wyc_label_small_fold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/com_wyc_label_height_45"
+            android:background="@drawable/com_wyc_label_round_style"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:padding="5dp"
+                android:text="@string/com_wyc_label_printer"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_16" />
+
+            <TextView
+                android:id="@+id/printer_tv"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center_vertical|end"
+                android:text="@{setting.printer}"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_16"
+                app:drawableEndCompat="@drawable/com_wyc_label_small_fold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/com_wyc_label_height_45"
+            android:background="@drawable/com_wyc_label_round_style"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:padding="5dp"
+                android:text="@string/com_wyc_label_rotate_degree_setting"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_16" />
+
+            <TextView
+                android:id="@+id/rotate_tv"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center_vertical|end"
+                android:tag="@{setting.rotate.ordinal()}"
+                android:text="@{setting.rotate.description}"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_16"
+                app:drawableEndCompat="@drawable/com_wyc_label_small_fold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/com_wyc_label_height_45"
+            android:background="@drawable/com_wyc_label_round_style"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:padding="5dp"
+                android:text="@string/com_wyc_label_cur_label_model"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_16" />
+
+            <TextView
+                android:id="@+id/template_tv"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center_vertical|end"
+                android:tag="@{setting.labelTemplateId}"
+                android:text="@{setting.labelTemplateName}"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_16"
+                app:drawableEndCompat="@drawable/com_wyc_label_small_fold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/com_wyc_label_height_45"
+            android:background="@drawable/com_wyc_label_round_style"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:padding="5dp"
+                android:text="@string/print_num"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_16" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <Button
+                android:id="@+id/minus"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginStart="@dimen/com_wyc_label_size_35"
+                android:background="@drawable/com_wyc_label_minus" />
+
+            <TextView
+                android:id="@+id/print_num_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:padding="@dimen/com_wyc_label_margin_8"
+                android:text="@{String.valueOf(setting.printNum)}"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_18" />
+
+            <Button
+                android:id="@+id/plus"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginEnd="@dimen/com_wyc_label_margin_18"
+                android:background="@drawable/com_wyc_label_plus" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/com_wyc_label_height_45"
+            android:background="@drawable/com_wyc_label_round_style"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:padding="@dimen/com_wyc_label_margin_2"
+                android:text="@string/com_wyc_label_hor_offset"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_16" />
+
+            <Button
+                android:id="@+id/minusX"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginStart="@dimen/com_wyc_label_margin_5"
+                android:background="@drawable/com_wyc_label_minus" />
+
+            <TextView
+                android:id="@+id/offsetX_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:padding="@dimen/com_wyc_label_margin_8"
+                android:text="@{String.valueOf(setting.offsetX)}"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_18" />
+
+            <Button
+                android:id="@+id/plusX"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginEnd="@dimen/com_wyc_label_margin_12"
+                android:background="@drawable/com_wyc_label_plus" />
+
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:padding="@dimen/com_wyc_label_margin_2"
+                android:text="@string/com_wyc_label_ver_offset"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_16" />
+
+            <Button
+                android:id="@+id/minusY"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginStart="@dimen/com_wyc_label_margin_5"
+                android:background="@drawable/com_wyc_label_minus" />
+
+            <TextView
+                android:id="@+id/offsetY_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:padding="@dimen/com_wyc_label_margin_8"
+                android:text="@{String.valueOf(setting.offsetY)}"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_18" />
+
+            <Button
+                android:id="@+id/plusY"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginEnd="@dimen/com_wyc_label_margin_18"
+                android:background="@drawable/com_wyc_label_plus" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/com_wyc_label_height_45"
+            android:background="@drawable/com_wyc_label_round_style"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:padding="@dimen/com_wyc_label_margin_5"
+                android:text="@string/com_wyc_label_dpi"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_16" />
+
+            <TextView
+                android:id="@+id/dpi_tv"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center_vertical|end"
+                android:text="@{String.valueOf(setting.dpi)}"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_16"
+                app:drawableEndCompat="@drawable/com_wyc_label_small_fold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/print_template_tv"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/com_wyc_label_height_45"
+            android:background="@drawable/com_wyc_label_round_style"
+            android:gravity="center_vertical"
+            android:padding="5dp"
+            android:text="@string/com_wyc_label_label_design"
+            android:textColor="@color/com_wyc_label_text_color"
+            android:textSize="@dimen/com_wyc_label_font_size_16"
+            app:drawableEndCompat="@drawable/com_wyc_label_small_fold" />
+
+    </com.wyc.label.ItemPaddingLinearLayout>
+</layout>

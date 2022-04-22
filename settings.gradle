@@ -14,3 +14,4 @@ include ':opencv'
 include(':logger')
 include ':app'
 rootProject.name = "AndroidFeatureSet"
+include ':label'

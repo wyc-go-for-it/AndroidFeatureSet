@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/com_wyc_label_round_shape"
+    android:orientation="vertical"
+    android:padding="@dimen/com_wyc_label_margin_2">
+
+    <Button
+        android:id="@+id/import_file"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/com_wyc_label_height_45"
+        android:background="@drawable/com_wyc_label_bottom_separator"
+        android:gravity="center"
+        android:text="@string/com_wyc_label_import_"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16" />
+
+    <Button
+        android:id="@+id/export"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/com_wyc_label_height_45"
+        android:background="@color/white"
+        android:gravity="center"
+        android:text="@string/com_wyc_label_export"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16" />
+</LinearLayout>

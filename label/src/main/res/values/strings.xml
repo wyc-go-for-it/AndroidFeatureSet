@@ -45,12 +45,12 @@
     <string name="com_wyc_label_italic">斜体</string>
     <string name="com_wyc_label_underLine">下划线</string>
     <string name="com_wyc_label_delLine">删除线</string>
-    <string name="com_wyc_label_t_align"><![CDATA[对&#160;&#160;&#160;齐]]></string>
+    <string name="com_wyc_label_t_align">对&#160;&#160;&#160;齐</string>
     <string name="com_wyc_label_l_align">左对齐</string>
     <string name="com_wyc_label_m_align">中间对齐</string>
     <string name="com_wyc_label_r_align">右对齐</string>
     <string name="com_wyc_label_letterSpacing">字间距</string>
-    <string name="com_wyc_label_date_format"><![CDATA[格&#160;&#160;&#160;式]]></string>
+    <string name="com_wyc_label_date_format">格&#160;&#160;&#160;式</string>
     <string name="com_wyc_label_auto_update">自动更新</string>
     <string name="com_wyc_label_printer_not_init">打印机未初始化…</string>
     <string name="status_fail">打印机状态获取失败，请检查打印机是否缺纸或开盖</string>
@@ -77,4 +77,9 @@
     <string name="com_wyc_label_ver_offset">垂直偏移</string>
     <string name="com_wyc_label_dpi">分辨率</string>
     <string name="com_wyc_label_label_design">标签格式设计</string>
+    <string name="com_wyc_label_round">圆&#160;&#160;&#160;&#160;角</string>
+    <string name="com_wyc_label_rotate_label_print_setting">标签打印设置</string>
+    <string name="com_wyc_label_searching_bluetooth">正在搜索蓝牙打印机…</string>
+    <string name="com_wyc_label_local_label">本地标签</string>
+    <string name="com_wyc_label_modify">修改</string>
 </resources>

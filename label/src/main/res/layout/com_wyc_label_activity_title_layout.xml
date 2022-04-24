@@ -35,6 +35,7 @@
         android:layout_width="108dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
+        android:background="?attr/selectableItemBackgroundBorderless"
         android:gravity="center"
         android:paddingStart="0dp"
         android:paddingEnd="@dimen/com_wyc_label_margin_5"

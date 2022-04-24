@@ -16,6 +16,7 @@ import com.wyc.label.room.AppDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import kotlin.math.max
 import kotlin.math.min
@@ -767,7 +768,9 @@ class LabelView: View {
             template.itemList = toJson().toString()
             AppDatabase.getInstance().LabelTemplateDao().insertTemplate(template)
 
-            Log.d(this.javaClass.simpleName,template.toString())
+            withContext(Dispatchers.Main){
+                Utils.showToast(R.string.com_wyc_label_success)
+            }
         }
     }
 

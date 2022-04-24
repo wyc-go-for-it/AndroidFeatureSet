@@ -4,16 +4,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/round_shape"
-    android:padding="@dimen/margin_8">
+    android:background="@drawable/com_wyc_label_round_shape"
+    android:padding="@dimen/com_wyc_label_margin_8">
 
     <TextView
         android:id="@+id/align_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/t_align"
-        android:textColor="@color/text_color"
-        android:textSize="@dimen/font_size_16"
+        android:text="@string/com_wyc_label_t_align"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
         app:layout_constraintBottom_toBottomOf="@id/align"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@id/align" />
@@ -22,8 +22,8 @@
         android:id="@+id/align"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/margin_2"
-        android:layout_marginTop="@dimen/margin_12"
+        android:layout_marginStart="@dimen/com_wyc_label_margin_2"
+        android:layout_marginTop="@dimen/com_wyc_label_margin_12"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/align_label"
@@ -33,40 +33,40 @@
             android:id="@+id/left"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="@dimen/margin_12"
-            android:text="@string/l_align"
-            android:textColor="@color/text_color"
-            android:textSize="@dimen/font_size_14" />
+            android:layout_marginEnd="@dimen/com_wyc_label_margin_12"
+            android:text="@string/com_wyc_label_l_align"
+            android:textColor="@color/com_wyc_label_text_color"
+            android:textSize="@dimen/com_wyc_label_font_size_14" />
 
         <RadioButton
             android:id="@+id/mid"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="@dimen/margin_12"
-            android:text="@string/m_align"
-            android:textColor="@color/text_color"
-            android:textSize="@dimen/font_size_14" />
+            android:layout_marginEnd="@dimen/com_wyc_label_margin_12"
+            android:text="@string/com_wyc_label_m_align"
+            android:textColor="@color/com_wyc_label_text_color"
+            android:textSize="@dimen/com_wyc_label_font_size_14" />
 
         <RadioButton
             android:id="@+id/right"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/r_align"
-            android:textColor="@color/text_color"
-            android:textSize="@dimen/font_size_14" />
+            android:text="@string/com_wyc_label_r_align"
+            android:textColor="@color/com_wyc_label_text_color"
+            android:textSize="@dimen/com_wyc_label_font_size_14" />
     </RadioGroup>
 
     <TextView
         android:id="@+id/font_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/font"
-        android:textColor="@color/text_color"
-        android:textSize="@dimen/font_size_16"
+        android:text="@string/com_wyc_label_font"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.wyc.cloudapp.customizationView.MySeekBar
+    <com.wyc.label.MySeekBar
         android:id="@+id/font"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -79,9 +79,9 @@
         android:id="@+id/style_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/style"
-        android:textColor="@color/text_color"
-        android:textSize="@dimen/font_size_16"
+        android:text="@string/com_wyc_label_style"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
         app:layout_constraintBottom_toBottomOf="@id/bold"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@id/bold" />
@@ -90,9 +90,9 @@
         android:id="@+id/newline"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/newline"
-        android:textColor="@color/text_color"
-        android:textSize="@dimen/font_size_14"
+        android:text="@string/com_wyc_label_newline"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_14"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/content"
         app:layout_constraintTop_toTopOf="@id/content" />
@@ -101,10 +101,10 @@
         android:id="@+id/bold"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/margin_12"
-        android:text="@string/bold"
-        android:textColor="@color/text_color"
-        android:textSize="@dimen/font_size_14"
+        android:layout_marginTop="@dimen/com_wyc_label_margin_12"
+        android:text="@string/com_wyc_label_bold"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_14"
         app:layout_constraintEnd_toStartOf="@+id/italic"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@id/style_label"
@@ -114,9 +114,9 @@
         android:id="@+id/italic"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/italic"
-        android:textColor="@color/text_color"
-        android:textSize="@dimen/font_size_14"
+        android:text="@string/com_wyc_label_italic"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_14"
         app:layout_constraintEnd_toStartOf="@+id/underLine"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/bold"
@@ -126,9 +126,9 @@
         android:id="@+id/underLine"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/underLine"
-        android:textColor="@color/text_color"
-        android:textSize="@dimen/font_size_14"
+        android:text="@string/com_wyc_label_underLine"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_14"
         app:layout_constraintEnd_toStartOf="@id/delLine"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/italic"
@@ -138,9 +138,9 @@
         android:id="@+id/delLine"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/delLine"
-        android:textColor="@color/text_color"
-        android:textSize="@dimen/font_size_14"
+        android:text="@string/com_wyc_label_delLine"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_14"
         app:layout_constraintStart_toEndOf="@id/underLine"
         app:layout_constraintTop_toTopOf="@id/bold" />
 
@@ -148,14 +148,14 @@
         android:id="@+id/letterSpacing_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/margin_12"
-        android:text="@string/letterSpacing"
-        android:textColor="@color/text_color"
-        android:textSize="@dimen/font_size_16"
+        android:layout_marginTop="@dimen/com_wyc_label_margin_12"
+        android:text="@string/com_wyc_label_letterSpacing"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/align" />
 
-    <com.wyc.cloudapp.customizationView.MySeekBar
+    <com.wyc.label.MySeekBar
         android:id="@+id/letterSpacing"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -167,15 +167,15 @@
     <EditText
         android:id="@+id/content"
         android:layout_width="0dp"
-        android:layout_height="@dimen/height_35"
-        android:layout_marginTop="@dimen/margin_12"
-        android:background="@drawable/edit_text_with_gray_border_style"
+        android:layout_height="@dimen/com_wyc_label_height_35"
+        android:layout_marginTop="@dimen/com_wyc_label_margin_12"
+        android:background="@drawable/com_wyc_label_edit_text_with_gray_border_style"
         android:ems="10"
         android:inputType="textPersonName"
-        android:paddingStart="@dimen/margin_5"
-        android:paddingEnd="@dimen/margin_5"
-        android:textColor="@color/text_color"
-        android:textSize="@dimen/font_size_16"
+        android:paddingStart="@dimen/com_wyc_label_margin_5"
+        android:paddingEnd="@dimen/com_wyc_label_margin_5"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
         app:layout_constraintEnd_toStartOf="@id/newline"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/letterSpacing_label" />

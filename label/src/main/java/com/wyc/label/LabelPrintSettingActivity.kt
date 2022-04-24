@@ -15,119 +15,157 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
-import com.wyc.label.databinding.ActivityLabelPrintSettingBinding
+import com.wyc.label.databinding.ComWycLabelActivityLabelPrintSettingBinding
 import com.wyc.label.room.BluetoothUtils
-import java.util.*
 
-class LabelPrintSettingActivity : AppCompatActivity() {
+class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
     private var mLabelTemplateSelector: ActivityResultLauncher<Intent>? = null
-    private var mBluetoothDevices:MutableList<TreeListItem>? = null
+    private var mPermission: ActivityResultLauncher<String>? = null
+    private var mSelectDialog:SelectDialog? = null
+
+    private var root: View? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        DataBindingUtil.setContentView<ActivityLabelPrintSettingBinding>(this, R.layout.activity_label_print_setting)
+        DataBindingUtil.setContentView<ComWycLabelActivityLabelPrintSettingBinding>(this,R.layout.com_wyc_label_activity_label_print_setting)
+
+        root = findViewById(R.id.root)
+
+        initSearchDialog()
 
         initParam()
-        registerGoodsCallback()
+        initTitle()
+        initView()
+        registerLabelCallback()
+        registerPermissionCallback()
     }
+
+    private fun initSearchDialog(){
+        mSelectDialog = SelectDialog(this,true)
+        mSelectDialog!!.setSelectListener(object : SelectDialog.OnSelect{
+            override fun select(content: SelectDialog.Item) {
+                DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.run {
+                    setting?.printer = LabelPrintSetting.combinationPrinter(content.id,content.name)
+                    mSelectDialog!!.dismiss()
+                    invalidateAll()
+                }
+            }
+        })
+        mSelectDialog!!.setOnDismissListener {
+            BluetoothUtils.stopBlueToothDiscovery()
+            mSelectDialog!!.clearContent()
+        }
+    }
+
+    private fun initTitle(){
+        findViewById<TextView>(R.id.middle_title_tv).setText(R.string.com_wyc_label_rotate_label_print_setting)
+        findViewById<TextView>(R.id.left_title_tv).setOnClickListener {
+            finish()
+        }
+        val save = findViewById<TextView>(R.id.right_title_tv)
+        save.setText(R.string.com_wyc_label_save)
+        save.setOnClickListener {
+            DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.setting?.saveSetting()
+        }
+    }
+
     private fun initView(){
-        findViewById<TextView>(R.id.template_tv).setOnClickListener {
-            mLabelTemplateSelector?.launch(Intent(this,BrowseLabelActivity::class.java))
-        }
+        findViewById<TextView>(R.id.printer_tv).setOnClickListener(this)
+        findViewById<TextView>(R.id.rotate_tv).setOnClickListener(this)
+        findViewById<TextView>(R.id.plus).setOnClickListener(this)
+        findViewById<TextView>(R.id.minus).setOnClickListener(this)
 
-        findViewById<TextView>(R.id.rotate_tv).setOnClickListener{view->
-            val treeListDialog = TreeListDialogForObj(mContext, mContext.getString(R.string.paper_spec))
-            treeListDialog.setData(convertRotate(), null, true)
-            if (treeListDialog.exec() == 1) {
-                val obj = treeListDialog.singleContent
-                (view as TextView).text = obj.item_name
+        findViewById<TextView>(R.id.plusX).setOnClickListener(this)
+        findViewById<TextView>(R.id.minusX).setOnClickListener(this)
 
-                val setting: LabelPrintSetting? = DataBindingUtil.bind<ActivityLabelPrintSettingBinding>(rootView)?.setting
-                setting?.rotate = LabelPrintSetting.Rotate.valueOf(obj.item_id)
+        findViewById<TextView>(R.id.plusY).setOnClickListener(this)
+        findViewById<TextView>(R.id.minusY).setOnClickListener(this)
+
+        findViewById<TextView>(R.id.print_template_tv).setOnClickListener(this)
+        findViewById<TextView>(R.id.cur_template_tv).setOnClickListener(this)
+    }
+
+
+    override fun onClick(v: View) {
+        when(v.id){
+            R.id.printer_tv->{
+                mPermission?.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             }
-        }
-        private fun convertRotate(): List<TreeListItem> {
-            val data: MutableList<TreeListItem> = ArrayList()
-            val  values: Array<LabelPrintSetting.Rotate> = LabelPrintSetting.Rotate.values()
-            values.iterator().forEach {
-                val item = TreeListItem()
-                item.item_id = it.name
-                item.item_name = it.description
-                data.add(item)
-            }
-            return data
-        }
-
-        findViewById<TextView>(R.id.minus).setOnClickListener{view->
-            var i = 1
-            if (view.id == R.id.plus){
-                i = -1
-            }
-            val bind = DataBindingUtil.bind<ActivityLabelPrintSettingBinding>(window.decorView)
-            val setting = bind?.setting
-            val num = setting?.printNum?:0
-            setting?.printNum = num - i
-            bind?.invalidateAll()
-        }
-
-        @OnClick(R.id.plusX, R.id.minusX)
-        fun offsetX(view: View){
-            var i = -1
-            if (view.id == R.id.minusX){
-                i = 1
-            }
-            val bind = DataBindingUtil.bind<LabelPrintSettingBinding>(rootView)
-            val setting = bind?.setting
-            val num = setting?.offsetX?:0
-            setting?.offsetX = num - i
-            bind?.invalidateAll()
-        }
-
-        @OnClick(R.id.plusY, R.id.minusY)
-        fun offsetY(view: View){
-            var i = -1
-            if (view.id == R.id.minusY){
-                i = 1
-            }
-            val bind = DataBindingUtil.bind<LabelPrintSettingBinding>(rootView)
-            val setting = bind?.setting
-            val num = setting?.offsetY?:0
-            setting?.offsetY = num - i
-            bind?.invalidateAll()
-        }
-
-        findViewById<TextView>(R.id.printer_tv).setOnClickListener{
-            XXPermissions.with(this)
-                    .permission(Manifest.permission.ACCESS_FINE_LOCATION)
-                    .request(object : OnPermissionCallback {
-                        override fun onGranted(permissions: MutableList<String>?, all: Boolean) {
-                            BluetoothUtils.startBlueToothDiscovery(this@LabelPrintFragment)
+            R.id.rotate_tv->{
+                val selectDialog = SelectDialog(this)
+                LabelPrintSetting.Rotate.values().forEach {
+                    val item = SelectDialog.Item(it.name,it.description)
+                    selectDialog.addContent(item)
+                }
+                selectDialog.setSelectListener(object : SelectDialog.OnSelect{
+                    override fun select(content: SelectDialog.Item) {
+                        DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.apply {
+                            setting?.rotate = LabelPrintSetting.Rotate.valueOf(content.id)
+                            invalidateAll()
+                            selectDialog.dismiss()
                         }
 
-                        override fun onDenied(permissions: MutableList<String>?, never: Boolean) {
-                            if (never) {
-
-                            }
-                        }
-                    })
-        }
-
-        @OnClick(R.id.print_template_tv)
-        fun templateDesign(){
-            LabelDesignActivity.start(mContext)
+                    }
+                })
+                selectDialog.show()
+            }
+            R.id.plus,R.id.minus->{
+                var i = 1
+                if (v.id == R.id.plus){
+                    i = -1
+                }
+                val bind = DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)
+                val setting = bind?.setting
+                val num = setting?.printNum?:0
+                setting?.printNum = num - i
+                bind?.invalidateAll()
+            }
+            R.id.plusX, R.id.minusX->{
+                var i = -1
+                if (v.id == R.id.minusX){
+                    i = 1
+                }
+                val bind = DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)
+                val setting = bind?.setting
+                val num = setting?.offsetX?:0
+                setting?.offsetX = num - i
+                bind?.invalidateAll()
+            }
+            R.id.plusY, R.id.minusY->{
+                var i = -1
+                if (v.id == R.id.minusY){
+                    i = 1
+                }
+                val bind = DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)
+                val setting = bind?.setting
+                val num = setting?.offsetX?:0
+                setting?.offsetY = num - i
+                bind?.invalidateAll()
+            }
+            R.id.print_template_tv->{
+                LabelDesignActivity.start(this)
+            }
+            R.id.cur_template_tv->{
+                mLabelTemplateSelector?.launch(Intent(this,BrowseLabelActivity::class.java))
+            }
         }
     }
 
-    private fun registerGoodsCallback(){
+    private fun registerPermissionCallback(){
+        mPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+            if (it){
+                BluetoothUtils.startBlueToothDiscovery(this)
+            }else Utils.showToast("...")
+        }
+    }
+
+    private fun registerLabelCallback(){
         mLabelTemplateSelector = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             if (it.resultCode == RESULT_OK){
-                it.data?.getParcelableExtra<LabelTemplate>("label")?.apply {
-                    findViewById<TextView>(R.id.template_tv)?.text = templateName
-                    val setting: LabelPrintSetting? = DataBindingUtil.bind<ActivityLabelPrintSettingBinding>(window.decorView)?.setting
-                    try {
-                        setting?.labelTemplateId = templateId
-                    }catch (e: NumberFormatException){
-                        e.printStackTrace()
-                    }
+                it.data?.getParcelableExtra<LabelTemplate>(BrowseLabelActivity.LABEL_KEY)?.apply {
+                    findViewById<TextView>(R.id.cur_template_tv)?.text = templateName
+                    val setting: LabelPrintSetting? = DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.setting
+                    setting?.labelTemplateId = templateId
                     setting?.labelTemplateName = templateName
                 }
             }
@@ -136,14 +174,14 @@ class LabelPrintSettingActivity : AppCompatActivity() {
 
     private fun initParam(){
         val setting = LabelPrintSetting.getSetting()
-        DataBindingUtil.bind<ActivityLabelPrintSettingBinding>(window.decorView)?.setting = setting
+        DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.setting = setting
         BluetoothUtils.bondBlueTooth(setting.getPrinterAddress())
     }
 
 
     override fun onResume() {
         super.onResume()
-        BluetoothUtils.attachReceiver(context,receiver)
+        BluetoothUtils.attachReceiver(this,receiver)
     }
 
     override fun onPause() {
@@ -165,57 +203,23 @@ class LabelPrintSettingActivity : AppCompatActivity() {
                     bluetoothDevice_found?.let {
                         val device_style = it.bluetoothClass.majorDeviceClass
                         if (device_style == BluetoothClass.Device.Major.IMAGING || device_style == BluetoothClass.Device.Major.MISC) {
-                            val address = it.address
-                            if (mBluetoothDevices == null)mBluetoothDevices = mutableListOf()
-                            try {
-                                mBluetoothDevices!!.first {
-                                    it.item_id == address
-                                }
-                            }catch (e: NoSuchElementException){
-                                mBluetoothDevices!!.add(TreeListItem(address,it.name))
-                            }
+                            mSelectDialog?.addContent(it.address,it.name)
                         }
                     }
                 }
                 BluetoothAdapter.ACTION_DISCOVERY_STARTED -> {
-                    showProgress(getString(R.string.searching_bluetooth))
-                    mProgressDialog?.setOnCancelListener {
-                        BluetoothUtils.stopBlueToothDiscovery()
-                    }
+                    mSelectDialog?.showMsg(getString(R.string.com_wyc_label_searching_bluetooth))
+                    mSelectDialog?.show()
                 }
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
 
                 }
                 BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
-                    dismissProgress()
-                    setPrinter()
+                    mSelectDialog?.stopSearch()
                 }
             }
         }
     }
-
-    private fun setPrinter(){
-        mBluetoothDevices?.let {
-            if (it.isNotEmpty()){
-                DataBindingUtil.bind<ActivityLabelPrintSettingBinding>(window.decorView)?.run {
-                    if (it.size == 1){
-                        setting?.printer =
-                                LabelPrintSetting.combinationPrinter(it[0].item_id,it[0].item_name)
-                    }else{
-                        val treeListDialog = TreeListDialogForObj(mContext, mContext.getString(R.string.printer))
-                        treeListDialog.setData(mBluetoothDevices, null, true)
-                        if (treeListDialog.exec() == 1) {
-                            val obj = treeListDialog.singleContent
-                            setting?.printer = LabelPrintSetting.combinationPrinter(obj.item_id,obj.item_name)
-                        }
-                    }
-                    invalidateAll()
-                }
-            }
-        }
-    }
-
-
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
         super.onActivityResult(requestCode, resultCode, intent)
@@ -225,9 +229,16 @@ class LabelPrintSettingActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        if (DataBindingUtil.bind<ActivityLabelPrintSettingBinding>(window.decorView)?.setting?.hasChange() == true){
-            DataBindingUtil.bind<ActivityLabelPrintSettingBinding>(window.decorView)?.setting?.saveSetting()
+        if (DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.setting?.hasChange() == true){
+            DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.setting?.saveSetting()
         }
         return super.onBackPressed()
     }
+    companion object{
+        @JvmStatic
+        fun start(context: Activity ){
+            context.startActivity(Intent(context, LabelPrintSettingActivity::class.java))
+        }
+    }
+
 }

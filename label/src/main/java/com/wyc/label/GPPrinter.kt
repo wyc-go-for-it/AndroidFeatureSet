@@ -10,6 +10,7 @@ import com.gprinter.utils.CallbackListener
 import com.gprinter.utils.Command
 import com.gprinter.utils.ConnMethod
 import com.wyc.label.LabelPrintSetting.Companion.getSetting
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -47,7 +48,9 @@ class GPPrinter: CallbackListener {
 
         @JvmStatic
         fun connect(devices: PrinterDevices?) {
-            CoroutineScope(Dispatchers.IO).launch {
+            CoroutineScope(Dispatchers.IO + CoroutineExceptionHandler{_,e->
+                Utils.showToast(e.message)
+            }).launch() {
                 if (portManager != null) { //先close上次连接
                     portManager!!.closePort()
                     try {

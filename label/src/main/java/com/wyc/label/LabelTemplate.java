@@ -203,7 +203,7 @@ public class LabelTemplate implements Parcelable {
         for (int i = 0,size = a.size(); i < size; i ++){
             final JSONObject obj = a.getJSONObject(i);
             try {
-                list.add((ItemBase) obj.toJavaObject(Class.forName("com.wyc.cloudapp.design." + obj.getString("clsType"))));
+                list.add((ItemBase) obj.toJavaObject(Class.forName("com.wyc.label." + obj.getString("clsType"))));
             }catch (ClassNotFoundException ignore){
 
             }

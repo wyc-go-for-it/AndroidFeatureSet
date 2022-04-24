@@ -10,6 +10,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Point
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.provider.MediaStore
 import android.text.Editable
 import android.text.TextWatcher
@@ -24,14 +25,13 @@ import androidx.appcompat.app.AppCompatActivity
 import com.alibaba.fastjson.JSON
 import com.gprinter.bean.PrinterDevices
 import com.gprinter.utils.CallbackListener
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.wyc.label.Utils.Companion.showToast
+import com.wyc.label.room.AppDatabase
+import kotlinx.coroutines.*
 import java.io.*
 import java.nio.charset.StandardCharsets
 
-class LabelDesignActivity : AppCompatActivity(), View.OnClickListener,CallbackListener,CoroutineScope by CoroutineScope(Dispatchers.IO) {
+class LabelDesignActivity : AppCompatActivity(), View.OnClickListener{
     private var mLabelView: LabelView? = null
     private var mCurBtn:TopDrawableTextView? = null
     private var newFlag = false
@@ -44,8 +44,12 @@ class LabelDesignActivity : AppCompatActivity(), View.OnClickListener,CallbackLi
     private var mOpenDocumentLauncher: ActivityResultLauncher<Array<String>>? = null
     private var mSaveDocumentLauncher: ActivityResultLauncher<String>? = null
 
+    private val mCoroutineScope = CoroutineScope(Dispatchers.IO)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.com_wyc_label_activity_format)
+
         initTitle()
 
         initImExport()
@@ -68,7 +72,7 @@ class LabelDesignActivity : AppCompatActivity(), View.OnClickListener,CallbackLi
     private fun initImExport(){
         mOpenDocumentLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri != null){
-                launch {
+                mCoroutineScope.launch {
                     contentResolver.openInputStream(uri)?.use { stream ->
                         val reader = BufferedReader(InputStreamReader(stream, StandardCharsets.UTF_8))
                         val stringBuilder = StringBuilder()
@@ -85,7 +89,7 @@ class LabelDesignActivity : AppCompatActivity(), View.OnClickListener,CallbackLi
         }
         mSaveDocumentLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument()){
             it?.apply {
-                launch {
+                mCoroutineScope.launch {
                     contentResolver.openOutputStream(it)?.use {stream->
                         val writer = BufferedWriter(OutputStreamWriter(stream,StandardCharsets.UTF_8))
                         val json = JSON.toJSONString(mLabelView?.getLabelTemplate())
@@ -128,7 +132,7 @@ class LabelDesignActivity : AppCompatActivity(), View.OnClickListener,CallbackLi
     }
 
     private fun connPrinter(){
-        GPPrinter.openBlueTooth(LabelPrintSetting.getSetting().getPrinterAddress(),this)
+        GPPrinter.openBlueTooth(LabelPrintSetting.getSetting().getPrinterAddress(),callback)
     }
 
     private fun initAddLabel(){
@@ -152,15 +156,29 @@ class LabelDesignActivity : AppCompatActivity(), View.OnClickListener,CallbackLi
                     newFlag = false
                 }
             })
+            addLabelFormat.show()
         }
     }
 
     private fun initLabelView(){
         mLabelView = findViewById(R.id.labelView)
         val intent = intent
+        var labelTemplate:LabelTemplate? = null
         if (intent != null){
-            intent.getParcelableExtra<LabelTemplate>("label")?.apply {
-                updateLabel(this)
+            labelTemplate = intent.getParcelableExtra(BrowseLabelActivity.LABEL_KEY)
+        }
+        if (labelTemplate != null){
+            updateLabel(labelTemplate)
+        }else{
+            mCoroutineScope.launch {
+                LabelPrintSetting.getSetting().let { setting->
+                    var t = AppDatabase.getInstance().LabelTemplateDao().getLabelTemplateById(setting.labelTemplateId)
+                    if (t == null) t = LabelTemplate()
+                    mLabelView?.setRotate(setting.rotate.value)
+                    withContext(Dispatchers.Main){
+                        updateLabel(t)
+                    }
+                }
             }
         }
     }
@@ -235,6 +253,8 @@ class LabelDesignActivity : AppCompatActivity(), View.OnClickListener,CallbackLi
     }
 
     override fun onDestroy() {
+        mCoroutineScope.cancel()
+
         super.onDestroy()
         //关闭打印机
         GPPrinter.close()
@@ -286,8 +306,8 @@ class LabelDesignActivity : AppCompatActivity(), View.OnClickListener,CallbackLi
     }
     private fun createCropImageFile(): Uri? {
         val imageFileName = "clip_wyc_." + Bitmap.CompressFormat.JPEG.toString()
-        val storageDir: String = getDir("wyc", Context.MODE_PRIVATE).absolutePath
-        return Uri.parse("file://" + File.separator + storageDir + imageFileName)
+        val storageDir: String = getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath ?:"wyc"
+        return Uri.parse("file://" + File.separator + storageDir + File.separator + imageFileName)
     }
 
     private fun openAlbum() {
@@ -403,10 +423,12 @@ class LabelDesignActivity : AppCompatActivity(), View.OnClickListener,CallbackLi
                         if (mLabelView != null){
                             val labelTemplate = mLabelView!!.getLabelTemplate()
                             if((v as TopDrawableTextView).hasNormal()){
-                                launch {
+                                CoroutineScope(Dispatchers.IO).launch {
                                     var n = LabelPrintSetting.getSetting().printNum
+                                    val goods = testGoods()
+
                                     while (n-- > 0){
-                                        GPPrinter.sendDataToPrinter(GPPrinter.getGPTscCommand(labelTemplate,DataItem.LabelGoods()).command)
+                                        GPPrinter.sendDataToPrinter(GPPrinter.getGPTscCommand(labelTemplate,goods).command)
                                     }
                                 }
                             }else{
@@ -418,11 +440,24 @@ class LabelDesignActivity : AppCompatActivity(), View.OnClickListener,CallbackLi
             }
         }
     }
+    private fun testGoods():DataItem.LabelGoods{
+        val goods = DataItem.LabelGoods()
+        goods.barcode = "6922711043401"
+        goods.goodsTitle = "test内容"
+        goods.level = "高级"
+        goods.origin = "长沙"
+        goods.spec = "箱"
+        goods.unit = "件"
+        goods.retail_price = 18.68
+        goods.yh_price = 12.08
+        return goods
+    }
+
     private fun hasSupportBluetooth(): Boolean {
         val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
         val code = bluetoothAdapter != null && bluetoothAdapter.isEnabled
         if (!code) {
-            Toast.makeText(this,"未开启蓝牙功能...",Toast.LENGTH_LONG).show()
+            showToast("未开启蓝牙功能...")
         }
         return code
     }
@@ -437,32 +472,33 @@ class LabelDesignActivity : AppCompatActivity(), View.OnClickListener,CallbackLi
             normal()
         }
     }
+    private val callback = object : CallbackListener{
+        override fun onConnecting() {
+            showToast(R.string.com_wyc_label_printer_connecting)
+        }
 
-    override fun onConnecting() {
-        Toast.makeText(this,R.string.com_wyc_label_printer_connecting,Toast.LENGTH_LONG).show()
-    }
+        override fun onCheckCommand() {
 
-    override fun onCheckCommand() {
+        }
 
-    }
+        override fun onSuccess(p0: PrinterDevices?) {
+            showToast(R.string.com_wyc_label_conn_success)
+            printerNormal()
+        }
 
-    override fun onSuccess(p0: PrinterDevices?) {
-        Toast.makeText(this,R.string.com_wyc_label_conn_success,Toast.LENGTH_LONG).show()
-        printerNormal()
-    }
+        override fun onReceive(p0: ByteArray?) {
 
-    override fun onReceive(p0: ByteArray?) {
+        }
 
-    }
+        override fun onFailure() {
+            showToast(R.string.com_wyc_label_conn_fail)
+            printerError()
+        }
 
-    override fun onFailure() {
-        Toast.makeText(this,R.string.com_wyc_label_conn_fail,Toast.LENGTH_LONG).show()
-        printerError()
-    }
-
-    override fun onDisconnect() {
-        Toast.makeText(this,R.string.com_wyc_label_printer_disconnect,Toast.LENGTH_LONG).show()
-        printerError()
+        override fun onDisconnect() {
+            showToast(R.string.com_wyc_label_printer_disconnect)
+            printerError()
+        }
     }
 
 }

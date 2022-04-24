@@ -2,6 +2,11 @@ package com.wyc.label
 
 import android.content.Context
 import android.graphics.*
+import android.os.Looper
+import android.widget.Toast
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 class Utils {
@@ -19,9 +24,9 @@ class Utils {
         fun getPixel(a: Int, r: Int, g: Int, b: Int): Int {
             var newPixel = 0
             newPixel = newPixel or (a and 0xff)
-            newPixel = newPixel shl 8 or r and 0xff
-            newPixel = newPixel shl 8 or g and 0xff
-            newPixel = newPixel shl 8 or b and 0xff
+            newPixel = (newPixel shl 8) or (r and 0xff)
+            newPixel = (newPixel shl 8) or (g and 0xff)
+            newPixel = (newPixel shl 8) or (b and 0xff)
             return newPixel
         }
         @JvmStatic
@@ -50,6 +55,20 @@ class Utils {
             return (spValue * fontScale + 0.5f)
         }
 
+        @JvmStatic
+        fun showToast(message: String?) {
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                Toast.makeText(App.getInstance(),message, Toast.LENGTH_LONG).show()
+            } else{
+                CoroutineScope(Dispatchers.Main).launch {
+                    Toast.makeText(App.getInstance(),message, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+        @JvmStatic
+        fun showToast(id:Int) {
+            showToast(App.getInstance().getString(id))
+        }
     }
 
 }

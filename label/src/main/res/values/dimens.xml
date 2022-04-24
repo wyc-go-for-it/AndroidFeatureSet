@@ -31,5 +31,8 @@
     <dimen name="com_wyc_label_height_88">88dp</dimen>
     <dimen name="com_wyc_label_size_10">10dp</dimen>
     <dimen name="com_wyc_label_margin_18">18dp</dimen>
-    <dimen name="com_wyc_label_font_size_10">10</dimen>
+    <dimen name="com_wyc_label_font_size_10">10dp</dimen>
+    <dimen name="com_wyc_label_height_35">35dp</dimen>
+    <dimen name="com_wyc_label_select_dialog_h">288dp</dimen>
+    <dimen name="com_wyc_label_size_15">15dp</dimen>
 </resources>

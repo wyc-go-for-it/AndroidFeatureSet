@@ -31,10 +31,17 @@ class AddLabelFormat(context: Context): Dialog(context) {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.com_wyc_label_add_label_format)
-        initWindowSize()
+        setCanceledOnTouchOutside(false)
+
         initLabelSize()
         initView()
     }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        initWindowSize()
+    }
+
     private fun initView(){
         findViewById<TextView>(R.id.title).setText(R.string.com_wyc_label_add_label)
         findViewById<Button>(R.id._close).setOnClickListener {
@@ -56,10 +63,9 @@ class AddLabelFormat(context: Context): Dialog(context) {
         window?.apply {
             setGravity(Gravity.CENTER)
             val lp = attributes
-            lp.width = (0.95 * point.x).toInt()
+            lp.width = (0.98 * point.x).toInt()
             attributes = lp
         }
-
     }
 
     private fun getContent():LabelTemplate{

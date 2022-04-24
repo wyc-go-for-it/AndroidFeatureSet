@@ -44,7 +44,7 @@
             android:layout_height="match_parent"
             android:layout_weight="0.5"
             android:foreground="@drawable/com_wyc_label_spinner_style"
-            tools:ignore="SpeakableTextPresentCheck" />
+            tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck" />
     </LinearLayout>
 
     <com.wyc.label.LabelView
@@ -310,7 +310,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:selectTextColor="@color/white"
             app:verSpacing="@dimen/com_wyc_label_margin_2"
-            tools:ignore="TextContrastCheck" />
+            tools:ignore="TextContrastCheck,TouchTargetSizeCheck" />
 
         <com.wyc.label.TopDrawableTextView
             android:id="@+id/preview"
@@ -326,7 +326,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:selectTextColor="@color/white"
-            app:verSpacing="@dimen/com_wyc_label_size_3"
+            app:verSpacing="@dimen/com_wyc_label_size_2"
             tools:ignore="TextContrastCheck" />
 
         <com.wyc.label.TopDrawableTextView
@@ -345,7 +345,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:selectTextColor="@color/white"
             app:verSpacing="@dimen/com_wyc_label_margin_2"
-            tools:ignore="TextContrastCheck" />
+            tools:ignore="TextContrastCheck,TouchTargetSizeCheck" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

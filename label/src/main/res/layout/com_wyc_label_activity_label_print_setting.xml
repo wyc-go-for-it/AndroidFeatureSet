@@ -7,17 +7,21 @@
             type="com.wyc.label.LabelPrintSetting" />
     </data>
 
-    <com.wyc.label.ItemPaddingLinearLayout
+    <LinearLayout
+        android:id="@+id/root"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/white"
-        android:orientation="vertical"
-        android:padding="@dimen/com_wyc_label_margin_5"
-        app:ItemPadding="@dimen/com_wyc_label_margin_5">
+        android:orientation="vertical">
+
+        <include layout="@layout/com_wyc_label_activity_title_layout" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="@dimen/com_wyc_label_height_45"
+            android:layout_marginStart="@dimen/com_wyc_label_margin_5"
+            android:layout_marginTop="@dimen/com_wyc_label_margin_5"
+            android:layout_marginEnd="@dimen/com_wyc_label_margin_5"
             android:background="@drawable/com_wyc_label_round_style"
             android:orientation="horizontal">
 
@@ -36,8 +40,8 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:gravity="center_vertical|end"
-                android:text="@{setting.way.description}"
                 android:tag="@{setting.way.ordinal()}"
+                android:text="@{setting.way.description}"
                 android:textColor="@color/com_wyc_label_text_color"
                 android:textSize="@dimen/com_wyc_label_font_size_16"
                 app:drawableEndCompat="@drawable/com_wyc_label_small_fold" />
@@ -46,6 +50,9 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="@dimen/com_wyc_label_height_45"
+            android:layout_marginStart="@dimen/com_wyc_label_margin_5"
+            android:layout_marginTop="@dimen/com_wyc_label_margin_5"
+            android:layout_marginEnd="@dimen/com_wyc_label_margin_5"
             android:background="@drawable/com_wyc_label_round_style"
             android:orientation="horizontal">
 
@@ -73,6 +80,9 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="@dimen/com_wyc_label_height_45"
+            android:layout_marginStart="@dimen/com_wyc_label_margin_5"
+            android:layout_marginTop="@dimen/com_wyc_label_margin_5"
+            android:layout_marginEnd="@dimen/com_wyc_label_margin_5"
             android:background="@drawable/com_wyc_label_round_style"
             android:orientation="horizontal">
 
@@ -101,6 +111,9 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="@dimen/com_wyc_label_height_45"
+            android:layout_marginStart="@dimen/com_wyc_label_margin_5"
+            android:layout_marginTop="@dimen/com_wyc_label_margin_5"
+            android:layout_marginEnd="@dimen/com_wyc_label_margin_5"
             android:background="@drawable/com_wyc_label_round_style"
             android:orientation="horizontal">
 
@@ -114,7 +127,7 @@
                 android:textSize="@dimen/com_wyc_label_font_size_16" />
 
             <TextView
-                android:id="@+id/template_tv"
+                android:id="@+id/cur_template_tv"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
@@ -129,6 +142,9 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="@dimen/com_wyc_label_height_45"
+            android:layout_marginStart="@dimen/com_wyc_label_margin_5"
+            android:layout_marginTop="@dimen/com_wyc_label_margin_5"
+            android:layout_marginEnd="@dimen/com_wyc_label_margin_5"
             android:background="@drawable/com_wyc_label_round_style"
             android:orientation="horizontal">
 
@@ -176,6 +192,9 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="@dimen/com_wyc_label_height_45"
+            android:layout_marginStart="@dimen/com_wyc_label_margin_5"
+            android:layout_marginTop="@dimen/com_wyc_label_margin_5"
+            android:layout_marginEnd="@dimen/com_wyc_label_margin_5"
             android:background="@drawable/com_wyc_label_round_style"
             android:orientation="horizontal">
 
@@ -259,6 +278,9 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="@dimen/com_wyc_label_height_45"
+            android:layout_marginStart="@dimen/com_wyc_label_margin_5"
+            android:layout_marginTop="@dimen/com_wyc_label_margin_5"
+            android:layout_marginEnd="@dimen/com_wyc_label_margin_5"
             android:background="@drawable/com_wyc_label_round_style"
             android:orientation="horizontal">
 
@@ -287,6 +309,9 @@
             android:id="@+id/print_template_tv"
             android:layout_width="match_parent"
             android:layout_height="@dimen/com_wyc_label_height_45"
+            android:layout_marginStart="@dimen/com_wyc_label_margin_5"
+            android:layout_marginTop="@dimen/com_wyc_label_margin_5"
+            android:layout_marginEnd="@dimen/com_wyc_label_margin_5"
             android:background="@drawable/com_wyc_label_round_style"
             android:gravity="center_vertical"
             android:padding="5dp"
@@ -295,5 +320,5 @@
             android:textSize="@dimen/com_wyc_label_font_size_16"
             app:drawableEndCompat="@drawable/com_wyc_label_small_fold" />
 
-    </com.wyc.label.ItemPaddingLinearLayout>
+    </LinearLayout>
 </layout>

@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.*
 import android.os.Looper
 import android.widget.Toast
+import androidx.annotation.StringRes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -68,6 +69,10 @@ class Utils {
         @JvmStatic
         fun showToast(id:Int) {
             showToast(App.getInstance().getString(id))
+        }
+        @JvmStatic
+        fun showToast(@StringRes  id:Int,vararg formatArgs:Any){
+            Toast.makeText(App.getInstance(),App.getInstance().getString(id,formatArgs), Toast.LENGTH_LONG).show()
         }
     }
 

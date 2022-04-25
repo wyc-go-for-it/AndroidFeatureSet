@@ -35,7 +35,9 @@
             android:authorities="com.android.wyc.provider"
             android:readPermission="com.android.wyc.provider.READ_PERMISSION"
             android:writePermission="com.android.wyc.provider.WRITE_PERMISSION"
+            android:grantUriPermissions="true"
             android:process=":provider"
+            android:enabled="true"
             android:exported="true"/>
 
     </application>

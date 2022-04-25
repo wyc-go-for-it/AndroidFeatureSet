@@ -27,4 +27,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/label_design" />
+
+    <Button
+        android:id="@+id/label_print"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/label_print" />
 </LinearLayout>

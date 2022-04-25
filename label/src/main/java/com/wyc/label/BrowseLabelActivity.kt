@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
-class BrowseLabelActivity : AppCompatActivity() {
+class BrowseLabelActivity : BaseActivity() {
     private var mCurLabel:LabelTemplate? = null
     private var mAdapter:LabelAdapter? = null
 
@@ -29,17 +29,12 @@ class BrowseLabelActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.com_wyc_label_activity_browse_label)
-
-        initTitle()
+        setMiddleText(getString(R.string.com_wyc_label_local_label))
         initAdapter()
     }
 
-    private fun initTitle(){
-        findViewById<TextView>(R.id.middle_title_tv).setText(R.string.com_wyc_label_local_label)
-        findViewById<TextView>(R.id.left_title_tv).setOnClickListener {
-            finish()
-        }
+    override fun getContentLayoutId(): Int {
+        return R.layout.com_wyc_label_activity_browse_label
     }
 
     private fun initAdapter() {

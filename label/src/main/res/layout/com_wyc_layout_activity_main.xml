@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/_main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/com_wyc_label_height_45"
+        android:background="@color/activity_title_color">
+
+        <TextView
+            android:id="@+id/left_title_tv"
+            android:layout_width="108dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:drawableStart="@drawable/com_wyc_label_back_ico"
+            android:gravity="center_vertical"
+            android:paddingStart="@dimen/com_wyc_label_margin_5"
+            android:paddingEnd="0dp"
+            android:text="@string/com_wyc_label_back"
+            android:textColor="@android:color/white"
+            android:textSize="@dimen/com_wyc_label_font_size_16" />
+
+        <TextView
+            android:id="@+id/middle_title_tv"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:padding="@dimen/com_wyc_label_margin_1"
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            android:textSize="@dimen/com_wyc_label_font_size_20" />
+
+        <TextView
+            android:id="@+id/right_title_tv"
+            android:layout_width="108dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:paddingStart="0dp"
+            android:paddingEnd="@dimen/com_wyc_label_margin_5"
+            android:textAlignment="viewEnd"
+            android:textColor="@android:color/white"
+            android:textSize="@dimen/com_wyc_label_font_size_16" />
+    </LinearLayout>
+
+</LinearLayout>

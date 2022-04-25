@@ -24,6 +24,7 @@ class App {
         fun initApp(application: Application){
             app = application
         }
+        @JvmStatic
         fun getInstance():Application{
             return app!!
         }

@@ -1,4 +1,4 @@
-package com.wyc.label
+package com.wyc.label.printer
 
 import android.graphics.Color
 import android.util.Log
@@ -9,6 +9,7 @@ import com.gprinter.io.*
 import com.gprinter.utils.CallbackListener
 import com.gprinter.utils.Command
 import com.gprinter.utils.ConnMethod
+import com.wyc.label.*
 import com.wyc.label.LabelPrintSetting.Companion.getSetting
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -89,8 +90,8 @@ class GPPrinter: CallbackListener {
                     .setConnMethod(ConnMethod.BLUETOOTH)
                     .setMacAddress(mac)
                     .setCommand(Command.TSC)
-                    .setCallbackListener(GPPrinter.getInstance()).build()
-            GPPrinter.connect(blueTooth)
+                    .setCallbackListener(getInstance()).build()
+            connect(blueTooth)
         }
 
         @JvmStatic
@@ -102,14 +103,18 @@ class GPPrinter: CallbackListener {
                     .setMacAddress(mac)
                     .setCommand(Command.TSC)
                     .setCallbackListener(callbackListener).build()
-            GPPrinter.connect(blueTooth)
+            connect(blueTooth)
         }
 
         @Throws(IOException::class)
         @JvmStatic
         fun sendDataToPrinter(vector: Vector<Byte?>?) {
             if (portManager == null) {
-                Toast.makeText(App.getInstance(), R.string.com_wyc_label_printer_not_init, Toast.LENGTH_LONG).show()
+                Utils.showToast(R.string.com_wyc_label_printer_not_init)
+                return
+            }
+            if (!portManager!!.connectStatus){
+                Utils.showToast(R.string.com_wyc_label_not_connect)
                 return
             }
             CoroutineScope(Dispatchers.IO).launch {
@@ -124,22 +129,22 @@ class GPPrinter: CallbackListener {
         private fun showPrinterStatusDescription(status: Int) {
             when (status) {
                 -1 -> {
-                    Toast.makeText(App.getInstance(), R.string.status_fail, Toast.LENGTH_LONG).show()
+                    Utils.showToast(R.string.com_wyc_label_status_fail)
                 }
                 1 -> {
-                    Toast.makeText(App.getInstance(), R.string.status_feed, Toast.LENGTH_LONG).show()
+                    Utils.showToast(R.string.com_wyc_label_status_feed)
                 }
                 0 -> {
-                    Toast.makeText(App.getInstance(), R.string.status_normal, Toast.LENGTH_LONG).show()
+                    Utils.showToast(R.string.com_wyc_label_status_normal)
                 }
                 -2 -> {
-                    Toast.makeText(App.getInstance(), R.string.status_out_of_paper, Toast.LENGTH_LONG).show()
+                    Utils.showToast(R.string.com_wyc_label_status_out_of_paper)
                 }
                 -3 -> {
-                    Toast.makeText(App.getInstance(), R.string.status_open, Toast.LENGTH_LONG).show()
+                    Utils.showToast(R.string.com_wyc_label_status_open)
                 }
                 -4 -> {
-                    Toast.makeText(App.getInstance(), R.string.status_overheated, Toast.LENGTH_LONG).show()
+                    Utils.showToast(R.string.com_wyc_label_status_overheated)
                 }
             }
         }
@@ -178,7 +183,7 @@ class GPPrinter: CallbackListener {
     }
 
     override fun onConnecting() {
-        Toast.makeText(App.getInstance(), R.string.com_wyc_label_printer_connecting, Toast.LENGTH_LONG).show()
+        Utils.showToast(R.string.com_wyc_label_printer_connecting)
     }
 
     override fun onCheckCommand() {
@@ -186,7 +191,7 @@ class GPPrinter: CallbackListener {
     }
 
     override fun onSuccess(printerDevices: PrinterDevices?) {
-        Toast.makeText(App.getInstance(), R.string.com_wyc_label_conn_success, Toast.LENGTH_LONG).show()
+        Utils.showToast(R.string.com_wyc_label_conn_success)
     }
 
     override fun onReceive(bytes: ByteArray?) {
@@ -194,10 +199,10 @@ class GPPrinter: CallbackListener {
     }
 
     override fun onFailure() {
-        Toast.makeText(App.getInstance(), R.string.com_wyc_label_conn_fail, Toast.LENGTH_LONG).show()
+        Utils.showToast(R.string.com_wyc_label_conn_fail)
     }
 
     override fun onDisconnect() {
-        Toast.makeText(App.getInstance(), R.string.com_wyc_label_printer_disconnect, Toast.LENGTH_LONG).show()
+        Utils.showToast(R.string.com_wyc_label_printer_disconnect)
     }
 }

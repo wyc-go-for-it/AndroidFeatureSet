@@ -216,9 +216,9 @@ class BarcodeItem: CodeItemBase() {
             } catch (e: Exception) {
                 e.printStackTrace()
                 if (e is IllegalArgumentException && barcodeFormat == BarcodeFormat.EAN_13){
-                    Toast.makeText(App.getInstance(),R.string.com_wyc_label_ean_13_error_hint,Toast.LENGTH_LONG).show()
+                    Utils.showToast(R.string.com_wyc_label_ean_13_error_hint)
                 }else
-                    Toast.makeText(App.getInstance(),App.getInstance().getString(R.string.com_wyc_label_new_barcode_hint,e.message),Toast.LENGTH_LONG).show()
+                    Utils.showToast(App.getInstance().getString(R.string.com_wyc_label_new_barcode_hint,e.message))
 
                 if(mBitmap != null){
                     mBitmap!!.recycle()
@@ -310,7 +310,7 @@ class BarcodeItem: CodeItemBase() {
                     supportFormatList.forEach {
                         if (it.name == adapter.getItem(position)){
                             if (it.name  == BarcodeFormat.EAN_13.name && content.length != 13){
-                                Toast.makeText(App.getInstance(),R.string.com_wyc_label_not_ean_13,Toast.LENGTH_LONG).show()
+                                Utils.showToast(R.string.com_wyc_label_not_ean_13)
                                 setSelection(supportFormatList.indexOf(barcodeFormat))
                                 return
                             }else if (it.name == BarcodeFormat.CODE_128.name){

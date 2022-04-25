@@ -8,13 +8,6 @@
     android:orientation="vertical"
     tools:context=".LabelDesignActivity">
 
-    <include
-        android:id="@+id/t"
-        layout="@layout/com_wyc_label_activity_title_layout"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <LinearLayout
         android:id="@+id/top"
         android:layout_width="0dp"
@@ -23,7 +16,7 @@
         android:padding="@dimen/com_wyc_label_size_2"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/t">
+        app:layout_constraintTop_toTopOf="parent">
 
         <EditText
             android:id="@+id/label_name"

@@ -631,23 +631,27 @@ class LabelView: View {
     }
 
     fun addDataItem(){
-        val view = View.inflate(context,R.layout.com_wyc_label_add_data_item_dialog,null)
-        val pop = Dialog(context, R.style.com_wyc_label_MyDialog)
-        pop.setContentView(view)
-
-        val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        val d: Display = wm.defaultDisplay // 获取屏幕宽、高用
-        val point = Point()
-        d.getSize(point)
-
-        pop.window?.apply {
-            setWindowAnimations(R.style.com_wyc_label_bottom_pop_anim)
-            val wlp: WindowManager.LayoutParams = attributes
-            wlp.gravity = Gravity.BOTTOM
-            wlp.y = 68
-            wlp.width = (point.x * 0.95).toInt()
-            attributes = wlp
+        val selectDialog = SelectDialog(context)
+        DataItem.FIELD.values().forEach {
+            val item = SelectDialog.Item(it.field,it.description)
+            selectDialog.addContent(item)
         }
+        selectDialog.setSelectListener(object :SelectDialog.OnSelect{
+            override fun select(content: SelectDialog.Item) {
+                selectDialog.dismiss()
+                if (DataItem.FIELD.Barcode.field == content.id){
+                    val item = BarcodeItem()
+                    item.field = content.id
+                    addItem(item)
+                }else{
+                    val item = DataItem()
+                    item.field = content.id
+                    item.content = content.name
+                    addItem(item)
+                }
+            }
+        })
+        selectDialog.show()
     }
 
     fun deleteItem(){
@@ -768,9 +772,7 @@ class LabelView: View {
             template.itemList = toJson().toString()
             AppDatabase.getInstance().LabelTemplateDao().insertTemplate(template)
 
-            withContext(Dispatchers.Main){
-                Utils.showToast(R.string.com_wyc_label_success)
-            }
+            Utils.showToast(R.string.com_wyc_label_success)
         }
     }
 

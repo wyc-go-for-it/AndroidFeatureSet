@@ -40,7 +40,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/com_wyc_label_margin_12"
-            android:text="@string/dot"
+            android:text="@string/com_wyc_label_dot"
             android:textColor="@color/com_wyc_label_text_color"
             android:textSize="@dimen/com_wyc_label_font_size_14" />
     </RadioGroup>

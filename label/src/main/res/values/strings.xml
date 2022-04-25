@@ -2,7 +2,7 @@
 <resources>
     <string name="com_wyc_label_label_name">标签名称：</string>
     <string name="com_wyc_label_label_width">宽度：</string>
-    <string name="default_format">默认格式：</string>
+    <string name="com_wyc_label_default_format">默认格式：</string>
     <string name="com_wyc_label_OK">确定</string>
     <string name="com_wyc_label__cancel">取消</string>
     <string name="com_wyc_label_add_label">新增标签</string>
@@ -53,26 +53,27 @@
     <string name="com_wyc_label_date_format">格&#160;&#160;&#160;式</string>
     <string name="com_wyc_label_auto_update">自动更新</string>
     <string name="com_wyc_label_printer_not_init">打印机未初始化…</string>
-    <string name="status_fail">打印机状态获取失败，请检查打印机是否缺纸或开盖</string>
-    <string name="status_normal">状态正常</string>
-    <string name="status_feed">状态走纸、打印</string>
-    <string name="status_out_of_paper">状态缺纸</string>
-    <string name="status_open">状态开盖</string>
-    <string name="status_overheated">状态过热</string>
-    <string name="send_success">发送成功</string>
+    <string name="com_wyc_label_status_fail">打印机状态获取失败，请检查打印机是否缺纸或开盖</string>
+    <string name="com_wyc_label_status_normal">状态正常</string>
+    <string name="com_wyc_label_status_feed">状态走纸、打印</string>
+    <string name="com_wyc_label_status_out_of_paper">状态缺纸</string>
+    <string name="com_wyc_label_status_open">状态开盖</string>
+    <string name="com_wyc_label_status_overheated">状态过热</string>
+    <string name="com_wyc_label_send_success">发送成功</string>
+    <string name="com_wyc_label_not_connect">打印机未连接…</string>
     <string name="com_wyc_label_bluetooth_way">蓝牙打印</string>
     <string name="com_wyc_label_success">成功</string>
     <string name="com_wyc_label_code_format">编码格式</string>
     <string name="com_wyc_label_fill">填充</string>
     <string name="com_wyc_label_border">边框</string>
-    <string name="dot">虚边框</string>
+    <string name="com_wyc_label_dot">虚边框</string>
     <string name="com_wyc_label_dot_width">虚线宽</string>
     <string name="com_wyc_label_border_width">线宽</string>
     <string name="com_wyc_label_print_way">打印接口</string>
     <string name="com_wyc_label_printer">打印机</string>
     <string name="com_wyc_label_rotate_degree_setting">标签旋转设置</string>
     <string name="com_wyc_label_cur_label_model">当前默认模板</string>
-    <string name="print_num">打印份数</string>
+    <string name="com_wyc_label_print_num">打印份数</string>
     <string name="com_wyc_label_hor_offset">水平偏移</string>
     <string name="com_wyc_label_ver_offset">垂直偏移</string>
     <string name="com_wyc_label_dpi">分辨率</string>
@@ -82,4 +83,7 @@
     <string name="com_wyc_label_searching_bluetooth">正在搜索蓝牙打印机…</string>
     <string name="com_wyc_label_local_label">本地标签</string>
     <string name="com_wyc_label_modify">修改</string>
+    <string name="com_wyc_label_label_empty_hints">标签内容为空,请检查标签是否已设置或当前默认模板已选择…</string>
+    <string name="c_label_failure">解析格式错误:%1$s</string>
+    <string name="not_enbel_bluetooth">未开启蓝牙功能...</string>
 </resources>

@@ -66,7 +66,7 @@ public class ProviderActivity extends AppCompatActivity {
         contentValues.put("name","wyc");
         contentValues.put("gender",1);
         contentValues.put("number","201804091601");
-        contentValues.put("score","80");
+        contentValues.put("score","88");
 
         getContentResolver().insert(STUDENT_URI,contentValues);
     }

@@ -121,7 +121,7 @@ open class CodeItemBase: ItemBase() {
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                Toast.makeText(App.getInstance(),e.message,Toast.LENGTH_LONG).show()
+                Utils.showToast(e.message)
                 if(mBitmap != null){
                     mBitmap!!.recycle()
                     mBitmap = null

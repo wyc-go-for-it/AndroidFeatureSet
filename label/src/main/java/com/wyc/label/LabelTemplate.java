@@ -76,6 +76,10 @@ public class LabelTemplate implements Parcelable {
         templateName = String.format(Locale.CHINA,"%s_%d_%d","未命名",width,height);
     }
 
+    public boolean hasItem(){
+        return !printItem.isEmpty();
+    }
+
     protected LabelTemplate(Parcel in) {
         templateId = in.readInt();
         templateName = in.readString();
@@ -160,7 +164,7 @@ public class LabelTemplate implements Parcelable {
         try {
             return JSONObject.parseObject(json,LabelTemplate.class);
         }catch (JSONException e){
-            Toast.makeText(App.Companion.getInstance(),e.getMessage(),Toast.LENGTH_LONG).show();
+            Utils.showToast(R.string.c_label_failure,e.getMessage());
         }
         return new LabelTemplate();
     }

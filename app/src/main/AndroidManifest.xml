@@ -17,6 +17,9 @@
 
     <uses-permission android:name="com.android.wyc.provider.READ_PERMISSION"/>
     <uses-permission android:name="com.android.wyc.provider.WRITE_PERMISSION"/>
+    <queries><!--20220425 提示拒绝访问需要权限，增加provider包路径之后正常-->
+        <package android:name="com.android.wyc.contentproviderclient"/>
+    </queries>
 
     <application
         android:name=".MyApp"

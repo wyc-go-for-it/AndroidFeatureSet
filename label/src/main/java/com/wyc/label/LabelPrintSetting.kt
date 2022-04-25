@@ -85,10 +85,7 @@ class LabelPrintSetting {
             val editor = preferences.edit()
             editor.putString(C_KEY,JSONObject.toJSONString(this@LabelPrintSetting))
             editor.apply()
-
-            withContext(Dispatchers.Main){
-                Toast.makeText(App.getInstance(),R.string.com_wyc_label_success,Toast.LENGTH_LONG).show()
-            }
+            Utils.showToast(R.string.com_wyc_label_success)
         }
     }
 

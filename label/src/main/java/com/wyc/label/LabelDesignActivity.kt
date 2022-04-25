@@ -26,12 +26,13 @@ import com.alibaba.fastjson.JSON
 import com.gprinter.bean.PrinterDevices
 import com.gprinter.utils.CallbackListener
 import com.wyc.label.Utils.Companion.showToast
+import com.wyc.label.printer.GPPrinter
 import com.wyc.label.room.AppDatabase
 import kotlinx.coroutines.*
 import java.io.*
 import java.nio.charset.StandardCharsets
 
-class LabelDesignActivity : AppCompatActivity(), View.OnClickListener{
+class LabelDesignActivity : BaseActivity(), View.OnClickListener{
     private var mLabelView: LabelView? = null
     private var mCurBtn:TopDrawableTextView? = null
     private var newFlag = false
@@ -48,9 +49,7 @@ class LabelDesignActivity : AppCompatActivity(), View.OnClickListener{
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.com_wyc_label_activity_format)
-
-        initTitle()
+        setMiddleText(getString(R.string.com_wyc_label_label_setting))
 
         initImExport()
 
@@ -62,11 +61,8 @@ class LabelDesignActivity : AppCompatActivity(), View.OnClickListener{
         connPrinter()
     }
 
-    private fun initTitle(){
-        findViewById<TextView>(R.id.middle_title_tv).setText(R.string.com_wyc_label_label_setting)
-        findViewById<TextView>(R.id.left_title_tv).setOnClickListener {
-            finish()
-        }
+    override fun getContentLayoutId(): Int {
+        return R.layout.com_wyc_label_activity_format
     }
 
     private fun initImExport(){
@@ -275,7 +271,7 @@ class LabelDesignActivity : AppCompatActivity(), View.OnClickListener{
                         }
                     } catch (e: IOException) {
                         e.printStackTrace()
-                        Toast.makeText(this,e.localizedMessage,Toast.LENGTH_LONG).show()
+                        showToast(e.message)
                     }
                 }
                 CHOOSE_PHOTO -> {
@@ -413,7 +409,8 @@ class LabelDesignActivity : AppCompatActivity(), View.OnClickListener{
                     save()
                 }
                 R.id.preview->{
-                    this@LabelDesignActivity.findViewById<ImageView>(R.id.imageView3).setImageBitmap(mLabelView?.printSingleGoodsBitmap("",DataItem.LabelGoods()))
+                    val goods = DataItem.testGoods()
+                    this@LabelDesignActivity.findViewById<ImageView>(R.id.imageView3).setImageBitmap(mLabelView?.printSingleGoodsBitmap("",goods))
                 }
                 R.id.document->{
                     showImExportDialog()
@@ -425,7 +422,7 @@ class LabelDesignActivity : AppCompatActivity(), View.OnClickListener{
                             if((v as TopDrawableTextView).hasNormal()){
                                 CoroutineScope(Dispatchers.IO).launch {
                                     var n = LabelPrintSetting.getSetting().printNum
-                                    val goods = testGoods()
+                                    val goods = DataItem.testGoods()
 
                                     while (n-- > 0){
                                         GPPrinter.sendDataToPrinter(GPPrinter.getGPTscCommand(labelTemplate,goods).command)
@@ -439,18 +436,6 @@ class LabelDesignActivity : AppCompatActivity(), View.OnClickListener{
                 }
             }
         }
-    }
-    private fun testGoods():DataItem.LabelGoods{
-        val goods = DataItem.LabelGoods()
-        goods.barcode = "6922711043401"
-        goods.goodsTitle = "test内容"
-        goods.level = "高级"
-        goods.origin = "长沙"
-        goods.spec = "箱"
-        goods.unit = "件"
-        goods.retail_price = 18.68
-        goods.yh_price = 12.08
-        return goods
     }
 
     private fun hasSupportBluetooth(): Boolean {

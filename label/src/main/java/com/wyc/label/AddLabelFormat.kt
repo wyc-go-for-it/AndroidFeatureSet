@@ -81,7 +81,7 @@ class AddLabelFormat(context: Context): Dialog(context) {
             }
             mLabelTemplate.templateName = name
         }catch (e:NumberFormatException){
-            Toast.makeText(context,e.message,Toast.LENGTH_LONG).show()
+            Utils.showToast(e.message)
         }
         return mLabelTemplate
     }

@@ -45,6 +45,22 @@ class DataItem: TextItem() {
         }
     }
 
+    companion object {
+        @JvmStatic
+        fun testGoods(): LabelGoods {
+            val goods = LabelGoods()
+            goods.barcode = "6922711043401"
+            goods.goodsTitle = "test内容"
+            goods.level = "高级"
+            goods.origin = "长沙"
+            goods.spec = "箱"
+            goods.unit = "件"
+            goods.retail_price = 18.68
+            goods.yh_price = 12.08
+            return goods
+        }
+    }
+
     override fun toString(): String {
         return "DataItem(field='$field', hasMark=$hasMark) ${super.toString()}"
     }

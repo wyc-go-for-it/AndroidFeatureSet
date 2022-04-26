@@ -2,11 +2,13 @@ package com.wyc.label.printer
 
 import com.wyc.label.DataItem
 import com.wyc.label.LabelPrintSetting.Companion.getSetting
+import com.wyc.label.LabelTemplate
 import com.wyc.label.R
 import com.wyc.label.Utils
 import com.wyc.label.printer.GPPrinter.Companion.getGPTscCommand
 import com.wyc.label.printer.GPPrinter.Companion.sendDataToPrinter
 import com.wyc.label.room.AppDatabase.Companion.getInstance
+import com.wyc.label.room.BluetoothUtils
 
 
 /**
@@ -27,14 +29,23 @@ class LabelPrintUtils {
     companion object{
         @JvmStatic
         fun print(goods: DataItem.LabelGoods){
-            val labelTemplate = getInstance().LabelTemplateDao().getLabelTemplateById(getSetting().labelTemplateId)
+            val labelTemplate = getLabelTemplate()
             if (labelTemplate != null && labelTemplate.hasItem()){
                 sendDataToPrinter(getGPTscCommand(labelTemplate,goods).command)
             }else Utils.showToast(R.string.com_wyc_label_label_empty_hints)
         }
         @JvmStatic
-        fun openPrint(){
-            GPPrinter.openBlueTooth(getSetting().getPrinterAddress()+"111")
+        fun openPrinter(){
+            if (BluetoothUtils.hasSupportBluetooth())
+                GPPrinter.openBlueTooth(getSetting().getPrinterAddress())
+        }
+        @JvmStatic
+        fun closePrinter(){
+            GPPrinter.close()
+        }
+        @JvmStatic
+        fun getLabelTemplate(): LabelTemplate? {
+            return getInstance().LabelTemplateDao().getLabelTemplateById(getSetting().labelTemplateId)
         }
     }
 }

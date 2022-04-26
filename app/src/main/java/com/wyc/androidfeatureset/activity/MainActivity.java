@@ -21,7 +21,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        LabelPrintUtils.openPrint();
+        LabelPrintUtils.openPrinter();
     }
     @OnClick(R.id.camera_feature_btn)
     void camera(){

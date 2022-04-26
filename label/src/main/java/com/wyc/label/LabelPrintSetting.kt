@@ -2,13 +2,11 @@ package com.wyc.label
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.widget.Toast
 import com.alibaba.fastjson.JSONObject
 import com.alibaba.fastjson.annotation.JSONField
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlin.properties.Delegates
 
 /**
@@ -25,11 +23,11 @@ import kotlin.properties.Delegates
  * @Version:        1.0
  */
 
-class LabelPrintSetting {
+internal class LabelPrintSetting {
     @JSONField(serialize = false)
     private var change = false
     enum class Way(s: String)  {
-        BLUETOOTH_PRINT(App.getInstance().getString(R.string.com_wyc_label_bluetooth_way));
+        BLUETOOTH_PRINT(LabelApp.getInstance().getString(R.string.com_wyc_label_bluetooth_way));
         val description:String = s
     }
     var way: Way by change(Way.BLUETOOTH_PRINT)
@@ -72,7 +70,7 @@ class LabelPrintSetting {
         }
         @JvmStatic
         fun getSetting(): LabelPrintSetting {
-            val preferences: SharedPreferences = App.getInstance().getSharedPreferences(P_KEY, Context.MODE_PRIVATE)
+            val preferences: SharedPreferences = LabelApp.getInstance().getSharedPreferences(P_KEY, Context.MODE_PRIVATE)
             val setting = JSONObject.parseObject(preferences.getString(C_KEY,"{}"), LabelPrintSetting::class.java)?: LabelPrintSetting()
             setting.change = false
             return setting
@@ -81,7 +79,7 @@ class LabelPrintSetting {
 
     fun saveSetting(){
         CoroutineScope(Dispatchers.IO).launch {
-            val preferences: SharedPreferences = App.getInstance().getSharedPreferences(P_KEY, Context.MODE_PRIVATE)
+            val preferences: SharedPreferences = LabelApp.getInstance().getSharedPreferences(P_KEY, Context.MODE_PRIVATE)
             val editor = preferences.edit()
             editor.putString(C_KEY,JSONObject.toJSONString(this@LabelPrintSetting))
             editor.apply()

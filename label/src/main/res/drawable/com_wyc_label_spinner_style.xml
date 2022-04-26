@@ -6,12 +6,12 @@
             <!-- 设置边框线宽度和颜色 -->
             <stroke
                 android:width="@dimen/com_wyc_label_size_1"
-                android:color="@color/blue_subtransparent">
+                android:color="@color/com_wyc_label_blue_sub_transparent">
             </stroke>
             <!-- 设置圆角度数 -->
             <corners android:radius="@dimen/com_wyc_label_size_2" />
             <!-- 设置背景颜色 -->
-            <solid android:color="@color/transparent" />
+            <solid android:color="@color/com_wyc_label_transparent" />
             <!-- padding：设置边距 -->
             <padding
                 android:bottom="@dimen/com_wyc_label_size_2"

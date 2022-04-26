@@ -25,7 +25,7 @@ import android.widget.*
  * @Version:        1.0
  */
 
-class AddLabelFormat(context: Context): Dialog(context) {
+internal class AddLabelFormat(context: Context): Dialog(context) {
     private val mLabelTemplate = LabelTemplate()
     private var mContentListener: OnContent? = null
     override fun onCreate(savedInstanceState: Bundle?) {

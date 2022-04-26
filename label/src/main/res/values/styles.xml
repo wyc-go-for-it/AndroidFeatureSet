@@ -13,7 +13,13 @@
         <item name="android:backgroundDimEnabled">true</item>
     </style>
     <style name="com_wyc_label_bottom_pop_anim" parent="android:Animation">
-        <item name="android:windowEnterAnimation">@anim/pop_enter_anim</item>
-        <item name="android:windowExitAnimation">@anim/pop_exit_anim</item>
+        <item name="android:windowEnterAnimation">@anim/com_wyc_label_pop_enter_anim</item>
+        <item name="android:windowExitAnimation">@anim/com_wyc_label_pop_exit_anim</item>
+    </style>
+    <style name="com_wyc_label_ActivityTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowBackground">@color/com_wyc_label_black_trans</item>
+        <item name="android:windowIsTranslucent">true</item>
     </style>
 </resources>

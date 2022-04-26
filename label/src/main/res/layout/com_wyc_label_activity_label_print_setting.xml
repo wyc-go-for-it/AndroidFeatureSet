@@ -11,14 +11,14 @@
         android:id="@+id/root"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/white"
+        android:background="@color/com_wyc_label_white"
         android:orientation="vertical">
 
         <LinearLayout
             android:id="@+id/title"
             android:layout_width="match_parent"
             android:layout_height="@dimen/com_wyc_label_height_45"
-            android:background="@color/activity_title_color">
+            android:background="@color/com_wyc_label_activity_title_color">
 
             <TextView
                 android:id="@+id/left_title_tv"
@@ -83,6 +83,8 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:gravity="center_vertical|end"
+                android:paddingStart="0dp"
+                android:paddingEnd="@dimen/com_wyc_label_margin_5"
                 android:tag="@{setting.way.ordinal()}"
                 android:text="@{setting.way.description}"
                 android:textColor="@color/com_wyc_label_text_color"
@@ -207,8 +209,8 @@
             <Button
                 android:id="@+id/minus"
                 style="@style/Widget.AppCompat.Button.Borderless"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
+                android:layout_width="@dimen/com_wyc_label_size_22"
+                android:layout_height="@dimen/com_wyc_label_size_22"
                 android:layout_marginStart="@dimen/com_wyc_label_size_35"
                 android:background="@drawable/com_wyc_label_minus" />
 
@@ -225,7 +227,7 @@
             <Button
                 android:id="@+id/plus"
                 style="@style/Widget.AppCompat.Button.Borderless"
-                android:layout_width="22dp"
+                android:layout_width="@dimen/com_wyc_label_size_22"
                 android:layout_height="22dp"
                 android:layout_marginEnd="@dimen/com_wyc_label_margin_18"
                 android:background="@drawable/com_wyc_label_plus" />
@@ -251,9 +253,10 @@
 
             <Button
                 android:id="@+id/minusX"
-                style="@style/Widget.AppCompat.Button.Borderless"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
+                style="@android:style/Widget.DeviceDefault.Button.Borderless"
+                android:layout_width="@dimen/com_wyc_label_size_22"
+                android:layout_height="@dimen/com_wyc_label_size_22"
+                android:layout_gravity="center_vertical"
                 android:layout_marginStart="@dimen/com_wyc_label_margin_5"
                 android:background="@drawable/com_wyc_label_minus" />
 
@@ -270,8 +273,9 @@
             <Button
                 android:id="@+id/plusX"
                 style="@style/Widget.AppCompat.Button.Borderless"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
+                android:layout_width="@dimen/com_wyc_label_size_22"
+                android:layout_height="@dimen/com_wyc_label_size_22"
+                android:layout_gravity="center_vertical"
                 android:layout_marginEnd="@dimen/com_wyc_label_margin_12"
                 android:background="@drawable/com_wyc_label_plus" />
 
@@ -292,8 +296,9 @@
             <Button
                 android:id="@+id/minusY"
                 style="@style/Widget.AppCompat.Button.Borderless"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
+                android:layout_width="@dimen/com_wyc_label_size_22"
+                android:layout_height="@dimen/com_wyc_label_size_22"
+                android:layout_gravity="center_vertical"
                 android:layout_marginStart="@dimen/com_wyc_label_margin_5"
                 android:background="@drawable/com_wyc_label_minus" />
 
@@ -310,8 +315,9 @@
             <Button
                 android:id="@+id/plusY"
                 style="@style/Widget.AppCompat.Button.Borderless"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
+                android:layout_width="@dimen/com_wyc_label_size_22"
+                android:layout_height="@dimen/com_wyc_label_size_22"
+                android:layout_gravity="center_vertical"
                 android:layout_marginEnd="@dimen/com_wyc_label_margin_18"
                 android:background="@drawable/com_wyc_label_plus" />
 

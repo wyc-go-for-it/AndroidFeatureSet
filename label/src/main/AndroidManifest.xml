@@ -9,10 +9,10 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application>
-        <activity android:name=".LabelDesignActivity" android:exported="false"/>
-        <activity android:name=".BrowseLabelActivity" android:exported="false"/>
+        <activity android:name=".LabelDesignActivity" android:exported="false" android:theme="@style/com_wyc_label_ActivityTheme"/>
+        <activity android:name=".BrowseLabelActivity" android:exported="false" android:theme="@style/com_wyc_label_ActivityTheme"/>
         <activity
-            android:name=".LabelPrintSettingActivity"
+            android:name=".LabelPrintSettingActivity" android:theme="@style/com_wyc_label_ActivityTheme"
             android:exported="false" />
     </application>
 

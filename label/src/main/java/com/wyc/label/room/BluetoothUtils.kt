@@ -6,8 +6,6 @@ import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.IntentFilter
-import android.widget.Toast
-import com.wyc.label.App
 import com.wyc.label.R
 import com.wyc.label.Utils
 import java.util.*

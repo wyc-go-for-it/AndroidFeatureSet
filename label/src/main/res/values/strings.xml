@@ -20,7 +20,7 @@
     <string name="com_wyc_label_rotate">旋转</string>
     <string name="com_wyc_label_undo">撤销</string>
     <string name="com_wyc_label_text">文字</string>
-    <string name="com_wyc_label_barcode">条码</string>
+    <string name="com_wyc_label_barcode">自定义条码</string>
     <string name="com_wyc_label_qrcode">二维码</string>
     <string name="com_wyc_label_line">线条</string>
     <string name="com_wyc_label_rect">矩形</string>

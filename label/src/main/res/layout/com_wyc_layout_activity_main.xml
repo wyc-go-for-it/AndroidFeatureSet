@@ -5,14 +5,14 @@
     android:id="@+id/_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
+    android:background="@color/com_wyc_label_white"
     android:orientation="vertical">
 
     <LinearLayout
         android:id="@+id/title"
         android:layout_width="match_parent"
         android:layout_height="@dimen/com_wyc_label_height_45"
-        android:background="@color/activity_title_color">
+        android:background="@color/com_wyc_label_activity_title_color">
 
         <TextView
             android:id="@+id/left_title_tv"

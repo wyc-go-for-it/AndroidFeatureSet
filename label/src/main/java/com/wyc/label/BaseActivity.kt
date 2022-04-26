@@ -32,12 +32,18 @@ abstract class BaseActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentLayout()
         initTitle()
+        setTitleColor()
     }
     private fun initTitle() {
         mLeft = findViewById(R.id.left_title_tv)
         mMiddle = findViewById(R.id.middle_title_tv)
         mRight = findViewById(R.id.right_title_tv)
         mLeft?.setOnClickListener { onBackPressed() }
+    }
+
+    private fun setTitleColor(){
+        window.statusBarColor = LabelApp.themeColor()
+        findViewById<View>(R.id.title).setBackgroundColor(LabelApp.themeColor())
     }
 
     protected open fun setMiddleText(text: String?) {

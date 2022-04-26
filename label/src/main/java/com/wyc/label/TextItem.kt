@@ -31,11 +31,11 @@ import kotlin.math.min
  */
 
 open class TextItem: ItemBase() {
-    private val minFontSize = App.getInstance().resources.getDimensionPixelSize(R.dimen.com_wyc_label_font_size_10)
+    private val minFontSize = LabelApp.getInstance().resources.getDimensionPixelSize(R.dimen.com_wyc_label_font_size_10)
     private val maxFontSize = 128
 
     var content = "编辑内容"
-    var mFontSize = App.getInstance().resources.getDimension(R.dimen.com_wyc_label_font_size_18)
+    var mFontSize = LabelApp.getInstance().resources.getDimension(R.dimen.com_wyc_label_font_size_18)
     var mFontColor = Color.BLACK
     var mLetterSpacing = 0f
     var hasNewLine = false

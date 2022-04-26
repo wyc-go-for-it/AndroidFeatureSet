@@ -59,20 +59,20 @@ class Utils {
         @JvmStatic
         fun showToast(message: String?) {
             if (Looper.myLooper() == Looper.getMainLooper()) {
-                Toast.makeText(App.getInstance(),message, Toast.LENGTH_LONG).show()
+                Toast.makeText(LabelApp.getInstance(),message, Toast.LENGTH_LONG).show()
             } else{
                 CoroutineScope(Dispatchers.Main).launch {
-                    Toast.makeText(App.getInstance(),message, Toast.LENGTH_LONG).show()
+                    Toast.makeText(LabelApp.getInstance(),message, Toast.LENGTH_LONG).show()
                 }
             }
         }
         @JvmStatic
         fun showToast(id:Int) {
-            showToast(App.getInstance().getString(id))
+            showToast(LabelApp.getInstance().getString(id))
         }
         @JvmStatic
         fun showToast(@StringRes  id:Int,vararg formatArgs:Any){
-            Toast.makeText(App.getInstance(),App.getInstance().getString(id,formatArgs), Toast.LENGTH_LONG).show()
+            Toast.makeText(LabelApp.getInstance(),LabelApp.getInstance().getString(id,formatArgs), Toast.LENGTH_LONG).show()
         }
     }
 

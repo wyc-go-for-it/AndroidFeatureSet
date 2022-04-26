@@ -35,7 +35,7 @@ public final class TopDrawableTextView extends androidx.appcompat.widget.AppComp
 
     public TopDrawableTextView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        final int default_color = getResources().getColor(R.color.blue,null);
+        final int default_color = getResources().getColor(R.color.com_wyc_label_blue,null);
 
         final TypedArray typedArray = context.getTheme().obtainStyledAttributes(attrs, R.styleable.TopDrawableTextView, 0, 0);
         final int indexCount = typedArray.getIndexCount();

@@ -1,6 +1,7 @@
 package com.wyc.label
 
 import android.app.Application
+import android.graphics.Color
 
 
 /**
@@ -8,7 +9,7 @@ import android.app.Application
  * @ProjectName:    AndroidFeatureSet
  * @Package:        com.wyc.label
  * @ClassName:      App
- * @Description:    作用描述
+ * @Description:    保存第三放变量
  * @Author:         wyc
  * @CreateDate:     2022/4/22 11:19
  * @UpdateUser:     更新者：
@@ -17,9 +18,10 @@ import android.app.Application
  * @Version:        1.0
  */
 
-class App {
+class LabelApp {
     companion object{
         private var app:Application? = null
+        private var appColor:Int = Color.parseColor("#67B0F8")
         @JvmStatic
         fun initApp(application: Application){
             app = application
@@ -27,6 +29,14 @@ class App {
         @JvmStatic
         fun getInstance():Application{
             return app!!
+        }
+        @JvmStatic
+        fun initThemeColor(c:Int){
+            appColor = c
+        }
+        @JvmStatic
+        fun themeColor():Int{
+            return appColor
         }
     }
 }

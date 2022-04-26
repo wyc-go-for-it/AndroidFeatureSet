@@ -4,7 +4,6 @@ import android.content.Context;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.TypedValue;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -54,9 +53,9 @@ public class LabelTemplate implements Parcelable {
      * 用于重新计算item尺寸，同一个格式可能会加载到不同尺寸的界面
      * */
     @NonNull
-    Integer realWidth = width2Pixel(this,App.Companion.getInstance());
+    Integer realWidth = width2Pixel(this, LabelApp.Companion.getInstance());
     @NonNull
-    Integer realHeight = height2Pixel(this,App.Companion.getInstance());
+    Integer realHeight = height2Pixel(this, LabelApp.Companion.getInstance());
     @NonNull
     String itemList = "[]";
 

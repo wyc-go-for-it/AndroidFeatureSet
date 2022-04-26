@@ -20,7 +20,7 @@
         android:id="@+id/del"
         android:layout_width="match_parent"
         android:layout_height="@dimen/com_wyc_label_height_45"
-        android:background="@color/white"
+        android:background="@color/com_wyc_label_white"
         android:gravity="center"
         android:text="@string/com_wyc_label_del_b"
         android:textColor="@color/com_wyc_label_text_color"

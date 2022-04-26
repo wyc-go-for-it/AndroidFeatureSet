@@ -29,9 +29,9 @@ import kotlin.math.min
  * @Version:        1.0
  */
 
-class BarcodeItem: CodeItemBase() {
-    val minFontSize = App.getInstance().resources.getDimension(R.dimen.com_wyc_label_font_size_14)
-    var fontSize =  App.getInstance().resources.getDimension(R.dimen.com_wyc_label_font_size_14)
+internal class BarcodeItem: CodeItemBase() {
+    val minFontSize = LabelApp.getInstance().resources.getDimension(R.dimen.com_wyc_label_font_size_14)
+    var fontSize =  LabelApp.getInstance().resources.getDimension(R.dimen.com_wyc_label_font_size_14)
     @JSONField(serialize = false)
     private var mBottomMarge = Rect()
     @JSONField(serialize = false)
@@ -41,7 +41,7 @@ class BarcodeItem: CodeItemBase() {
 
     init {
         width = 370
-        height =  App.getInstance().resources.getDimensionPixelSize(R.dimen.com_wyc_label_size_28)
+        height =  LabelApp.getInstance().resources.getDimensionPixelSize(R.dimen.com_wyc_label_size_28)
         generateBitmap()
         BarcodeFormat.values().forEach {
             if (it.name == BarcodeFormat.CODE_128.name || it.name == BarcodeFormat.EAN_13.name){
@@ -83,7 +83,7 @@ class BarcodeItem: CodeItemBase() {
             val end = content.substring(1,content.length)
             paint.getTextBounds(end,0,end.length,mBottomMarge)
             val textHeight = mBottomMarge.height()
-            mBottomMarge.bottom += App.getInstance().resources.getDimensionPixelSize(R.dimen.com_wyc_label_size_4)
+            mBottomMarge.bottom += LabelApp.getInstance().resources.getDimensionPixelSize(R.dimen.com_wyc_label_size_4)
             mBottomMarge.right += (width- rightMargin - start - mBottomMarge.width())
             mBottomMarge.offsetTo(l.toInt() + start, (height - mBottomMarge.height() + t).toInt())
 
@@ -109,7 +109,7 @@ class BarcodeItem: CodeItemBase() {
         }else{
             paint.getTextBounds(content,0,content.length,mBottomMarge)
             val textHeight = mBottomMarge.height()
-            mBottomMarge.bottom += App.getInstance().resources.getDimensionPixelSize(R.dimen.com_wyc_label_size_4)
+            mBottomMarge.bottom += LabelApp.getInstance().resources.getDimensionPixelSize(R.dimen.com_wyc_label_size_4)
             mBottomMarge.right += (width - mBottomMarge.width())
             mBottomMarge.offsetTo(l.toInt(), (height - mBottomMarge.height() + t).toInt())
             canvas.drawRect(mBottomMarge,paint)
@@ -218,7 +218,7 @@ class BarcodeItem: CodeItemBase() {
                 if (e is IllegalArgumentException && barcodeFormat == BarcodeFormat.EAN_13){
                     Utils.showToast(R.string.com_wyc_label_ean_13_error_hint)
                 }else
-                    Utils.showToast(App.getInstance().getString(R.string.com_wyc_label_new_barcode_hint,e.message))
+                    Utils.showToast(LabelApp.getInstance().getString(R.string.com_wyc_label_new_barcode_hint,e.message))
 
                 if(mBitmap != null){
                     mBitmap!!.recycle()

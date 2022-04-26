@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
+    android:background="@color/com_wyc_label_white"
     android:orientation="vertical"
     tools:context=".LabelDesignActivity">
 
@@ -151,7 +151,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:rowCount="5"
-        app:separator_color="@color/gray"
+        app:separator_color="@color/com_wyc_label_gray"
         app:separator_size="@dimen/com_wyc_label_size_1">
 
         <com.wyc.label.TopDrawableTextView
@@ -174,7 +174,7 @@
             android:onClick="onClick"
             android:padding="@dimen/com_wyc_label_margin_12"
             android:text="@string/com_wyc_label_barcode"
-            android:textSize="@dimen/com_wyc_label_font_size_14"
+            android:textSize="@dimen/com_wyc_label_font_size_12"
             app:layout_weight_width="0.2"
             app:verSpacing="@dimen/com_wyc_label_margin_8" />
 
@@ -280,7 +280,7 @@
         android:id="@+id/bottom"
         android:layout_width="match_parent"
         android:layout_height="@dimen/com_wyc_label_size_58"
-        android:background="@color/appColor"
+        android:background="@color/com_wyc_label_appColor"
         android:paddingStart="@dimen/com_wyc_label_size_25"
         android:paddingEnd="@dimen/com_wyc_label_size_25"
         android:visibility="visible"
@@ -295,13 +295,13 @@
             android:drawableTop="@drawable/com_wyc_label_save"
             android:onClick="onClick"
             android:text="@string/com_wyc_label_save"
-            android:textColor="@color/white"
+            android:textColor="@color/com_wyc_label_white"
             android:textSize="@dimen/com_wyc_label_font_size_16"
             app:bottomSpacing="@dimen/com_wyc_label_margin_5"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:selectTextColor="@color/white"
+            app:selectTextColor="@color/com_wyc_label_white"
             app:verSpacing="@dimen/com_wyc_label_margin_2"
             tools:ignore="TextContrastCheck,TouchTargetSizeCheck" />
 
@@ -312,13 +312,13 @@
             android:drawableTop="@drawable/com_wyc_label_perview"
             android:onClick="onClick"
             android:text="@string/com_wyc_label_preview"
-            android:textColor="@color/white"
+            android:textColor="@color/com_wyc_label_white"
             android:textSize="@dimen/com_wyc_label_font_size_16"
             app:bottomSpacing="@dimen/com_wyc_label_margin_5"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:selectTextColor="@color/white"
+            app:selectTextColor="@color/com_wyc_label_white"
             app:verSpacing="@dimen/com_wyc_label_size_2"
             tools:ignore="TextContrastCheck" />
 
@@ -329,14 +329,14 @@
             android:drawableTop="@drawable/com_wyc_label_print"
             android:onClick="onClick"
             android:text="@string/com_wyc_label_print"
-            android:textColor="@color/white"
+            android:textColor="@color/com_wyc_label_white"
             android:textSize="@dimen/com_wyc_label_font_size_16"
             app:bottomSpacing="@dimen/com_wyc_label_margin_5"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/preview"
             app:layout_constraintStart_toEndOf="@+id/save"
             app:layout_constraintTop_toTopOf="parent"
-            app:selectTextColor="@color/white"
+            app:selectTextColor="@color/com_wyc_label_white"
             app:verSpacing="@dimen/com_wyc_label_margin_2"
             tools:ignore="TextContrastCheck,TouchTargetSizeCheck" />
     </androidx.constraintlayout.widget.ConstraintLayout>

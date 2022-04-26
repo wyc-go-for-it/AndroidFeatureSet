@@ -28,7 +28,7 @@
             android:paddingStart="@dimen/com_wyc_label_size_35"
             android:paddingEnd="0dp"
             android:textAlignment="center"
-            android:textColor="@color/white"
+            android:textColor="@color/com_wyc_label_white"
             android:textSize="@dimen/com_wyc_label_font_size_24" />
 
         <Button

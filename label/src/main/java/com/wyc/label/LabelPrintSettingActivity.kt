@@ -28,18 +28,21 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         DataBindingUtil.setContentView<ComWycLabelActivityLabelPrintSettingBinding>(this,R.layout.com_wyc_label_activity_label_print_setting)
+        setTitleColor()
 
         root = findViewById(R.id.root)
 
         initSearchDialog()
-
         initParam()
         initTitle()
         initView()
         registerLabelCallback()
         registerPermissionCallback()
     }
-
+    private fun setTitleColor(){
+        window.statusBarColor = LabelApp.themeColor()
+        findViewById<View>(R.id.title).setBackgroundColor(LabelApp.themeColor())
+    }
     private fun initSearchDialog(){
         mSelectDialog = SelectDialog(this,true)
         mSelectDialog!!.setSelectListener(object : SelectDialog.OnSelect{

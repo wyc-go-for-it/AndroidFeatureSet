@@ -3,7 +3,7 @@ package com.wyc.label.room
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.wyc.label.App
+import com.wyc.label.LabelApp
 import com.wyc.label.LabelTemplate
 
 
@@ -33,7 +33,7 @@ abstract class AppDatabase : RoomDatabase() {
             if (DB == null) {
                 synchronized(AppDatabase::class.java) {
                     if (DB == null) {
-                        DB = Room.databaseBuilder(App.getInstance(), AppDatabase::class.java,"label_db")
+                        DB = Room.databaseBuilder(LabelApp.getInstance(), AppDatabase::class.java,"label_db")
                                 .allowMainThreadQueries()
                                 .build()
                     }

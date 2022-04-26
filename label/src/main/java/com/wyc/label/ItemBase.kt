@@ -185,7 +185,7 @@ open class ItemBase:Cloneable{
     private fun drawAction(offsetX:Float, offsetY:Float, canvas:Canvas, paint: Paint) {
         updateActionRect(offsetX + left,offsetY + top)
 
-        val rc = Utils.dpToPxF(App.getInstance(),1f)
+        val rc = Utils.dpToPxF(LabelApp.getInstance(),1f)
 
         paint.color = Color.GRAY
         paint.style = Paint.Style.STROKE
@@ -202,7 +202,7 @@ open class ItemBase:Cloneable{
 
         //删除图标X
         paint.color = Color.WHITE
-        paint.strokeWidth = App.getInstance().resources.getDimension(R.dimen.com_wyc_label_size_1)
+        paint.strokeWidth = LabelApp.getInstance().resources.getDimension(R.dimen.com_wyc_label_size_1)
         canvas.save()
         canvas.rotate(45f, DEL_RECT.centerX(), DEL_RECT.centerY())
         canvas.scale(0.6f,0.6f, DEL_RECT.centerX(), DEL_RECT.centerY())
@@ -218,7 +218,7 @@ open class ItemBase:Cloneable{
         canvas.rotate(SCALE_DIRECT,rightCenterX,bottomCenterY)
         canvas.scale(0.6f,0.6f,rightCenterX,bottomCenterY)
         canvas.drawLine(rightCenterX - ACTION_RADIUS,bottomCenterY,rightCenterX + ACTION_RADIUS,bottomCenterY,paint)
-        val hypotenuse = App.getInstance().resources.getDimension(R.dimen.com_wyc_label_margin_5)
+        val hypotenuse = LabelApp.getInstance().resources.getDimension(R.dimen.com_wyc_label_margin_5)
         val offset  = hypotenuse * 0.5f
         canvas.drawLine(rightCenterX - ACTION_RADIUS,bottomCenterY,rightCenterX - ACTION_RADIUS + offset,bottomCenterY - offset,paint)
         canvas.drawLine(rightCenterX - ACTION_RADIUS,bottomCenterY,rightCenterX - ACTION_RADIUS + offset,bottomCenterY + offset,paint)
@@ -360,10 +360,10 @@ open class ItemBase:Cloneable{
         @JSONField
         val ROTATE_MATRIX = Matrix()
         @JvmField
-        val ACTION_RADIUS = App.getInstance().resources.getDimension(R.dimen.com_wyc_label_size_10)
+        val ACTION_RADIUS = LabelApp.getInstance().resources.getDimension(R.dimen.com_wyc_label_size_10)
         @JvmField
         var SCALE_DIRECT = 45.0f
         @JvmField
-        val MIN_BORDER_WIDTH = App.getInstance().resources.getDimension(R.dimen.com_wyc_label_size_1)
+        val MIN_BORDER_WIDTH = LabelApp.getInstance().resources.getDimension(R.dimen.com_wyc_label_size_1)
     }
 }

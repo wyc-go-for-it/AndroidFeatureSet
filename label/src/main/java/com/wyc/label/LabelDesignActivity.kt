@@ -21,12 +21,12 @@ import android.view.WindowManager
 import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import com.alibaba.fastjson.JSON
 import com.gprinter.bean.PrinterDevices
 import com.gprinter.utils.CallbackListener
 import com.wyc.label.Utils.Companion.showToast
 import com.wyc.label.printer.GPPrinter
+import com.wyc.label.printer.LabelPrintUtils
 import com.wyc.label.room.AppDatabase
 import kotlinx.coroutines.*
 import java.io.*
@@ -50,6 +50,7 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setMiddleText(getString(R.string.com_wyc_label_label_setting))
+        setBottomColor()
 
         initImExport()
 
@@ -59,6 +60,9 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
         printerError()
 
         connPrinter()
+    }
+    private fun setBottomColor(){
+        findViewById<View>(R.id.bottom).setBackgroundColor(LabelApp.themeColor())
     }
 
     override fun getContentLayoutId(): Int {
@@ -250,10 +254,8 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
 
     override fun onDestroy() {
         mCoroutineScope.cancel()
-
+        LabelPrintUtils.closePrinter()
         super.onDestroy()
-        //关闭打印机
-        GPPrinter.close()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {

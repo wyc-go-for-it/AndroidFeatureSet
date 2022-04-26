@@ -22,7 +22,7 @@ import android.widget.SeekBar
 
 class RectItem: ShapeItemBase() {
     init {
-        height = App.getInstance().resources.getDimensionPixelOffset(R.dimen.com_wyc_label_height_88)
+        height = LabelApp.getInstance().resources.getDimensionPixelOffset(R.dimen.com_wyc_label_height_88)
     }
     var rc = 0f
     override fun drawShape(offsetX: Float, offsetY: Float, canvas: Canvas, paint: Paint) {

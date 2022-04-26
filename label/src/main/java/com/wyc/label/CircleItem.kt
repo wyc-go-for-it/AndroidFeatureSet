@@ -2,7 +2,7 @@ package com.wyc.cloudapp.design
 
 import android.graphics.Canvas
 import android.graphics.Paint
-import com.wyc.label.App
+import com.wyc.label.LabelApp
 import com.wyc.label.R
 import com.wyc.label.ShapeItemBase
 
@@ -23,7 +23,7 @@ import com.wyc.label.ShapeItemBase
 
 class CircleItem: ShapeItemBase() {
     init {
-        height = App.getInstance().resources.getDimensionPixelOffset(R.dimen.com_wyc_label_height_88)
+        height = LabelApp.getInstance().resources.getDimensionPixelOffset(R.dimen.com_wyc_label_height_88)
     }
 
     override fun drawShape(offsetX: Float, offsetY: Float, canvas: Canvas, paint: Paint) {

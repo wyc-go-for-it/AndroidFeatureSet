@@ -23,7 +23,7 @@ import kotlin.math.max
 
 open class ShapeItemBase: ItemBase() {
     init {
-        width = App.getInstance().resources.getDimensionPixelOffset(R.dimen.com_wyc_label_width_88)
+        width = LabelApp.getInstance().resources.getDimensionPixelOffset(R.dimen.com_wyc_label_width_88)
     }
     var borderWidth = MIN_BORDER_WIDTH
         set(value) {

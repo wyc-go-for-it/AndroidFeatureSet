@@ -2,7 +2,6 @@ package com.wyc.label.printer
 
 import android.graphics.Color
 import android.util.Log
-import android.widget.Toast
 import com.gprinter.bean.PrinterDevices
 import com.gprinter.command.LabelCommand
 import com.gprinter.io.*
@@ -33,7 +32,7 @@ import java.util.*
  * @Version:        1.0
  */
 
-class GPPrinter: CallbackListener {
+internal class GPPrinter: CallbackListener {
 
     companion object {
         private var printer: GPPrinter? = null
@@ -86,7 +85,7 @@ class GPPrinter: CallbackListener {
         @JvmStatic
         fun openBlueTooth(mac: String?) {
             val blueTooth = PrinterDevices.Build()
-                    .setContext(App.getInstance())
+                    .setContext(LabelApp.getInstance())
                     .setConnMethod(ConnMethod.BLUETOOTH)
                     .setMacAddress(mac)
                     .setCommand(Command.TSC)
@@ -98,7 +97,7 @@ class GPPrinter: CallbackListener {
         fun openBlueTooth(mac: String?, callbackListener: CallbackListener?) {
             Log.d("connecting printer. mac is %s", mac!!)
             val blueTooth = PrinterDevices.Build()
-                    .setContext(App.getInstance())
+                    .setContext(LabelApp.getInstance())
                     .setConnMethod(ConnMethod.BLUETOOTH)
                     .setMacAddress(mac)
                     .setCommand(Command.TSC)

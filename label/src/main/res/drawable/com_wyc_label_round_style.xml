@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <!-- 形状颜色 -->
-    <solid android:color="@color/white"
+    <solid android:color="@color/com_wyc_label_white"
         />
     <!--边框颜色-->
     <stroke
         android:width="@dimen/com_wyc_label_size_1"
-        android:color="@color/black" />
+        android:color="@color/com_wyc_label_black" />
     <!--圆角-->
     <corners android:radius="5dp"/>
 </shape>

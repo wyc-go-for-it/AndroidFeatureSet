@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import com.wyc.label.databinding.ComWycLabelActivityLabelPrintSettingBinding
 import com.wyc.label.room.BluetoothUtils
+import java.util.logging.Level
 
 class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
     private var mLabelTemplateSelector: ActivityResultLauncher<Intent>? = null
@@ -141,7 +142,7 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
                 }
                 val bind = DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)
                 val setting = bind?.setting
-                val num = setting?.offsetX?:0
+                val num = setting?.offsetY?:0
                 setting?.offsetY = num - i
                 bind?.invalidateAll()
             }
@@ -165,11 +166,12 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
     private fun registerLabelCallback(){
         mLabelTemplateSelector = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             if (it.resultCode == RESULT_OK){
-                it.data?.getParcelableExtra<LabelTemplate>(BrowseLabelActivity.LABEL_KEY)?.apply {
-                    findViewById<TextView>(R.id.cur_template_tv)?.text = templateName
+                it.data?.getIntExtra(BrowseLabelActivity.LABEL_KEY,0)?.apply {
+                    val label = LabelTemplate.getLabelById(this)
+                    findViewById<TextView>(R.id.cur_template_tv)?.text = label.templateName
                     val setting: LabelPrintSetting? = DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.setting
-                    setting?.labelTemplateId = templateId
-                    setting?.labelTemplateName = templateName
+                    setting?.labelTemplateId = label.templateId
+                    setting?.labelTemplateName = label.templateName
                 }
             }
         }

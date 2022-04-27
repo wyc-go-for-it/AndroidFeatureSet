@@ -1,9 +1,6 @@
 package com.wyc.label
 
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Rect
+import android.graphics.*
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
@@ -11,7 +8,7 @@ import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.RadioButton
 import android.widget.SeekBar
-import com.alibaba.fastjson.annotation.JSONField
+import java.io.ObjectStreamException
 import kotlin.math.abs
 import kotlin.math.min
 
@@ -30,7 +27,7 @@ import kotlin.math.min
  * @Version:        1.0
  */
 
-open class TextItem: ItemBase() {
+internal open class TextItem: ItemBase() {
     private val minFontSize = LabelApp.getInstance().resources.getDimensionPixelSize(R.dimen.com_wyc_label_font_size_10)
     private val maxFontSize = 128
 
@@ -41,14 +38,28 @@ open class TextItem: ItemBase() {
     var hasNewLine = false
     var hasBold = false
     var hasItalic = false
-    var hasUnderLine = false
+    private var hasUnderLine = false
     var hasDelLine = false
     var textAlign = Align.LEFT
 
-    @JSONField(serialize = false)
-    private var mPaint:Paint = Paint()
-    @JSONField(serialize = false)
-    private val mRect = Rect()
+    @Transient private var mPaint:Paint = Paint()
+    @Transient private var mRect = Rect()
+
+    @Throws(ObjectStreamException::class)
+    private fun readResolve(): Any {
+        serializableInit()
+        return this
+    }
+
+    companion object {
+        const val serialVersionUID = 1L
+    }
+
+    override fun serializableInit() {
+        super.serializableInit()
+        mPaint = Paint()
+        mRect = Rect()
+    }
 
     override fun measureItem(w:Int,h:Int) {
         updatePaintAttr()

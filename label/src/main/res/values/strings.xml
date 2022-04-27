@@ -85,5 +85,7 @@
     <string name="com_wyc_label_modify">修改</string>
     <string name="com_wyc_label_label_empty_hints">标签内容为空,请检查标签是否已设置或当前默认模板已选择…</string>
     <string name="c_label_failure">解析格式错误:%1$s</string>
-    <string name="not_enbel_bluetooth">未开启蓝牙功能...</string>
+    <string name="not_enbel_bluetooth">未开启蓝牙功能…</string>
+    <string name="com_wyc_label_export_error">导出标签错误,请检查文件格式或路径是否正确…</string>
+    <string name="com_wyc_label_import_error">导入标签错误,请检查文件格式或路径是否正确…</string>
 </resources>

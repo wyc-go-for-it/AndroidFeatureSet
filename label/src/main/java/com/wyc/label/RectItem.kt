@@ -2,8 +2,11 @@ package com.wyc.label
 
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.RectF
 import android.view.View
 import android.widget.SeekBar
+import java.io.ObjectStreamException
 
 
 /**
@@ -20,13 +23,23 @@ import android.widget.SeekBar
  * @Version:        1.0
  */
 
-class RectItem: ShapeItemBase() {
+internal class RectItem: ShapeItemBase() {
     init {
         height = LabelApp.getInstance().resources.getDimensionPixelOffset(R.dimen.com_wyc_label_height_88)
     }
     var rc = 0f
     override fun drawShape(offsetX: Float, offsetY: Float, canvas: Canvas, paint: Paint) {
         canvas.drawRoundRect(left + offsetX,top + offsetY,left + offsetX + width,top + offsetY + height,rc,rc,paint)
+    }
+
+    @Throws(ObjectStreamException::class)
+    private fun readResolve(): Any {
+        serializableInit()
+        return this
+    }
+
+    companion object {
+        const val serialVersionUID = 1L
     }
 
     override fun popMenu(labelView: LabelView) {

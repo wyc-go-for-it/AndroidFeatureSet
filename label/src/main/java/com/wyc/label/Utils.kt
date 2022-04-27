@@ -71,8 +71,8 @@ class Utils {
             showToast(LabelApp.getInstance().getString(id))
         }
         @JvmStatic
-        fun showToast(@StringRes  id:Int,vararg formatArgs:Any){
-            Toast.makeText(LabelApp.getInstance(),LabelApp.getInstance().getString(id,formatArgs), Toast.LENGTH_LONG).show()
+        fun showToast(@StringRes  id:Int,vararg formatArgs:Any?){
+            showToast(LabelApp.getInstance().getString(id,formatArgs))
         }
     }
 

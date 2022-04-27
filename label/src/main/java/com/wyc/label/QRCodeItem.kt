@@ -1,10 +1,14 @@
 package com.wyc.label
 
+import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.RectF
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
 import android.widget.*
 import com.google.zxing.BarcodeFormat
+import java.io.ObjectStreamException
 
 
 /**
@@ -21,7 +25,7 @@ import com.google.zxing.BarcodeFormat
  * @Version:        1.0
  */
 
-class QRCodeItem: CodeItemBase()  {
+internal class QRCodeItem: CodeItemBase()  {
     init {
         width = 231
         height = width
@@ -34,6 +38,14 @@ class QRCodeItem: CodeItemBase()  {
                 supportFormatList.add(it)
             }
         }
+    }
+    @Throws(ObjectStreamException::class)
+    private fun readResolve(): Any {
+        serializableInit()
+        return this
+    }
+    companion object {
+        const val serialVersionUID = 1L
     }
 
     override fun scale(scaleX: Float, scaleY: Float) {

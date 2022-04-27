@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.view.View
 import android.widget.*
+import java.io.ObjectStreamException
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -24,7 +25,7 @@ import java.util.*
  * @Version:        1.0
  */
 
-class DateItem: TextItem() {
+internal class DateItem: TextItem() {
     var dateFormat = FORMAT.Y_M_D_H_M_S
 
     var dateContent = Date().time
@@ -33,6 +34,15 @@ class DateItem: TextItem() {
     }
 
     var autoUpdate = false
+
+    @Throws(ObjectStreamException::class)
+    private fun readResolve(): Any {
+        serializableInit()
+        return this
+    }
+    companion object {
+        const val serialVersionUID = 1L
+    }
 
     override fun drawItem(offsetX: Float, offsetY: Float, canvas: Canvas, paint: Paint) {
         if (autoUpdate){

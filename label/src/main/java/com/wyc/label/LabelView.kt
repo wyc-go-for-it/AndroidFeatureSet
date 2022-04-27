@@ -1,23 +1,18 @@
 package com.wyc.label
 
-import android.app.Dialog
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.util.Base64
-import android.util.Log
 import android.view.*
-import com.alibaba.fastjson.JSONArray
-import com.wyc.cloudapp.design.*
 import com.wyc.label.LabelPrintSetting.Companion.getSetting
 import com.wyc.label.LabelTemplate.height2Pixel
 import com.wyc.label.LabelTemplate.width2Pixel
-import com.wyc.label.room.AppDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.ByteArrayOutputStream
+import java.io.*
+import java.util.ArrayList
 import kotlin.math.max
 import kotlin.math.min
 
@@ -84,6 +79,7 @@ class LabelView: View {
             return if ( field < 0) mMaxAttrIndex - 1 else field
         }
 
+
     constructor(context: Context):this(context, null)
     constructor(context: Context, attrs: AttributeSet?):this(context, attrs, 0)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int):super(context, attrs, defStyleAttr){
@@ -95,7 +91,7 @@ class LabelView: View {
         mItemChange = true
         adjustLabelSize(labelTemplate.width,labelTemplate.height)
         contentList.clear()
-        contentList.addAll(labelTemplate.toItem())
+        contentList.addAll(labelTemplate.printItem)
         generateBackground()
         requestLayout()
         invalidate()
@@ -103,10 +99,6 @@ class LabelView: View {
 
     fun getLabelTemplate():LabelTemplate{
         return mLabelTemplate
-    }
-
-    private fun toJson():JSONArray{
-        return JSONArray.toJSON(contentList) as? JSONArray?:JSONArray()
     }
 
     private fun initPaint(){
@@ -412,7 +404,7 @@ class LabelView: View {
     /**
      * @param bg 背景位图。如果为null则清除当前背景
      * */
-    fun setLabelBackground(bg:Bitmap?){
+    internal fun setLabelBackground(bg:Bitmap?){
         if (bg == null){
             if (mBackground != null){
                 mBackground!!.recycle()
@@ -467,7 +459,7 @@ class LabelView: View {
         mItemAttrList[mCurAttrIndex++] = ActionObject(item,ActionObject.Action.DEL,null)
     }
 
-    fun addModifyAction(item: ItemBase, vararg vars:ActionObject.FieldObject){
+    internal fun addModifyAction(item: ItemBase, vararg vars:ActionObject.FieldObject){
 
         val fieldList:MutableList<ActionObject.FieldObject> = mutableListOf()
 
@@ -550,7 +542,7 @@ class LabelView: View {
         }
     }
 
-    fun restAction(){
+    internal fun restAction(){
         val actionObject = mItemAttrList[--mCurAttrIndex]
         if (actionObject != null){
             mItemAttrList[mCurAttrIndex] = null
@@ -595,42 +587,42 @@ class LabelView: View {
         postInvalidate()
     }
 
-    fun getRealWidth():Int{
+    internal fun getRealWidth():Int{
         return realWidth
     }
-    fun getRealHeight():Int{
+    internal fun getRealHeight():Int{
         return realHeight
     }
 
-    fun addTextItem(){
+    internal fun addTextItem(){
         addItem(TextItem())
     }
-    fun addLineItem(){
+    internal fun addLineItem(){
         addItem(LineItem())
     }
 
-    fun addRectItem(){
+    internal fun addRectItem(){
         addItem(RectItem())
     }
 
-    fun addCircleItem(){
+    internal fun addCircleItem(){
         addItem(CircleItem())
     }
 
-    fun addBarcodeItem(){
+    internal fun addBarcodeItem(){
         addItem(BarcodeItem())
     }
 
-    fun addQRCodeItem(){
+    internal fun addQRCodeItem(){
         val item = QRCodeItem()
         addItem(item)
     }
 
-    fun addDateItem(){
+    internal fun addDateItem(){
         addItem(DateItem())
     }
 
-    fun addDataItem(){
+    internal fun addDataItem(){
         val selectDialog = SelectDialog(context)
         DataItem.FIELD.values().forEach {
             val item = SelectDialog.Item(it.field,it.description)
@@ -654,7 +646,7 @@ class LabelView: View {
         selectDialog.show()
     }
 
-    fun deleteItem(){
+    internal fun deleteItem(){
         mCurItem?.apply {
             contentList.remove(this)
 
@@ -664,7 +656,7 @@ class LabelView: View {
         }
     }
 
-    fun shrinkItem(){
+    internal fun shrinkItem(){
         mCurItem?.apply {
 
             val oldW = width
@@ -684,7 +676,7 @@ class LabelView: View {
             invalidate()
         }
     }
-    fun zoomItem(){
+    internal fun zoomItem(){
         mCurItem?.apply {
 
             val oldW = width
@@ -705,7 +697,7 @@ class LabelView: View {
         }
     }
 
-    fun rotateItem(){
+    internal fun rotateItem(){
         mCurItem?.apply {
             radian += 15
 
@@ -721,22 +713,22 @@ class LabelView: View {
     fun editModel(){
         mModel = false
     }
-    fun hasPreviewModel():Boolean{
+    private fun hasPreviewModel():Boolean{
         return mModel
     }
-    fun hasEditModel():Boolean{
+    internal fun hasEditModel():Boolean{
         return !mModel
     }
 
-    fun getLabelName():String{
+    internal fun getLabelName():String{
         return mLabelTemplate.templateName
     }
 
-    fun updateLabelName(n:String){
+    internal fun updateLabelName(n:String){
         mLabelTemplate.templateName = n
     }
 
-    fun updateLabelSize(w:Int,h: Int){
+    internal fun updateLabelSize(w:Int,h: Int){
         adjustLabelSize(w,h)
         calculateContentSize()
 
@@ -762,21 +754,20 @@ class LabelView: View {
         mLabelSize.add(0,LabelTemplate.LabelSize(w,h))
     }
 
-    fun save(){
+    internal fun save(){
         CoroutineScope(Dispatchers.IO).launch {
             mItemAttrList.fill(null)
-
             val template = mLabelTemplate
             template.realWidth = realWidth
             template.realHeight = realHeight
-            template.itemList = toJson().toString()
-            AppDatabase.getInstance().LabelTemplateDao().insertTemplate(template)
-
+            template.printItem = contentList
+            template.save()
             Utils.showToast(R.string.com_wyc_label_success)
         }
     }
 
-    fun printSingleGoodsBitmap(barcodeId:String = "",labelGoods: DataItem.LabelGoods):Bitmap{
+
+    internal  fun printSingleGoodsBitmap(barcodeId:String = "",labelGoods: LabelGoods):Bitmap{
         val dpi = getSetting().dpi
         val bmp = Bitmap.createBitmap(mLabelTemplate.width2Dot(dpi),mLabelTemplate.height2Dot(dpi),Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
@@ -796,7 +787,7 @@ class LabelView: View {
         val scaleX = mLabelTemplate.width2Dot(getSetting().dpi).toFloat() / realWidth.toFloat()
         val scaleY = mLabelTemplate.height2Dot(getSetting().dpi).toFloat() / realHeight.toFloat()
 
-        val itemCopy: MutableList<ItemBase> = java.util.ArrayList()
+        val itemCopy: MutableList<ItemBase> = ArrayList()
 
         labelGoods.apply {
             contentList.forEach {
@@ -821,7 +812,7 @@ class LabelView: View {
         return bmp
     }
 
-    fun setPreviewData(labelGoods: DataItem.LabelGoods){
+    fun setPreviewData(labelGoods: LabelGoods){
         if (hasPreviewModel()){
             labelGoods.apply {
                 contentList.forEach {
@@ -832,16 +823,16 @@ class LabelView: View {
         }
     }
 
-    fun setRotate(degree:Int){
+    internal fun setRotate(degree:Int){
         mRotate = degree
         postInvalidate()
     }
 
-    fun getLabelSize(): MutableList<LabelTemplate.LabelSize> {
+    internal fun getLabelSize(): MutableList<LabelTemplate.LabelSize> {
         return mLabelSize
     }
 
-    fun hasModify():Boolean{
+    internal fun hasModify():Boolean{
         return mItemAttrList.any { it != null && it.action != ActionObject.Action.ACTIVE }
     }
 }

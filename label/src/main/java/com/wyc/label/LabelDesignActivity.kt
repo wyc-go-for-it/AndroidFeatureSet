@@ -21,16 +21,14 @@ import android.view.WindowManager
 import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import com.alibaba.fastjson.JSON
 import com.gprinter.bean.PrinterDevices
 import com.gprinter.utils.CallbackListener
 import com.wyc.label.Utils.Companion.showToast
 import com.wyc.label.printer.GPPrinter
 import com.wyc.label.printer.LabelPrintUtils
-import com.wyc.label.room.AppDatabase
 import kotlinx.coroutines.*
-import java.io.*
-import java.nio.charset.StandardCharsets
+import java.io.File
+import java.io.IOException
 
 class LabelDesignActivity : BaseActivity(), View.OnClickListener{
     private var mLabelView: LabelView? = null
@@ -73,28 +71,31 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
         mOpenDocumentLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri != null){
                 mCoroutineScope.launch {
-                    contentResolver.openInputStream(uri)?.use { stream ->
-                        val reader = BufferedReader(InputStreamReader(stream, StandardCharsets.UTF_8))
-                        val stringBuilder = StringBuilder()
-                        var line: String?
-                        while (reader.readLine().also { line = it } != null) {
-                            stringBuilder.append(line)
+                    try {
+                        contentResolver.openInputStream(uri)?.use { stream ->
+                            val t = LabelTemplate.read(stream)
+                            withContext(Dispatchers.Main) {
+                                updateLabel(t)
+                            }
                         }
-                        withContext(Dispatchers.Main) {
-                            updateLabel(LabelTemplate.parse(stringBuilder.toString()))
-                        }
+                    }catch (e:IOException){
+                        showToast(R.string.com_wyc_label_import_error)
                     }
                 }
             }
         }
         mSaveDocumentLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument()){
             it?.apply {
-                mCoroutineScope.launch {
-                    contentResolver.openOutputStream(it)?.use {stream->
-                        val writer = BufferedWriter(OutputStreamWriter(stream,StandardCharsets.UTF_8))
-                        val json = JSON.toJSONString(mLabelView?.getLabelTemplate())
-                        writer.write(json)
-                        writer.flush()
+                mCoroutineScope.launch() {
+                    try {
+                        contentResolver.openOutputStream(it)?.use {stream->
+                            mLabelView?.getLabelTemplate()
+                                ?.let { it1 ->
+                                    LabelTemplate.write(stream, it1)
+                                }
+                        }
+                    }catch (e:IOException){
+                        showToast(R.string.com_wyc_label_export_error)
                     }
                 }
             }
@@ -163,22 +164,20 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
     private fun initLabelView(){
         mLabelView = findViewById(R.id.labelView)
         val intent = intent
-        var labelTemplate:LabelTemplate? = null
+        var labelTemplateId:Int = -1
         if (intent != null){
-            labelTemplate = intent.getParcelableExtra(BrowseLabelActivity.LABEL_KEY)
+            labelTemplateId = intent.getIntExtra(BrowseLabelActivity.LABEL_KEY,-1)
         }
-        if (labelTemplate != null){
-            updateLabel(labelTemplate)
-        }else{
-            mCoroutineScope.launch {
-                LabelPrintSetting.getSetting().let { setting->
-                    var t = AppDatabase.getInstance().LabelTemplateDao().getLabelTemplateById(setting.labelTemplateId)
-                    if (t == null) t = LabelTemplate()
-                    mLabelView?.setRotate(setting.rotate.value)
-                    withContext(Dispatchers.Main){
-                        updateLabel(t)
-                    }
+        mCoroutineScope.launch {
+            LabelPrintSetting.getSetting().let { setting->
+                if (labelTemplateId == -1){
+                    labelTemplateId = setting.labelTemplateId
                 }
+                mLabelView?.setRotate(setting.rotate.value)
+            }
+            val template = LabelTemplate.getLabelById(labelTemplateId)
+            withContext(Dispatchers.Main){
+                updateLabel(template)
             }
         }
     }
@@ -346,9 +345,9 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
 
     companion object{
         @JvmStatic
-        fun start(context: Activity,labelTemplate: LabelTemplate? = null){
+        fun start(context: Activity,templateId:Int = -1){
             val intent = Intent(context, LabelDesignActivity::class.java)
-            if (labelTemplate != null)intent.putExtra("label",labelTemplate)
+            if (templateId != -1)intent.putExtra("label",templateId)
             context.startActivity(intent)
         }
     }

@@ -1,12 +1,11 @@
 package com.wyc.label
 
 import android.graphics.*
-import android.widget.Toast
-import com.alibaba.fastjson.annotation.JSONField
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.common.BitMatrix
+import java.io.ObjectStreamException
 
 /**
  *
@@ -22,7 +21,7 @@ import com.google.zxing.common.BitMatrix
  * @Version:        1.0
  */
 
-open class CodeItemBase: ItemBase() {
+internal open class CodeItemBase: ItemBase(){
     var barcodeFormat: BarcodeFormat = BarcodeFormat.CODE_128
         set(value) {
             field = value
@@ -43,12 +42,24 @@ open class CodeItemBase: ItemBase() {
      * */
     var field = ""
 
-    @JSONField(serialize = false)
-    protected var mBitmap:Bitmap? = null
-    @JSONField(serialize = false)
-    var hasMark = true
-    @JSONField(serialize = false)
+    @Transient protected var mBitmap:Bitmap? = null
+    @Transient var hasMark = true
     protected val supportFormatList = mutableListOf<BarcodeFormat>()
+
+    @Throws(ObjectStreamException::class)
+    private fun readResolve(): Any {
+        serializableInit()
+        return this
+    }
+
+    companion object {
+        const val serialVersionUID = 1L
+    }
+
+    override fun serializableInit() {
+        super.serializableInit()
+        generateBitmap()
+    }
 
     override fun drawItem(offsetX: Float, offsetY: Float, canvas: Canvas, paint: Paint) {
         mBitmap?.let {

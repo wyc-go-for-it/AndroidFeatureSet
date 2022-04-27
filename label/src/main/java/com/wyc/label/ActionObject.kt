@@ -17,7 +17,7 @@ import java.lang.reflect.Field
  * @Version:        1.0
  */
 
-class ActionObject(var actionObj: ItemBase, var action:Action, var fieldList: MutableList<FieldObject>?) {
+internal class ActionObject(var actionObj: ItemBase, var action:Action, var fieldList: MutableList<FieldObject>?) {
 
 
 

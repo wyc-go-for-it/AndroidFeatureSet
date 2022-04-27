@@ -1,13 +1,12 @@
 package com.wyc.label
 
-import android.content.Context
-import android.content.SharedPreferences
-import com.alibaba.fastjson.JSONObject
-import com.alibaba.fastjson.annotation.JSONField
+import com.wyc.label.LabelApp.Companion.getInstance
+import com.wyc.label.Utils.Companion.showToast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlin.properties.Delegates
+import java.io.*
+import java.util.*
 
 /**
  *
@@ -23,14 +22,14 @@ import kotlin.properties.Delegates
  * @Version:        1.0
  */
 
-internal class LabelPrintSetting {
-    @JSONField(serialize = false)
-    private var change = false
+internal class LabelPrintSetting:Serializable {
+    @Transient private var change = false
+
     enum class Way(s: String)  {
         BLUETOOTH_PRINT(LabelApp.getInstance().getString(R.string.com_wyc_label_bluetooth_way));
         val description:String = s
     }
-    var way: Way by change(Way.BLUETOOTH_PRINT)
+    var way: Way  = Way.BLUETOOTH_PRINT
 
     enum class Rotate(degree:Int){
         D_0(0),D_180(180);
@@ -45,14 +44,14 @@ internal class LabelPrintSetting {
 
     var dpi = 203
 
-    var rotate: Rotate by change(Rotate.D_0)
+    var rotate: Rotate = Rotate.D_0
 
-    var labelTemplateId: Int by change(0)
-    var labelTemplateName:String by change("")
+    var labelTemplateId: Int  = 0
+    var labelTemplateName:String = ""
 
-    var printNum by change(1)
+    var printNum  = 1
 
-    var printer:String by change("")
+    var printer:String = ""
     fun getPrinterAddress():String{
         if (printer.contains("@")){
             return printer.split("@")[1]
@@ -61,29 +60,58 @@ internal class LabelPrintSetting {
     }
 
     companion object{
-        const val P_KEY = "label_print"
-        const val C_KEY = "c"
-
+        const val serialVersionUID = 1L
+        @JvmStatic
+        private fun getFile(): File {
+            val dirPath = String.format(
+                "%s%s%s%s",
+                getInstance().filesDir,
+                File.separator,
+                "setting",
+                File.separator
+            )
+            val dir = File(dirPath)
+            if (!dir.exists()) {
+                dir.mkdir()
+            }
+            val name =
+                String.format(Locale.CHINA, "%s%s%s", dir.absolutePath, File.separator,"setting")
+            return File(name)
+        }
         @JvmStatic
         fun combinationPrinter(a:String,n:String):String{
             return String.format("%s@%s",n,a)
         }
         @JvmStatic
         fun getSetting(): LabelPrintSetting {
-            val preferences: SharedPreferences = LabelApp.getInstance().getSharedPreferences(P_KEY, Context.MODE_PRIVATE)
-            val setting = JSONObject.parseObject(preferences.getString(C_KEY,"{}"), LabelPrintSetting::class.java)?: LabelPrintSetting()
-            setting.change = false
-            return setting
+            try {
+                ObjectInputStream(FileInputStream(getFile())).use { objectInputStream -> return objectInputStream.readObject() as LabelPrintSetting }
+            } catch (e: IOException) {
+                e.printStackTrace()
+                if (e !is FileNotFoundException)showToast(e.message)
+            } catch (e: ClassNotFoundException) {
+                e.printStackTrace()
+                showToast(e.message)
+            }
+            return LabelPrintSetting()
         }
     }
 
     fun saveSetting(){
         CoroutineScope(Dispatchers.IO).launch {
-            val preferences: SharedPreferences = LabelApp.getInstance().getSharedPreferences(P_KEY, Context.MODE_PRIVATE)
-            val editor = preferences.edit()
-            editor.putString(C_KEY,JSONObject.toJSONString(this@LabelPrintSetting))
-            editor.apply()
-            Utils.showToast(R.string.com_wyc_label_success)
+            val file = getFile()
+            file.delete()
+            try {
+                ObjectOutputStream(FileOutputStream(file)).use { fileOutputStream ->
+                    fileOutputStream.writeObject(
+                        this@LabelPrintSetting
+                    )
+                }
+                showToast(R.string.com_wyc_label_success)
+            } catch (e: IOException) {
+                e.printStackTrace()
+                showToast(e.message)
+            }
         }
     }
 
@@ -91,13 +119,7 @@ internal class LabelPrintSetting {
         return change
     }
 
-    private fun <T> change(iv:T) = Delegates.observable(iv) { _, oldValue, newValue ->
-        if (oldValue != newValue) change = true
-    }
-
     override fun toString(): String {
         return "LabelPrintSetting(way=$way, rotate=$rotate, labelTemplateId=$labelTemplateId, labelTemplateName='$labelTemplateName', printNum=$printNum, printer='$printer')"
     }
-
-
 }

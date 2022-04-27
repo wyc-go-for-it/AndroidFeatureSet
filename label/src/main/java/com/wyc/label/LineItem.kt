@@ -2,6 +2,7 @@ package com.wyc.label
 
 import android.graphics.Canvas
 import android.graphics.Paint
+import java.io.ObjectStreamException
 
 
 /**
@@ -18,9 +19,18 @@ import android.graphics.Paint
  * @Version:        1.0
  */
 
-class LineItem: ShapeItemBase() {
+internal class LineItem: ShapeItemBase() {
     init {
         height = borderWidth.toInt()
+    }
+
+    @Throws(ObjectStreamException::class)
+    private fun readResolve(): Any {
+        serializableInit()
+        return this
+    }
+    companion object {
+        const val serialVersionUID = 1L
     }
 
     override fun drawShape(offsetX: Float, offsetY: Float, canvas: Canvas, paint: Paint) {

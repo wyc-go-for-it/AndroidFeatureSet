@@ -1,21 +1,20 @@
 package com.wyc.label;
 
 import android.content.Context;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.util.TypedValue;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.room.Entity;
-import androidx.room.Ignore;
-import androidx.room.PrimaryKey;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONException;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.annotation.JSONField;
-
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -34,40 +33,37 @@ import java.util.UUID;
  * @UpdateRemark: 更新说明：
  * @Version: 1.0
  */
-@Entity(tableName = "labelTemplate")
-public class LabelTemplate implements Parcelable {
-    @PrimaryKey
+public class LabelTemplate implements Serializable {
+    private final static long serialVersionUID = 1L;
     @NonNull
-    Integer templateId = UUID.randomUUID().toString().hashCode();
+    private Integer templateId = UUID.randomUUID().toString().hashCode();
     @NonNull
-    String templateName = "";
+    private String templateName = "";
     /**
      * 打印物理尺寸 单位毫米
      * */
     @NonNull
-    Integer width = 0;
+    private Integer width = 0;
     @NonNull
-    Integer height = 0;
+    private Integer height = 0;
 
     /**
      * 用于重新计算item尺寸，同一个格式可能会加载到不同尺寸的界面
      * */
     @NonNull
-    Integer realWidth = width2Pixel(this, LabelApp.Companion.getInstance());
+    private Integer realWidth = width2Pixel(this, LabelApp.Companion.getInstance());
     @NonNull
-    Integer realHeight = height2Pixel(this, LabelApp.Companion.getInstance());
-    @NonNull
-    String itemList = "[]";
+    private Integer realHeight = height2Pixel(this, LabelApp.Companion.getInstance());
+
+    private static final String mLabelDir = String.format("%s%s%s%s", LabelApp.getInstance().getFilesDir(), File.separator,"template",File.separator);
 
     /**
      * 背景base64字符串
      * */
     @NonNull
-    String backgroundImg = "";
+    private String backgroundImg = "";
 
-    @JSONField(serialize = false)
-    @Ignore
-    List<ItemBase> printItem = new ArrayList<>();
+    private List<ItemBase> printItem = new ArrayList<>();
 
     public LabelTemplate(){
         width = 70;
@@ -75,49 +71,80 @@ public class LabelTemplate implements Parcelable {
         templateName = String.format(Locale.CHINA,"%s_%d_%d","未命名",width,height);
     }
 
+    public void save(){
+        File file = getFile();
+        file.delete();
+        try{
+            write(new FileOutputStream(file),this);
+        } catch (IOException e) {
+            e.printStackTrace();
+            Utils.showToast(e.getMessage());
+        }
+    }
+
+    public static List<LabelTemplate> getLabelList(){
+        final List<LabelTemplate> list = new ArrayList<>();
+        File dir = new File(mLabelDir);
+        File[] names = dir.listFiles();
+        if (names != null){
+            for (File f : names){
+                try (ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(f))){
+                    list.add((LabelTemplate) objectInputStream.readObject());
+                } catch (IOException | ClassNotFoundException e) {
+                    e.printStackTrace();
+                    Utils.showToast(e.getMessage());
+                    break;
+                }
+            }
+        }
+        return list;
+    }
+
+    public boolean deleteLabel(){
+        return getFile().delete();
+    }
+
+    public static LabelTemplate getLabelById(int templateId){
+        File dir = new File(mLabelDir);
+        File[] names = dir.listFiles();
+        if (names != null){
+            for (File f : names){
+                if (String.valueOf(templateId).equals(f.getName())){
+                    try{
+                        return read(new FileInputStream(f));
+                    } catch (IOException | ClassNotFoundException e) {
+                        e.printStackTrace();
+                        Utils.showToast(e.getMessage());
+                        break;
+                    }
+                }
+            }
+        }
+        return new LabelTemplate();
+    }
+    public static LabelTemplate read(InputStream inputStream) throws IOException, ClassNotFoundException {
+        try (ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)){
+            return (LabelTemplate) objectInputStream.readObject();
+        }
+    }
+    public static void write(OutputStream outputStream, @NonNull LabelTemplate labelTemplate) throws IOException {
+        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream)){
+            objectOutputStream.writeObject(labelTemplate);
+        }
+    }
+
+    private File getFile(){
+        File dir = new File(mLabelDir);
+        if (!dir.exists()){
+            dir.mkdir();
+        }
+        final String name = String.format(Locale.CHINA,"%s%s%d",dir.getAbsolutePath(),File.separator,templateId);
+        return new File(name);
+    }
+
     public boolean hasItem(){
         return !printItem.isEmpty();
     }
-
-    protected LabelTemplate(Parcel in) {
-        templateId = in.readInt();
-        templateName = in.readString();
-        width = in.readInt();
-        height = in.readInt();
-        realWidth = in.readInt();
-        realHeight = in.readInt();
-        itemList = in.readString();
-        backgroundImg = in.readString();
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeInt(templateId);
-        dest.writeString(templateName);
-        dest.writeInt(width);
-        dest.writeInt(height);
-        dest.writeInt(realWidth);
-        dest.writeInt(realHeight);
-        dest.writeString(itemList);
-        dest.writeString(backgroundImg);
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    public static final Creator<LabelTemplate> CREATOR = new Creator<LabelTemplate>() {
-        @Override
-        public LabelTemplate createFromParcel(Parcel in) {
-            return new LabelTemplate(in);
-        }
-
-        @Override
-        public LabelTemplate[] newArray(int size) {
-            return new LabelTemplate[size];
-        }
-    };
 
     public int width2Dot(int dpi){
         return (int) (width * dpi * (1.0f / 25.4f));
@@ -126,20 +153,15 @@ public class LabelTemplate implements Parcelable {
         return (int) (height * dpi * (1.0f / 25.4f));
     }
 
-    public List<ItemBase> printSingleGoodsById(@Nullable DataItem.LabelGoods goods){
-        generatePrinterDataItem(goods);
-        return printItem;
-    }
-
-    public void generatePrinterDataItem(@Nullable DataItem.LabelGoods goods){
+    public void generatePrinterDataItem(@Nullable LabelGoods goods){
         if (goods != null){
-            for(ItemBase item : printItem){
+            for(ItemBase item : generatePrintItem()){
                 assignItemValue(item,goods);
             }
         }
     }
 
-    public static void assignItemValue(ItemBase item ,DataItem.LabelGoods goods){
+    public static void assignItemValue(ItemBase item ,LabelGoods goods){
         if (item instanceof DataItem){
             DataItem i = (DataItem)item;
             i.setContent(goods.getValueByField(i.getField()));
@@ -159,15 +181,6 @@ public class LabelTemplate implements Parcelable {
         return list;
     }
 
-    public static LabelTemplate parse(String json){
-        try {
-            return JSONObject.parseObject(json,LabelTemplate.class);
-        }catch (JSONException e){
-            Utils.showToast(R.string.c_label_failure,e.getMessage());
-        }
-        return new LabelTemplate();
-    }
-
     public static int width2Pixel(LabelTemplate labelTemplate , Context context){
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_MM, labelTemplate.getWidth(),context.getResources().getDisplayMetrics());
     }
@@ -176,9 +189,9 @@ public class LabelTemplate implements Parcelable {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_MM, labelTemplate.getHeight(),context.getResources().getDisplayMetrics());
     }
 
-    public List<ItemBase> printSingleGoods(DataItem.LabelGoods goods){
+    public List<ItemBase> printSingleGoods(LabelGoods goods){
         List<ItemBase> itemCopy = new ArrayList<>();
-        for (ItemBase i:printItem) {
+        for (ItemBase i:generatePrintItem()) {
             final ItemBase item = i.clone();
             assignItemValue(item,goods);
             itemCopy.add(item);
@@ -189,29 +202,16 @@ public class LabelTemplate implements Parcelable {
     private List<ItemBase> generatePrintItem(){
         float scaleX = (float)width2Dot(LabelPrintSetting.getSetting().getDpi()) / (float)realWidth;
         float scaleY =(float) height2Dot(LabelPrintSetting.getSetting().getDpi()) / (float)realHeight;
-        List<ItemBase> content = toItem();
-        for (ItemBase i:content) {
-            i.transform(scaleX,scaleY);
-            if (i instanceof DataItem){
-                ((DataItem) i).setHasMark(false);
+        List<ItemBase> content = new ArrayList<>();
+        for (ItemBase i:printItem) {
+            final ItemBase item = i.clone();
+            item.transform(scaleX,scaleY);
+            if (item instanceof DataItem){
+                ((DataItem) item).setHasMark(false);
             }
+            content.add(item);
         }
         return content;
-    }
-
-    public List<ItemBase>  toItem(){
-        final JSONArray a =  JSONArray.parseArray(itemList);
-        final List<ItemBase> list = new ArrayList<>();
-
-        for (int i = 0,size = a.size(); i < size; i ++){
-            final JSONObject obj = a.getJSONObject(i);
-            try {
-                list.add((ItemBase) obj.toJavaObject(Class.forName("com.wyc.label." + obj.getString("clsType"))));
-            }catch (ClassNotFoundException ignore){
-
-            }
-        }
-        return list;
     }
 
     public Integer getTemplateId() {
@@ -262,19 +262,6 @@ public class LabelTemplate implements Parcelable {
         this.realHeight = realHeight;
     }
 
-    public @NonNull String getItemList() {
-        return itemList;
-    }
-
-    public void setItemList(String itemList) {
-        if (itemList == null)itemList = "[]";
-
-        this.itemList = itemList;
-
-        if (!printItem.isEmpty())printItem.clear();
-        printItem.addAll(generatePrintItem());
-    }
-
     public @NonNull String getBackgroundImg() {
         return backgroundImg;
     }
@@ -284,7 +271,11 @@ public class LabelTemplate implements Parcelable {
     }
 
     public List<ItemBase> getPrintItem() {
-        return printItem;
+        List<ItemBase> content = new ArrayList<>();
+        for (ItemBase i:printItem) {
+            content.add(i.clone());
+        }
+        return content;
     }
 
     public void setPrintItem(List<ItemBase> printItem) {
@@ -313,7 +304,6 @@ public class LabelTemplate implements Parcelable {
                 ", height=" + height +
                 ", realWidth=" + realWidth +
                 ", realHeight=" + realHeight +
-                ", itemList='" + itemList + '\'' +
                 ", backgroundImg='" + backgroundImg + '\'' +
                 ", printItem=" + printItem +
                 '}';

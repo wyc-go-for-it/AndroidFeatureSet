@@ -10,7 +10,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 
-public final class TopDrawableTextView extends androidx.appcompat.widget.AppCompatTextView{
+final class TopDrawableTextView extends androidx.appcompat.widget.AppCompatTextView{
     private float mVerSpacing,mBottomSpacing;
     private final Drawable[] mDrawables;
     private Drawable mTopDrawable;

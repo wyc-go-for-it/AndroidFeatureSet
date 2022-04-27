@@ -7,11 +7,11 @@ import android.text.InputType
 import android.text.TextWatcher
 import android.view.View
 import android.widget.*
-import com.alibaba.fastjson.annotation.JSONField
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.common.BitMatrix
+import java.io.ObjectStreamException
 import kotlin.math.min
 
 
@@ -30,14 +30,12 @@ import kotlin.math.min
  */
 
 internal class BarcodeItem: CodeItemBase() {
+
     val minFontSize = LabelApp.getInstance().resources.getDimension(R.dimen.com_wyc_label_font_size_14)
     var fontSize =  LabelApp.getInstance().resources.getDimension(R.dimen.com_wyc_label_font_size_14)
-    @JSONField(serialize = false)
-    private var mBottomMarge = Rect()
-    @JSONField(serialize = false)
-    private var leftMargin = 0
-    @JSONField(serialize = false)
-    private var rightMargin = 0
+    @Transient private  var mBottomMarge = Rect()
+    @Transient private var leftMargin = 0
+    @Transient private var rightMargin = 0
 
     init {
         width = 370
@@ -48,6 +46,21 @@ internal class BarcodeItem: CodeItemBase() {
                 supportFormatList.add(it)
             }
         }
+    }
+
+    @Throws(ObjectStreamException::class)
+    private fun readResolve(): Any {
+        serializableInit()
+        return this
+    }
+
+    companion object {
+        const val serialVersionUID = 1L
+    }
+
+    override fun serializableInit() {
+        super.serializableInit()
+        mBottomMarge = Rect()
     }
 
     override fun drawItem(offsetX: Float, offsetY: Float, canvas: Canvas, paint: Paint) {

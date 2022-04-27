@@ -9,7 +9,7 @@ import android.view.View
 import android.view.WindowManager
 import androidx.annotation.CallSuper
 import androidx.core.graphics.transform
-import com.alibaba.fastjson.annotation.JSONField
+import java.io.Serializable
 import java.lang.reflect.Field
 import kotlin.math.asin
 import kotlin.math.max
@@ -32,7 +32,8 @@ import kotlin.reflect.jvm.javaField
  * @Version:        1.0
  */
 
-open class ItemBase:Cloneable{
+open class ItemBase:Cloneable,Serializable {
+
     var top = 0
     var left = 0
     var width = -1
@@ -48,16 +49,19 @@ open class ItemBase:Cloneable{
             field = value % 360
         }
 
-    var clsType = this::class.simpleName
+    @Transient private var active:Boolean = false
 
-    @JSONField(serialize = false)
-    private var active:Boolean = false
-    @JSONField(serialize = false)
-    protected var scaling:Boolean = false
-    @JSONField(serialize = false)
-    private var deleting:Boolean = false
-    @JSONField(serialize = false)
-    protected val cRECT = RectF()
+    @Transient protected var scaling:Boolean = false
+
+    @Transient private var deleting:Boolean = false
+
+    @Transient protected var cRECT = RectF()
+
+
+    @CallSuper
+    protected open fun serializableInit(){
+        cRECT = RectF()
+    }
 
     fun draw(offsetX:Float, offsetY:Float, canvas:Canvas, paint: Paint){
         updateContentRect(offsetX + left,offsetY + top)
@@ -347,17 +351,18 @@ open class ItemBase:Cloneable{
     }
 
     override fun toString(): String {
-        return "ItemBase(top=$top, left=$left, width=$width, height=$height, radian=$radian, clsType=$clsType, active=$active,scaling=$scaling, deleting=$deleting, cRECT=$cRECT)"
+        return "ItemBase(top=$top, left=$left, width=$width, height=$height, radian=$radian , active=$active,scaling=$scaling, deleting=$deleting, cRECT=$cRECT)"
     }
 
     companion object{
+        const val serialVersionUID = 1L
         @JvmField
         val CUR_RECT = RectF()
         @JvmField
         val DEL_RECT = RectF()
         @JvmField
         val SCALE_RECT = RectF()
-        @JSONField
+        @JvmField
         val ROTATE_MATRIX = Matrix()
         @JvmField
         val ACTION_RADIUS = LabelApp.getInstance().resources.getDimension(R.dimen.com_wyc_label_size_10)

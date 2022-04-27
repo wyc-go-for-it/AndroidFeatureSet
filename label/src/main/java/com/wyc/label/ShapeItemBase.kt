@@ -21,7 +21,7 @@ import kotlin.math.max
  * @Version:        1.0
  */
 
-open class ShapeItemBase: ItemBase() {
+internal open class ShapeItemBase: ItemBase() {
     init {
         width = LabelApp.getInstance().resources.getDimensionPixelOffset(R.dimen.com_wyc_label_width_88)
     }
@@ -38,6 +38,10 @@ open class ShapeItemBase: ItemBase() {
     var hasfill = false
     var hasDash = false
     var hasBorder = true
+
+    companion object {
+        const val serialVersionUID = 1L
+    }
 
     override fun drawItem(offsetX: Float, offsetY: Float, canvas: Canvas, paint: Paint) {
         paint.strokeWidth = borderWidth

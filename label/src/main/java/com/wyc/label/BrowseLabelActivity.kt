@@ -4,17 +4,16 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Parcelable
 import android.view.ContextMenu
 import android.view.ContextMenu.ContextMenuInfo
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.wyc.label.room.AppDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -44,7 +43,7 @@ class BrowseLabelActivity : BaseActivity() {
         mAdapter = LabelAdapter(this)
 
         mCoroutineScope.launch {
-            val a = AppDatabase.getInstance().LabelTemplateDao().getAll()
+            val a = LabelTemplate.getLabelList()
             withContext(Dispatchers.Main){
                 mAdapter!!.setDataForList(a)
             }
@@ -53,7 +52,7 @@ class BrowseLabelActivity : BaseActivity() {
         mAdapter!!.setSelectListener(object :LabelAdapter.OnSelectFinishListener{
             override fun onFinish(item: LabelTemplate) {
                 val intent = Intent()
-                intent.putExtra(LABEL_KEY, item)
+                intent.putExtra(LABEL_KEY,  item.templateId)
                 setResult(RESULT_OK, intent)
                 finish()
             }
@@ -74,13 +73,12 @@ class BrowseLabelActivity : BaseActivity() {
         when (item.itemId) {
             1 -> {
                 mCurLabel?.let {
-                    AppDatabase.getInstance().LabelTemplateDao().deleteTemplateById(it)
-                    mAdapter?.deleteLabel(it)
+                    if (it.deleteLabel())mAdapter?.deleteLabel(it)
                 }
             }
             2 -> {
                 mCurLabel?.let {
-                    LabelDesignActivity.start(this,it)
+                    LabelDesignActivity.start(this,it.templateId)
                     finish()
                 }
             }

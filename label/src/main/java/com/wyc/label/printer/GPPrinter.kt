@@ -32,10 +32,12 @@ import java.util.*
  * @Version:        1.0
  */
 
-internal class GPPrinter: CallbackListener {
+class GPPrinter: CallbackListener {
 
     companion object {
+        @JvmStatic
         private var printer: GPPrinter? = null
+        @JvmStatic
         private var portManager: PortManager? = null
 
         @JvmStatic
@@ -158,7 +160,11 @@ internal class GPPrinter: CallbackListener {
             }
         }
         @JvmStatic
-        fun getGPTscCommand(labelTemplate: LabelTemplate, labelGoods: DataItem.LabelGoods?): LabelCommand {
+        fun hasConn():Boolean{
+            return portManager != null && portManager!!.connectStatus
+        }
+        @JvmStatic
+        fun getGPTscCommand(labelTemplate: LabelTemplate, labelGoods: LabelGoods?): LabelCommand {
             val tsc = LabelCommand()
             if (labelGoods != null) {
                 val setting = getSetting()

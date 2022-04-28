@@ -75,7 +75,7 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
                         contentResolver.openInputStream(uri)?.use { stream ->
                             val t = LabelTemplate.read(stream)
                             withContext(Dispatchers.Main) {
-                                updateLabel(t)
+                                importLabel(t)
                             }
                         }
                     }catch (e:IOException){
@@ -185,6 +185,13 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
         mLabelView?.updateLabelTemplate(label)
         initLabelSize()
         initLabelName()
+    }
+    private fun importLabel(label:LabelTemplate){
+        mLabelView?.getLabelTemplate()?.apply {
+            label.templateId = templateId
+            label.templateName = templateName
+            updateLabel(label)
+        }
     }
 
     private fun initLabelName(){

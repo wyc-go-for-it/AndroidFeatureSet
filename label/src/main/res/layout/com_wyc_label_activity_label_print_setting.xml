@@ -353,6 +353,56 @@
                 android:textSize="@dimen/com_wyc_label_font_size_16" />
         </LinearLayout>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/com_wyc_label_height_45"
+            android:layout_marginStart="@dimen/com_wyc_label_margin_5"
+            android:layout_marginTop="@dimen/com_wyc_label_margin_5"
+            android:layout_marginEnd="@dimen/com_wyc_label_margin_5"
+            android:background="@drawable/com_wyc_label_round_style"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:padding="5dp"
+                android:text="@string/com_wyc_label_print_density"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_16" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <Button
+                android:id="@+id/d_minus"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="@dimen/com_wyc_label_size_22"
+                android:layout_height="@dimen/com_wyc_label_size_22"
+                android:layout_marginStart="@dimen/com_wyc_label_size_35"
+                android:background="@drawable/com_wyc_label_minus" />
+
+            <TextView
+                android:id="@+id/density"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:padding="@dimen/com_wyc_label_margin_8"
+                android:text="@{String.valueOf(setting.density)}"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_18" />
+
+            <Button
+                android:id="@+id/d_plus"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="@dimen/com_wyc_label_size_22"
+                android:layout_height="22dp"
+                android:layout_marginEnd="@dimen/com_wyc_label_margin_18"
+                android:background="@drawable/com_wyc_label_plus" />
+        </LinearLayout>
+
         <TextView
             android:id="@+id/print_template_tv"
             android:layout_width="match_parent"

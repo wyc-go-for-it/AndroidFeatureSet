@@ -1,6 +1,7 @@
 package com.wyc.label;
 
 import android.content.Context;
+import android.util.Log;
 import android.util.TypedValue;
 
 import androidx.annotation.NonNull;
@@ -55,7 +56,7 @@ public class LabelTemplate implements Serializable {
     @NonNull
     private Integer realHeight = height2Pixel(this, LabelApp.Companion.getInstance());
 
-    private static final String mLabelDir = String.format("%s%s%s%s", LabelApp.getInstance().getFilesDir(), File.separator,"template",File.separator);
+    transient private static final String mLabelDir = LabelApp.getDir();
 
     /**
      * 背景base64字符串
@@ -88,8 +89,10 @@ public class LabelTemplate implements Serializable {
         File[] names = dir.listFiles();
         if (names != null){
             for (File f : names){
+                if (f.isDirectory())continue;
                 try (ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(f))){
-                    list.add((LabelTemplate) objectInputStream.readObject());
+                    final Object obj = objectInputStream.readObject();
+                    if (obj instanceof LabelTemplate)list.add((LabelTemplate)obj );
                 } catch (IOException | ClassNotFoundException e) {
                     e.printStackTrace();
                     Utils.showToast(e.getMessage());
@@ -134,11 +137,11 @@ public class LabelTemplate implements Serializable {
     }
 
     private File getFile(){
-        File dir = new File(mLabelDir);
-        if (!dir.exists()){
-            dir.mkdir();
+        File file = new File(mLabelDir);
+        if (!file.exists()){
+            file.mkdirs();
         }
-        final String name = String.format(Locale.CHINA,"%s%s%d",dir.getAbsolutePath(),File.separator,templateId);
+        final String name = String.format(Locale.CHINA,"%s%s%d",file.getAbsolutePath(),File.separator,templateId);
         return new File(name);
     }
 

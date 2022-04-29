@@ -74,6 +74,7 @@
     <string name="com_wyc_label_rotate_degree_setting">标签旋转设置</string>
     <string name="com_wyc_label_cur_label_model">当前默认模板</string>
     <string name="com_wyc_label_print_num">打印份数</string>
+    <string name="com_wyc_label_print_density">打印浓度</string>
     <string name="com_wyc_label_hor_offset">水平偏移</string>
     <string name="com_wyc_label_ver_offset">垂直偏移</string>
     <string name="com_wyc_label_dpi">分辨率</string>

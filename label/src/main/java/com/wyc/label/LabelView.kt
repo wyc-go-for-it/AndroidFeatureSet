@@ -373,17 +373,17 @@ class LabelView: View {
             mOffsetX.toFloat(), (realHeight + mOffsetY).toFloat(),mPaint)
     }
     private fun drawBackground(canvas: Canvas){
-        mBackground?.apply {
-            //画阴影
-            val color = mPaint.color
-            mPaint.color = Color.WHITE
-            mPaint.setShadowLayer(15f,0f,8f,Color.GRAY)
-            canvas.drawRect(
-                mOffsetX.toFloat(), mOffsetY.toFloat(),
-                (realWidth + mOffsetX).toFloat(), (realHeight + mOffsetY).toFloat(),mPaint)
-            mPaint.color = color
-            mPaint.setShadowLayer(0f,0f,0f,Color.GRAY)
+        //画阴影
+        val color = mPaint.color
+        mPaint.color = Color.WHITE
+        mPaint.setShadowLayer(15f,0f,8f,Color.GRAY)
+        canvas.drawRect(
+            mOffsetX.toFloat(), mOffsetY.toFloat(),
+            (realWidth + mOffsetX).toFloat(), (realHeight + mOffsetY).toFloat(),mPaint)
+        mPaint.color = color
+        mPaint.setShadowLayer(0f,0f,0f,Color.GRAY)
 
+        mBackground?.apply {
             val matrix = Matrix()
             matrix.setScale(realWidth.toFloat() / width.toFloat(),realHeight.toFloat() / height.toFloat())
             canvas.save()

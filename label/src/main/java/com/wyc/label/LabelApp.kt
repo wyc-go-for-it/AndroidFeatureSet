@@ -1,7 +1,12 @@
 package com.wyc.label
 
+import android.Manifest
 import android.app.Application
+import android.content.pm.PackageManager
 import android.graphics.Color
+import android.os.Environment
+import androidx.core.content.ContextCompat
+import java.io.File
 
 
 /**
@@ -29,6 +34,20 @@ class LabelApp {
         @JvmStatic
         fun getInstance():Application{
             return app!!
+        }
+        @JvmStatic
+        fun getDir():String{
+            return if (ContextCompat.checkSelfPermission(app!!, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                String.format(
+                    "%s%s%s%s",
+                    Environment.getExternalStorageDirectory().absolutePath,
+                    File.separator,
+                    "template",
+                    File.separator
+                )
+            }else{
+                String.format("%s%s%s%s", app!!.filesDir, File.separator, "template", File.separator)
+            }
         }
         @JvmStatic
         fun initThemeColor(c:Int){

@@ -59,23 +59,23 @@ internal class LabelPrintSetting:Serializable {
         return ""
     }
 
+    var density = 4
+        get() {
+            if (field < 1)return 1
+            if (field > 15)return 15
+            return field
+        }
+
     companion object{
         const val serialVersionUID = 1L
         @JvmStatic
         private fun getFile(): File {
-            val dirPath = String.format(
-                "%s%s%s%s",
-                getInstance().filesDir,
-                File.separator,
-                "setting",
-                File.separator
-            )
+            val dirPath =String.format("%s%s%s",LabelApp.getDir(), File.separator,"setting")
             val dir = File(dirPath)
             if (!dir.exists()) {
-                dir.mkdir()
+                dir.mkdirs()
             }
-            val name =
-                String.format(Locale.CHINA, "%s%s%s", dir.absolutePath, File.separator,"setting")
+            val name = String.format(Locale.CHINA, "%s%s%s", dir.absolutePath, File.separator,"setting")
             return File(name)
         }
         @JvmStatic
@@ -85,7 +85,10 @@ internal class LabelPrintSetting:Serializable {
         @JvmStatic
         fun getSetting(): LabelPrintSetting {
             try {
-                ObjectInputStream(FileInputStream(getFile())).use { objectInputStream -> return objectInputStream.readObject() as LabelPrintSetting }
+                ObjectInputStream(FileInputStream(getFile())).use {
+                    val obj = it.readObject()
+                    if (obj is LabelPrintSetting) return obj
+                }
             } catch (e: IOException) {
                 e.printStackTrace()
                 if (e !is FileNotFoundException)showToast(e.message)

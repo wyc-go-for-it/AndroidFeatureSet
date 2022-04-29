@@ -85,6 +85,10 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
         findViewById<TextView>(R.id.plusY).setOnClickListener(this)
         findViewById<TextView>(R.id.minusY).setOnClickListener(this)
 
+        findViewById<TextView>(R.id.d_minus).setOnClickListener(this)
+        findViewById<TextView>(R.id.d_plus).setOnClickListener(this)
+
+
         findViewById<TextView>(R.id.print_template_tv).setOnClickListener(this)
         findViewById<TextView>(R.id.cur_template_tv).setOnClickListener(this)
     }
@@ -144,6 +148,17 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
                 val setting = bind?.setting
                 val num = setting?.offsetY?:0
                 setting?.offsetY = num - i
+                bind?.invalidateAll()
+            }
+            R.id.d_minus, R.id.d_plus->{
+                var i = -1
+                if (v.id == R.id.d_minus){
+                    i = 1
+                }
+                val bind = DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)
+                val setting = bind?.setting
+                val num = setting?.density?:1
+                setting?.density  = num - i
                 bind?.invalidateAll()
             }
             R.id.print_template_tv->{

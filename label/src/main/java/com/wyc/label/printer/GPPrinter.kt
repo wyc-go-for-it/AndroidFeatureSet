@@ -170,11 +170,11 @@ class GPPrinter: CallbackListener {
                 val setting = getSetting()
                 val offsetX = setting.offsetX
                 val offsetY = setting.offsetY
-                tsc.addSize(labelTemplate.getWidth(), labelTemplate.getHeight())
+                tsc.addSize(labelTemplate.width, labelTemplate.height)
                 tsc.addGap(5)
                 tsc.addDirection(LabelCommand.DIRECTION.FORWARD, LabelCommand.MIRROR.NORMAL)
                 tsc.addReference(offsetX, offsetY)
-                tsc.addDensity(LabelCommand.DENSITY.DNESITY4)
+                tsc.addDensity(fromInt(setting.density))
                 tsc.addCls()
                 val data = labelTemplate.printSingleGoods(labelGoods)
                 for (it in data) {
@@ -185,6 +185,8 @@ class GPPrinter: CallbackListener {
             }
             return tsc
         }
+        @JvmStatic
+        private fun fromInt(value: Int) = LabelCommand.DENSITY.values().first { it.value == value }
     }
 
     override fun onConnecting() {

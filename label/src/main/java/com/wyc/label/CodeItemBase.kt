@@ -43,7 +43,7 @@ internal open class CodeItemBase: ItemBase(){
     var field = ""
 
     @Transient protected var mBitmap:Bitmap? = null
-    @Transient var hasMark = true
+    var hasMark = true
     protected val supportFormatList = mutableListOf<BarcodeFormat>()
 
     @Throws(ObjectStreamException::class)

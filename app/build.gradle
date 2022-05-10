@@ -52,4 +52,6 @@ dependencies {
     debugApi 'com.squareup.leakcanary:leakcanary-android:1.6'
     releaseApi 'com.squareup.leakcanary:leakcanary-android-no-op:1.6'
     testImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.6'
+
+    implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.50'
 }

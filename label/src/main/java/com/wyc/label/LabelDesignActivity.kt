@@ -3,12 +3,14 @@ package com.wyc.label
 import android.app.Activity
 import android.app.Dialog
 import android.bluetooth.BluetoothAdapter
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Point
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
@@ -301,7 +303,9 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
 
         intent.putExtra("scale", true)
         intent.putExtra("return-data", false)
+
         val imgCropUri = createCropImageFile()
+
         intent.putExtra(MediaStore.EXTRA_OUTPUT, imgCropUri)
         intent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString())
         intent.putExtra("noFaceDetection", false)
@@ -311,7 +315,29 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
     private fun createCropImageFile(): Uri? {
         val imageFileName = "clip_wyc_." + Bitmap.CompressFormat.JPEG.toString()
         val storageDir: String = getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath ?:"wyc"
-        return Uri.parse("file://" + File.separator + storageDir + File.separator + imageFileName)
+        return if (Build.VERSION.SDK_INT >= 30) {
+
+            val paramFile = File(storageDir + imageFileName)
+            val localContentValues = ContentValues()
+            localContentValues.put(MediaStore.Images.ImageColumns.TITLE, paramFile.name)
+            localContentValues.put(MediaStore.Images.ImageColumns.DISPLAY_NAME, paramFile.name)
+            localContentValues.put(MediaStore.Images.ImageColumns.MIME_TYPE, "image/*")
+            localContentValues.put(MediaStore.Images.ImageColumns.DATE_MODIFIED,
+                System.currentTimeMillis())
+            localContentValues.put(MediaStore.Images.ImageColumns.DATE_ADDED,
+                System.currentTimeMillis())
+            localContentValues.put(MediaStore.Images.ImageColumns.ORIENTATION, 0)
+            localContentValues.put(MediaStore.Images.ImageColumns.DATE_TAKEN,
+                System.currentTimeMillis())
+            localContentValues.put(MediaStore.Images.ImageColumns.DATA, paramFile.absolutePath)
+            localContentValues.put(MediaStore.Images.ImageColumns.SIZE, paramFile.length())
+
+            LabelApp.getInstance().contentResolver.insert(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                localContentValues
+            )
+
+        } else Uri.parse("file://" + File.separator + storageDir + File.separator + imageFileName)
     }
 
     private fun openAlbum() {

@@ -761,8 +761,7 @@ class LabelView: View {
             template.realWidth = realWidth
             template.realHeight = realHeight
             template.printItem = contentList
-            template.save()
-            Utils.showToast(R.string.com_wyc_label_success)
+            if (template.save()) Utils.showToast(R.string.com_wyc_label_success)
         }
     }
 

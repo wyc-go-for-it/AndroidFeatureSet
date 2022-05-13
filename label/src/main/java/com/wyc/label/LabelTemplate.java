@@ -72,15 +72,17 @@ public class LabelTemplate implements Serializable {
         templateName = String.format(Locale.CHINA,"%s_%d_%d","未命名",width,height);
     }
 
-    public void save(){
+    public boolean save(){
         File file = getFile();
         file.delete();
         try{
             write(new FileOutputStream(file),this);
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
             Utils.showToast(e.getMessage());
         }
+        return false;
     }
 
     public static List<LabelTemplate> getLabelList(){

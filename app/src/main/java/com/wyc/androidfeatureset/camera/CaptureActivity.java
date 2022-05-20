@@ -23,6 +23,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.wyc.androidfeatureset.R;
+import com.wyc.androidfeatureset.YUVUtils;
 import com.wyc.logger.Logger;
 
 import org.opencv.android.BaseLoaderCallback;
@@ -77,6 +78,20 @@ public class CaptureActivity extends AppCompatActivity implements SensorEventLis
         initThumb();
         initSensor();
 
+
+        byte[] t = new byte[]{1,2,3,4,5,6,
+                              7,8,9,10,11,12,
+                              13,14,15,16,17,18,
+                              19,20,21,22,23,24,
+
+                              44,45,55,56,66,67,
+                              77,78,88,89,98,99};
+
+        Logger.d(Arrays.toString(t));
+
+        byte[] n = YUVUtils.rotateYUV_420_90(t,6,4,null);
+
+        Logger.d(Arrays.toString(n));
      }
 
     private final BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -87,59 +102,25 @@ public class CaptureActivity extends AppCompatActivity implements SensorEventLis
 
                     w = (w + 16 -1) & (-16);
 
-                    int left = (w >> 1) & ~1,top = (h>> 1) & ~1;
-                    Rect rect = new Rect(left,top,w,h);
+                    int left = w >> 1,top = h>>1;
+                    final Rect rect = new Rect(left,top,w,h);
 
                     int width = rect.width();
                     int height = rect.height();
 
-                    // If the caller asks for the entire underlying image, save the copy and give them the
-                    // original data. The docs specifically warn that result.length must be ignored.
-                    if (width == w && height == h) {
-
-                    }
-
-                    int area = width * (height + height / 2);
                     if (mCacheMatrix == null){
-                        mCacheMatrix = new byte[area];
-                    }
-                    int inputOffset = 0;
-
-
-/*                    y_size = stride * height
-                    c_stride = ALIGN(stride/2, 16)
-                    c_size = c_stride * height/2
-                    size = y_size + c_size * 2
-                    cr_offset = y_size
-                    cb_offset = y_size + c_size*/
-
-                    //y
-                    for (int y = 0; y < height; y++) {
-                        int outputOffset = y * width;
-                        System.arraycopy(data, inputOffset, mCacheMatrix, outputOffset, width);
-                        inputOffset += w;
+                        mCacheMatrix = new byte[width * (height + height / 2)];
                     }
 
-                    int c_stride = ((w >> 1) + 16 -1) & (-16);
-                    //v
-                    int vOffset = w * h;
-                    for (int y =  height; y < height + height / 4; y++) {
-                        System.arraycopy(data, vOffset, mCacheMatrix, y * width, width);
-                        vOffset +=  w;
-                    }
-                    //u
-                    //vOffset = w * h + c_stride * h / 2;
-                    for (int y =  height + height / 4; y < height + height / 2; y++) {
-                        System.arraycopy(data, vOffset, mCacheMatrix, y * width, width);
-                        vOffset += w  ;
-                    }
+                    YUVUtils.clipYUV_420(data,w,h,mCacheMatrix,rect);
 
-                    com.wyc.androidfeatureset.Utils.flipYUV_420ByDiagonalY_axis(mCacheMatrix,width,height);
+
+                   mCacheMatrix = YUVUtils.rotateYUV_420_90(mCacheMatrix,width,height,null);
 
                     if (mCacheBitmap == null){
-                        mCacheBitmap = Bitmap.createBitmap(rect.width(),rect.height(), Bitmap.Config.ARGB_8888);
+                        mCacheBitmap = Bitmap.createBitmap(rect.height(), rect.width(),Bitmap.Config.ARGB_8888);
                     }
-                    if (mYuvFrameData == null)mYuvFrameData = new Mat(rect.height() + rect.height() / 2,rect.width(), CvType.CV_8UC1);
+                    if (mYuvFrameData == null)mYuvFrameData = new Mat(rect.width() + rect.width() / 2,rect.height(), CvType.CV_8UC1);
                     if (mRgba == null)mRgba = new Mat();
 
                     mYuvFrameData.put(0,0,mCacheMatrix);

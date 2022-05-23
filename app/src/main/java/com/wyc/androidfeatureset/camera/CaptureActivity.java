@@ -89,9 +89,9 @@ public class CaptureActivity extends AppCompatActivity implements SensorEventLis
 
         Logger.d(Arrays.toString(t));
 
-        byte[] n = YUVUtils.rotateYUV_420_90(t,6,4,null);
+        YUVUtils.yuv420ToBitmap(t,6,4,null);
 
-        Logger.d(Arrays.toString(n));
+        //Logger.d(Arrays.toString(n));
      }
 
     private final BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -115,12 +115,12 @@ public class CaptureActivity extends AppCompatActivity implements SensorEventLis
                     YUVUtils.clipYUV_420(data,w,h,mCacheMatrix,rect);
 
 
-                   mCacheMatrix = YUVUtils.rotateYUV_420_90(mCacheMatrix,width,height,null);
+                    mCacheMatrix = YUVUtils.rotateYUV_420_90(mCacheMatrix,width,height,null);
 
                     if (mCacheBitmap == null){
                         mCacheBitmap = Bitmap.createBitmap(rect.height(), rect.width(),Bitmap.Config.ARGB_8888);
                     }
-                    if (mYuvFrameData == null)mYuvFrameData = new Mat(rect.width() + rect.width() / 2,rect.height(), CvType.CV_8UC1);
+/*                    if (mYuvFrameData == null)mYuvFrameData = new Mat(rect.width() + rect.width() / 2,rect.height(), CvType.CV_8UC1);
                     if (mRgba == null)mRgba = new Mat();
 
                     mYuvFrameData.put(0,0,mCacheMatrix);
@@ -131,7 +131,9 @@ public class CaptureActivity extends AppCompatActivity implements SensorEventLis
                         Imgproc.cvtColor(mYuvFrameData, mRgba, Imgproc.COLOR_YUV2RGB_I420, 4);  // COLOR_YUV2RGBA_YV12 produces inverted colors
 
 
-                    Utils.matToBitmap(mRgba,mCacheBitmap);
+                    Utils.matToBitmap(mRgba,mCacheBitmap);*/
+
+                    YUVUtils.yuv420ToBitmap(mCacheMatrix,height,width,mCacheBitmap);
 
                     small_preview.setImageBitmap(mCacheBitmap);
                 });

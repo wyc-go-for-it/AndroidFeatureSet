@@ -1,5 +1,6 @@
 package com.wyc.androidfeatureset;
 
+import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 
@@ -153,7 +154,7 @@ public class YUVUtils {
         YYYY
         VUVU
     */
-        if (s_w * s_h > src.length){
+        if (s_w * s_h * 1.5 > src.length){
             throw new IllegalArgumentException("src is too small.");
         }
 
@@ -191,37 +192,73 @@ public class YUVUtils {
         byte[] line = new byte[s_w];
 
         while (top < s_h){
-
             System.arraycopy(src,top * s_w,line,0,s_w);
-
             for (int i = 0,len = line.length;i < len;i++){
-
                 dst[(i + 1) * s_h - top - 1] = line[i];
             }
-
             top++;
-
         }
 
-        top = s_h;
-
-        int toffset = s_h * s_w;
-        int h = 0,k = 0;
+        int tOffset = s_h * s_w,offset;
+        int h = 0;
         while (top < s_h + s_h / 2){
-
             System.arraycopy(src,top * s_w,line,0,s_w);
-
-            for (int i = 0,len = line.length;i < len;i+=2,k++){
-
-                final int offset = toffset + (s_w * (h + 1)) - i - 1    ;
-                dst[offset ] = line[i ];
-                dst[offset - 1] = line[i+ 1];
+            for (int i = 0,k = 0,len = line.length;i < len;i+=2,k++){
+                offset = tOffset + (k + 1) * s_h - h - 1;
+                dst[offset ] = line[i+ 1];
+                dst[offset - 1] = line[i];
             }
-            h++;
+            h+=2;
             top++;
-
         }
-
         return dst;
     }
+
+    public static Bitmap yuv420ToBitmap(@NonNull byte[] src, int s_w, int s_h,Bitmap dst){
+        /*
+        NV21
+
+        YYYY
+        YYYY
+        VUVU
+
+    */
+        if (s_w * s_h * 1.5 > src.length){
+            throw new IllegalArgumentException("src is too small.");
+        }
+        if (dst == null)dst = Bitmap.createBitmap(s_w,s_h,Bitmap.Config.ARGB_8888);
+
+        int r,g,b;
+        int y,v,u;
+        int k;
+        int xOffset,yOffset;
+        int newPixel = 0;
+        for (int j = 0;j < s_h;j ++){
+            k = -2;
+            xOffset = j * s_w;
+            yOffset = s_h * s_w + (j >> 1) * s_w;
+            for (int i = 0 ;i < s_w;i++ ){
+                y = (0xff & src[xOffset + i]);
+
+                if (i % 2 == 0)k += 2;
+
+                v = (0xff & src[yOffset + k]) - 128;
+                u = (0xff & src[yOffset +  k + 1]) - 128;
+
+                r = y + v + ((v * 103) >> 8);
+                g= y - ((u * 88) >> 8) - ((v * 183) >> 8);
+                b= y + u + ((u * 198) >> 8);
+
+
+                newPixel |= (0xff);
+                newPixel = newPixel << 8 | r & 0xff ;
+                newPixel = newPixel << 8 | g & 0xff ;
+                newPixel = newPixel << 8 | b & 0xff ;
+
+                dst.setPixel(i,j,newPixel);
+            }
+        }
+        return dst;
+    }
+
 }

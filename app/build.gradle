@@ -42,6 +42,7 @@ dependencies {
     implementation project(path: ':opencv')
     implementation project(path:':logger')
     implementation project(path:':label')
+    implementation project(path:':video')
 
     implementation 'com.jakewharton:butterknife:10.1.0'
     annotationProcessor 'com.jakewharton:butterknife-compiler:10.1.0'

@@ -20,6 +20,7 @@ import com.wyc.androidfeatureset.provider.ProviderActivity;
 import com.wyc.label.LabelPrintSettingActivity;
 import com.wyc.label.printer.LabelPrintUtils;
 import com.wyc.logger.Logger;
+import com.wyc.video.activity.VideoRelatedActivity;
 
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -67,7 +68,6 @@ public class MainActivity extends AppCompatActivity {
     void label(){
         LabelPrintSettingActivity.start(this);
     }
-
     @OnClick(R.id.sm2)
     void sing(){
         SM2 clz = SM2.getInstance();
@@ -84,5 +84,9 @@ public class MainActivity extends AppCompatActivity {
             boolean verify = clz.SM2Verify(SM2Demo.hexStringToBytes(x), SM2Demo.hexStringToBytes(y), sourceData, sign);
             Logger.d("VerifyResult：" + verify);
         }
+    }
+    @OnClick(R.id.video)
+    void video(){
+        VideoRelatedActivity.start(this);
     }
 }

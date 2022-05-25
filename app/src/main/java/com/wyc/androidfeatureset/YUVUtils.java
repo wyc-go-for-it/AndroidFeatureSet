@@ -12,34 +12,8 @@ import java.util.Arrays;
 import java.util.Locale;
 
 public class YUVUtils {
-    public static void flipYUV_420ByDiagonal(byte[] src, byte[] des, int width, int height) {
-        /*
-        YYYY
-        YYYY
-        VUVU
-    */
 
-        int wh = width * height;
-        int k = 0;
-        for(int i=height - 1;i >= 0;i--) {
-            for(int j=width - 1;j >= 0;j--)
-            {
-                des[k] = src[width*i + j];
-                k++;
-            }
-        }
-
-        for(int i=height / 2 - 1;i >= 0;i--) {
-            for(int j=width - 1;j >=0 ;j-=2)
-            {
-                des[k] = src[wh+ width*i + j - 1];
-                des[k+1]=src[wh + width*i + j];
-                k+=2;
-            }
-        }
-    }
-
-    public static void flipYUV_420ByDiagonalPlus(byte[] src, int width, int height) {
+    public static void flipYUV_420By_180(byte[] src, int width, int height) {
         /*
         YYYY
         YYYY
@@ -58,7 +32,6 @@ public class YUVUtils {
             src[right] ^= src[left];
             src[left] ^= src[right];
         }
-
     }
 
     public static void flipYUV_420ByY_axis(byte[] src, int width, int height){
@@ -158,7 +131,7 @@ public class YUVUtils {
             throw new IllegalArgumentException("src is too small.");
         }
 
-        if (region.left + region.width() > s_w || region.top + region.height() > s_h){
+        if (region.left > 0 && region.left + region.width() > s_w || region.top > 0 && region.top + region.height() > s_h){
             throw new IllegalArgumentException("clip region is not in src.");
         }
 
@@ -187,34 +160,27 @@ public class YUVUtils {
     */
         if (dst == null)dst = new byte[src.length];
 
-        int top = 0;
-
-        byte[] line = new byte[s_w];
-
-        while (top < s_h){
-            System.arraycopy(src,top * s_w,line,0,s_w);
-            for (int i = 0,len = line.length;i < len;i++){
-                dst[(i + 1) * s_h - top - 1] = line[i];
+        for (int i = 0;i < s_h;i ++){
+            for (int j = 0;j < s_w; j ++){
+                dst[(j + 1) * s_h - i - 1] = src[i * s_w + j];
             }
-            top++;
         }
 
-        int tOffset = s_h * s_w,offset;
-        int h = 0;
-        while (top < s_h + s_h / 2){
-            System.arraycopy(src,top * s_w,line,0,s_w);
-            for (int i = 0,k = 0,len = line.length;i < len;i+=2,k++){
-                offset = tOffset + (k + 1) * s_h - h - 1;
-                dst[offset ] = line[i+ 1];
-                dst[offset - 1] = line[i];
+        int tOffset = s_w * s_h - 1,offset,srcOffset,vOffset;
+        for (int i = s_h;i <  s_h + s_h / 2;i ++){
+            srcOffset = i * s_w;
+            vOffset = (i - s_h) * 2;
+            for (int j = 0;j < s_w; j +=2){
+                offset = tOffset + (j / 2 + 1) * s_h - vOffset;
+                dst[offset] = src[srcOffset + j + 1];
+                dst[offset - 1] = src[srcOffset + j];
             }
-            h+=2;
-            top++;
         }
+
         return dst;
     }
 
-    public static Bitmap yuv420ToBitmap(@NonNull byte[] src, int s_w, int s_h,Bitmap dst){
+    public static int[] yuv420ToARGB(@NonNull byte[] src, int s_w, int s_h , int[] pixels){
         /*
         NV21
 
@@ -226,39 +192,99 @@ public class YUVUtils {
         if (s_w * s_h * 1.5 > src.length){
             throw new IllegalArgumentException("src is too small.");
         }
-        if (dst == null)dst = Bitmap.createBitmap(s_w,s_h,Bitmap.Config.ARGB_8888);
+
+        if (pixels == null)
+            pixels = new int[s_w * s_h];
+        else if (pixels.length < s_w * s_h){
+            throw new IllegalArgumentException("pixels is too small.");
+        }
 
         int r,g,b;
-        int y,v,u;
-        int k;
+        int y = 0,v = 0,u = 0;
         int xOffset,yOffset;
-        int newPixel = 0;
+
         for (int j = 0;j < s_h;j ++){
-            k = -2;
             xOffset = j * s_w;
             yOffset = s_h * s_w + (j >> 1) * s_w;
-            for (int i = 0 ;i < s_w;i++ ){
+            for (int i = 0 ;i < s_w;i++){
                 y = (0xff & src[xOffset + i]);
 
-                if (i % 2 == 0)k += 2;
-
-                v = (0xff & src[yOffset + k]) - 128;
-                u = (0xff & src[yOffset +  k + 1]) - 128;
+                if ((i & 1) == 0){
+                    v = (0xff & src[yOffset++]) - 128;
+                    u = (0xff & src[yOffset++]) - 128;
+                }
 
                 r = y + v + ((v * 103) >> 8);
                 g= y - ((u * 88) >> 8) - ((v * 183) >> 8);
                 b= y + u + ((u * 198) >> 8);
 
+                if (r < 0)
+                    r = 0;
+                else if (r > 255)
+                    r = 255;
+                if (g < 0)
+                    g = 0;
+                else if (g > 255)
+                    g = 255;
+                if (b < 0)
+                    b = 0;
+                else if (b > 255)
+                    b = 255;
 
-                newPixel |= (0xff);
-                newPixel = newPixel << 8 | r & 0xff ;
-                newPixel = newPixel << 8 | g & 0xff ;
-                newPixel = newPixel << 8 | b & 0xff ;
+                pixels[xOffset + i] = 0xff000000 | (r << 16) | (g << 8) | b;
 
-                dst.setPixel(i,j,newPixel);
+/*                int y1192 = 1192 * y;
+                r = (y1192 + 1634 * v);
+                g = (y1192 - 833 * v - 400 * u);
+                b = (y1192 + 2066 * u);
+                if (r < 0)
+                    r = 0;
+                else if (r > 262143)
+                    r = 262143;
+                if (g < 0)
+                    g = 0;
+                else if (g > 262143)
+                    g = 262143;
+                if (b < 0)
+                    b = 0;
+                else if (b > 262143)
+                    b = 262143;
+
+
+                pixels[xOffset + i] = 0xff000000 | ((r << 6) & 0xff0000)
+                        | ((g >> 2) & 0xff00) | ((b >> 10) & 0xff);*/
             }
         }
-        return dst;
+
+        return pixels;
     }
 
+    public static byte[] rotateYUV_420_270(@NonNull byte[] src, int s_w, int s_h,byte[] dst){
+        /*
+        YYYY
+        YYYY
+        VUVU
+    */
+        if (dst == null)dst = new byte[src.length];
+
+        int srcOffset;
+        for (int i = 0;i < s_h;i ++){
+            srcOffset = i * s_w;
+            for (int j = 0;j < s_w; j++){
+                dst[(s_w - 1 - j) * s_h + i ] = src[srcOffset + j];
+            }
+        }
+
+        int tOffset = s_w * s_h ,offset;
+        for (int i = s_h,k = 0;i <  s_h + s_h / 2;i ++,k++){
+            srcOffset = i * s_w;
+            for (int j = s_w;j > 0; j -=2){
+                offset = tOffset + ((s_w - j) >> 1) * s_h - (s_h - i) * 2;
+                dst[offset] = src[srcOffset + j - 2];
+                dst[offset + 1] = src[srcOffset + j - 1];
+            }
+        }
+
+        return dst;
+    }
 }

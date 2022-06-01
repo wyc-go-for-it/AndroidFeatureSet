@@ -2,14 +2,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.wyc.video">
 
+    <uses-permission android:name="android.permission.CAMERA" />
+
     <application>
         <activity
+            android:name=".activity.CameraSurfaceViewActivity"
+            android:theme="@style/wyc_video_ActivityTheme"
+            android:exported="false" />
+        <activity
             android:name=".activity.VideoRelatedActivity"
-            android:exported="true" android:theme="@style/wyc_video_ActivityTheme">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            android:exported="true"
+            android:theme="@style/wyc_video_ActivityTheme">
         </activity>
     </application>
 

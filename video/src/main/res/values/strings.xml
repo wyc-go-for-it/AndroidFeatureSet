@@ -3,5 +3,5 @@
     <string name="wyc_video_back">返回</string>
     <string name="video_related">视频相关</string>
     <string name="hello_video">hello_video</string>
-    <string name="useSurfaceView" >useSurfaceView</string>
+    <string name="useSurfaceView">useSurfaceView</string>
 </resources>

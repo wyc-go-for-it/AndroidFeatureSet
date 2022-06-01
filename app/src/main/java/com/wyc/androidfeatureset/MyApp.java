@@ -7,6 +7,7 @@ import com.squareup.leakcanary.LeakCanary;
 import com.wyc.label.LabelApp;
 import com.wyc.logger.AndroidLogAdapter;
 import com.wyc.logger.Logger;
+import com.wyc.video.VideoApp;
 
 /**
  * @ProjectName: AndroidFeatureSet
@@ -29,6 +30,7 @@ public class MyApp extends Application {
             StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder().detectAll().penaltyLog().build());
         }
         LabelApp.initApp(this);
+        VideoApp.initApp(this);
         LeakCanary.install(this);
         Logger.addLogAdapter(new AndroidLogAdapter());
     }

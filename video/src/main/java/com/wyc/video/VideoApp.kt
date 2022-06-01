@@ -36,17 +36,17 @@ class VideoApp {
             return app!!
         }
         @JvmStatic
-        fun getDir():String{
+        fun getVideoDir():String{
             return if (ContextCompat.checkSelfPermission(app!!, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                 String.format(
                     "%s%s%s%s",
                     Environment.getExternalStorageDirectory().absolutePath,
                     File.separator,
-                    "template",
+                    "wycVideo",
                     File.separator
                 )
             }else{
-                String.format("%s%s%s%s", app!!.filesDir, File.separator, "template", File.separator)
+                String.format("%s%s%s%s", app!!.filesDir, File.separator, "wycVideo", File.separator)
             }
         }
         @JvmStatic

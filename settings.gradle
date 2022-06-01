@@ -16,3 +16,4 @@ include ':app'
 rootProject.name = "AndroidFeatureSet"
 include ':label'
 include ':video'
+include ':permission'

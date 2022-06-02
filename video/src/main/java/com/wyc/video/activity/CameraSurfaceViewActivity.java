@@ -18,13 +18,14 @@ import com.wyc.permission.OnPermissionCallback;
 import com.wyc.permission.Permission;
 import com.wyc.permission.XXPermissions;
 import com.wyc.video.R;
+import com.wyc.video.camera.AdaptiveSurfaceView;
 import com.wyc.video.camera.CameraManager;
 
 import java.util.List;
 
 public class CameraSurfaceViewActivity extends BaseActivity implements SurfaceHolder.Callback {
     private CameraManager mCameraManager;
-    private SurfaceView mSurfaceView;
+    private AdaptiveSurfaceView mSurfaceView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -33,16 +34,13 @@ public class CameraSurfaceViewActivity extends BaseActivity implements SurfaceHo
         mSurfaceView = findViewById(R.id.preview_surface);
         mSurfaceView.getHolder().addCallback(this);
 
-        mCameraManager = new CameraManager(this);
+        mCameraManager = new CameraManager();
     }
 
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
-    }
-
-    @Override
-    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
-        Size preViewSize = mCameraManager.calPreViewSize(mSurfaceView.getWidth(),mSurfaceView.getHeight(),format);
+        float aspectRatio = mCameraManager.calPreViewSize(mSurfaceView.getWidth(),mSurfaceView.getHeight());
+        mSurfaceView.resize(aspectRatio);
         XXPermissions.with(this)
                 .permission(Permission.CAMERA)
                 .request(new OnPermissionCallback() {
@@ -57,6 +55,11 @@ public class CameraSurfaceViewActivity extends BaseActivity implements SurfaceHo
                         }
                     }
                 });
+    }
+
+    @Override
+    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
+
     }
 
     @Override

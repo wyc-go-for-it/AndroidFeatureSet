@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".activity.CameraSurfaceViewActivity">
 
-    <SurfaceView
+    <com.wyc.video.camera.AdaptiveSurfaceView
         android:id="@+id/preview_surface"
         android:layout_width="0dp"
         android:layout_height="0dp"

@@ -1,6 +1,10 @@
 package com.wyc.video
 
+import android.content.Context
+import android.os.Build
 import android.os.Looper
+import android.view.Surface
+import android.view.WindowManager
 import android.widget.Toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +25,7 @@ import kotlinx.coroutines.launch
  * @Version:        1.0
  */
 
-class ToastUtils {
+class Utils {
     companion object{
         @JvmStatic
         fun showToast(message: String?) {
@@ -32,6 +36,16 @@ class ToastUtils {
                     Toast.makeText(VideoApp.getInstance(),message, Toast.LENGTH_LONG).show()
                 }
             }
+        }
+        @JvmStatic
+        fun hasNatureRotation(context: Context):Boolean{
+            val o = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
+                context.display?.rotation?:0
+            }else{
+                (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.rotation
+            }
+
+            return o == Surface.ROTATION_0 || o == Surface.ROTATION_180
         }
     }
 }

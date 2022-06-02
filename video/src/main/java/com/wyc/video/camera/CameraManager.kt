@@ -1,29 +1,25 @@
 package com.wyc.video.camera
 
+import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.ImageFormat
-import android.graphics.PixelFormat
-import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
-import android.hardware.camera2.CameraCharacteristics.LENS_FACING
 import android.hardware.camera2.CameraDevice.StateCallback.*
 import android.hardware.camera2.CameraManager
-import android.hardware.camera2.params.InputConfiguration
 import android.hardware.camera2.params.OutputConfiguration
 import android.hardware.camera2.params.SessionConfiguration
-import android.media.ImageReader
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
-import android.util.Size
 import android.view.Surface
 import android.view.SurfaceHolder
 import com.wyc.logger.Logger
-import com.wyc.video.ToastUtils
+import com.wyc.video.Utils
+import com.wyc.video.VideoApp
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import kotlin.math.abs
 
 
 /**
@@ -40,7 +36,7 @@ import java.util.concurrent.Executors
  * @Version:        1.0
  */
 
-class CameraManager(c: Context) {
+class CameraManager() {
     private var mCameraFaceId:String = ""
     private var mCameraBackId:String = ""
     private var mCameraDevice:CameraDevice? = null
@@ -49,18 +45,16 @@ class CameraManager(c: Context) {
     private var mBackgroundThread:HandlerThread? = null
     private var hasBack = true
     private var mPreviewSurface:Surface? = null
+    private var mPreviewCaptureRequestBuilder:CaptureRequest.Builder? = null
     private var mExecutor: ExecutorService? = null
-    private var mPreviewSize:Size = Size(-1,-1)
-    private var mPreFormat:Int = ImageFormat.YUV_420_888
-
-    private val mContext: Context = c
+    private var mPreviewAspectRatio = -1.0f
 
     init {
         initCamera()
     }
 
     private fun initCamera(){
-        val cManager = mContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val cManager = VideoApp.getInstance().getSystemService(Context.CAMERA_SERVICE) as CameraManager
         val camIdList = cManager.cameraIdList
         if (camIdList.isEmpty()){
             logError("not find any camera with this device.")
@@ -81,15 +75,16 @@ class CameraManager(c: Context) {
                 }
             }*/
         }catch (e:CameraAccessException){
-            ToastUtils.showToast(e.message)
+            Utils.showToast(e.message)
             logError(e.message)
         }catch (e: IllegalArgumentException){
-            ToastUtils.showToast(e.message)
+            Utils.showToast(e.message)
             logError(e.message)
         }
     }
 
     private fun startBackgroundThread(){
+        logError("start backgroundThread.")
         stopBackgroundThread()
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
             mBackgroundThread = HandlerThread("cameraBackgroundThread")
@@ -100,6 +95,7 @@ class CameraManager(c: Context) {
         }
     }
     private fun stopBackgroundThread(){
+        logError("stop backgroundThread.")
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
             if (mBackgroundThread != null){
                 mBackgroundThread!!.quitSafely()
@@ -118,10 +114,6 @@ class CameraManager(c: Context) {
     }
 
     fun openCamera(surface:Surface?){
-        if (mPreviewSize.width < 0 || mPreviewSize.height < 0){
-            logError("preview size error:$mPreviewSize")
-            return
-        }
 
         if (surface == null){
             return
@@ -137,17 +129,17 @@ class CameraManager(c: Context) {
 
         mPreviewSurface = surface
 
-        val cManager = mContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val cManager = VideoApp.getInstance().getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try {
             cManager.openCamera(getValidCameraId(),mStateCallback,mBackgroundHandler)
         }catch (e:SecurityException){
-            ToastUtils.showToast(e.message)
+            Utils.showToast(e.message)
             logError(e.message)
         }catch (e: CameraAccessException){
-            ToastUtils.showToast(e.message)
+            Utils.showToast(e.message)
             logError(e.message)
         }catch (e:IllegalArgumentException){
-            ToastUtils.showToast(e.message)
+            Utils.showToast(e.message)
             logError(e.message)
         }
     }
@@ -158,49 +150,9 @@ class CameraManager(c: Context) {
         }
     }
 
-    fun calPreViewSize(width:Int,height:Int,format:Int):Size{
-        Logger.d("preview size width:%d,height:%d",width,height)
+    fun calPreViewSize(width:Int,height:Int):Float{
 
-        if (width == mPreviewSize.width && mPreviewSize.height == height && mPreFormat == format){
-            return mPreviewSize
-        }
-
-        mPreFormat = format
-
-        var calWidth = 0
-        var calHeight = 0
-        try {
-            (mContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager).getCameraCharacteristics(getValidCameraId())
-                .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)?.apply {
-                    val sizes = getOutputSizes(SurfaceHolder::class.java)
-                    logError( "sizes" + Arrays.toString(sizes))
-
-                    sizes.forEach {
-                        if (it.width <= width && it.height <= height && it.width >= calWidth && it.height >= calHeight){
-                            calWidth = it.width
-                            calHeight = it.height
-                        }
-                    }
-
-                    val sizeTexture =  getOutputSizes(SurfaceTexture::class.java)
-                    val sizeImageReader =  getOutputSizes(ImageReader::class.java)
-
-                    logError( "sizeTexture:" + Arrays.toString(sizeTexture))
-                    logError( "sizeImageReader:" + Arrays.toString(sizeImageReader))
-                }
-            if (calWidth != 0 && calHeight != 0){
-                mPreviewSize = Size(calWidth,calHeight)
-
-                logError(mPreviewSize.toString())
-            }
-        }catch (e: CameraAccessException){
-            ToastUtils.showToast(e.message)
-            logError(e.message)
-        }catch (e:IllegalArgumentException){
-            ToastUtils.showToast(e.message)
-            logError(e.message)
-        }
-        return mPreviewSize
+        return  0.75f//4:3
     }
     private val mStateCallback = object  : CameraDevice.StateCallback() {
         override fun onOpened(camera: CameraDevice) {
@@ -209,11 +161,11 @@ class CameraManager(c: Context) {
         }
 
         override fun onDisconnected(camera: CameraDevice) {
-            ToastUtils.showToast("camera has disconnected.")
+            Utils.showToast("camera has disconnected.")
         }
 
         override fun onError(camera: CameraDevice, error: Int) {
-            ToastUtils.showToast("camera open error:" + getOpenErrorMsg(error))
+            Utils.showToast("camera open error:" + getOpenErrorMsg(error))
         }
     }
 
@@ -232,14 +184,14 @@ class CameraManager(c: Context) {
             }else {
                 val outputConfiguration = OutputConfiguration(mPreviewSurface!!)
                 val config = SessionConfiguration(SessionConfiguration.SESSION_REGULAR,listOf(outputConfiguration),mExecutor!!,mCaptureSessionCallback)
-                //config.inputConfiguration = InputConfiguration(1920,1080, ImageFormat.YUV_420_888)
                 mCameraDevice!!.createCaptureSession(config)
+
             }
         }catch (e: CameraAccessException){
-            ToastUtils.showToast(e.message)
+            Utils.showToast(e.message)
             logError(e.message)
         }catch (e:IllegalArgumentException){
-            ToastUtils.showToast(e.message)
+            Utils.showToast(e.message)
             logError(e.message)
         }
     }
@@ -251,23 +203,23 @@ class CameraManager(c: Context) {
             }
             mCameraCaptureSession = session
             try {
-                val captureRequest = mCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-                captureRequest.addTarget(mPreviewSurface!!)
+                mPreviewCaptureRequestBuilder = mCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
+                mPreviewCaptureRequestBuilder!!.addTarget(mPreviewSurface!!)
 
-                captureRequest.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
-                captureRequest.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
+                mPreviewCaptureRequestBuilder!!.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
+                mPreviewCaptureRequestBuilder!!.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
 
-                mCameraCaptureSession!!.setRepeatingRequest(captureRequest.build(),null,mBackgroundHandler)
+                mCameraCaptureSession!!.setRepeatingRequest(mPreviewCaptureRequestBuilder!!.build(),null,mBackgroundHandler)
             }catch (e:IllegalArgumentException){
-                ToastUtils.showToast(e.message)
+                Utils.showToast(e.message)
                 logError(e.message)
             }catch (e:CameraAccessException){
-                ToastUtils.showToast(e.message)
+                Utils.showToast(e.message)
                 logError(e.message)
             }
         }
         override fun onConfigureFailed(session: CameraCaptureSession) {
-            ToastUtils.showToast("CaptureSession configure failure.")
+            Utils.showToast("CaptureSession configure failure.")
         }
 
         override fun onClosed(session: CameraCaptureSession) {
@@ -305,14 +257,18 @@ class CameraManager(c: Context) {
     }
 
     fun releaseCamera(){
-        mCameraCaptureSession?.apply {
-            close()
+        logError("start release resource.")
+        if (mPreviewCaptureRequestBuilder != null && mPreviewSurface != null){
+            mPreviewCaptureRequestBuilder!!.removeTarget(mPreviewSurface!!)
+            mPreviewCaptureRequestBuilder = null
+        }
+        if (mCameraCaptureSession != null){
+            mCameraCaptureSession!!.close()
             mCameraCaptureSession = null
         }
-        mCameraDevice?.apply {
-            close()
+        if (mCameraDevice != null){
+            mCameraDevice!!.close()
             mCameraDevice = null
         }
-        logError("release resource.")
     }
 }

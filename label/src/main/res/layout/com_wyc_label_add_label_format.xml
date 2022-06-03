@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/com_wyc_label_round_shape"
+    android:paddingBottom="@dimen/com_wyc_label_margin_5">
+
+    <LinearLayout
+        android:id="@+id/title_layout"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/com_wyc_label_dialog_head_height"
+        android:background="@drawable/com_wyc_label_dialog_dialog_top_round_shap"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:gravity="center"
+            android:paddingStart="@dimen/com_wyc_label_size_35"
+            android:paddingEnd="0dp"
+            android:textAlignment="center"
+            android:textColor="@color/com_wyc_label_white"
+            android:textSize="@dimen/com_wyc_label_font_size_24" />
+
+        <Button
+            android:id="@+id/_close"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="@dimen/com_wyc_label_size_35"
+            android:layout_height="@dimen/com_wyc_label_size_35"
+            android:layout_gravity="center_vertical"
+            android:layout_margin="@dimen/com_wyc_label_margin_2"
+            android:background="@drawable/com_wyc_label_close" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/name_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/com_wyc_label_margin_5"
+        android:text="@string/com_wyc_label_label_name"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
+        app:layout_constraintBottom_toBottomOf="@id/label_name"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/label_name" />
+
+    <EditText
+        android:id="@+id/label_name"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/com_wyc_label_height_45"
+        android:layout_marginTop="@dimen/com_wyc_label_margin_2"
+        android:background="@drawable/com_wyc_label_bottom_separator"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/name_label"
+        app:layout_constraintTop_toBottomOf="@id/title_layout" />
+
+    <TextView
+        android:id="@+id/width_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/com_wyc_label_label_width"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
+        app:layout_constraintBottom_toBottomOf="@id/label_width"
+        app:layout_constraintEnd_toEndOf="@id/name_label"
+        app:layout_constraintTop_toTopOf="@id/label_width" />
+
+    <EditText
+        android:id="@+id/label_width"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/com_wyc_label_height_45"
+        android:background="@drawable/com_wyc_label_bottom_separator"
+        android:ems="10"
+        android:inputType="number|textPersonName"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@id/label_name"
+        app:layout_constraintTop_toBottomOf="@id/label_name"
+        tools:ignore="TouchTargetSizeCheck,DuplicateClickableBoundsCheck,SpeakableTextPresentCheck" />
+
+    <TextView
+        android:id="@+id/height_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/com_wyc_label_label_width"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
+        app:layout_constraintBottom_toBottomOf="@id/label_height"
+        app:layout_constraintEnd_toEndOf="@id/width_label"
+        app:layout_constraintTop_toTopOf="@id/label_height" />
+
+    <EditText
+        android:id="@+id/label_height"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/com_wyc_label_height_45"
+        android:background="@drawable/com_wyc_label_bottom_separator"
+        android:ems="10"
+        android:inputType="number|textPersonName"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@id/label_width"
+        app:layout_constraintTop_toBottomOf="@id/label_width"
+        tools:ignore="TouchTargetSizeCheck,SpeakableTextPresentCheck" />
+
+    <TextView
+        android:id="@+id/default_szie_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/com_wyc_label_margin_5"
+        android:text="@string/com_wyc_label_default_format"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
+        app:layout_constraintBottom_toBottomOf="@id/default_size"
+        app:layout_constraintEnd_toEndOf="@id/width_label"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/default_size" />
+
+    <Spinner
+        android:id="@+id/default_size"
+        style="@style/Widget.AppCompat.Light.Spinner.DropDown.ActionBar"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/com_wyc_label_height_45"
+        android:layout_marginTop="@dimen/com_wyc_label_margin_2"
+        android:layout_marginEnd="@dimen/com_wyc_label_margin_2"
+        android:foreground="@drawable/com_wyc_label_spinner_style"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@id/label_height"
+        app:layout_constraintTop_toBottomOf="@id/label_height"
+        tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck" />
+
+    <Button
+        android:id="@+id/ok"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:layout_width="@dimen/com_wyc_label_width_88"
+        android:layout_height="@dimen/com_wyc_label_height_45"
+        android:layout_marginStart="@dimen/com_wyc_label_margin_5"
+        android:background="@drawable/com_wyc_label_round_shape_main_color"
+        android:text="@string/com_wyc_label_OK"
+        android:textColor="@color/com_wyc_label_white_pink"
+        android:textSize="@dimen/com_wyc_label_font_size_18"
+        android:visibility="visible"
+        app:layout_constraintEnd_toStartOf="@+id/cancel_btn"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/cancel"
+        tools:ignore="TouchTargetSizeCheck,UnknownId" />
+
+    <Button
+        android:id="@+id/cancel"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:layout_width="@dimen/com_wyc_label_width_88"
+        android:layout_height="@dimen/com_wyc_label_height_45"
+        android:layout_marginTop="@dimen/com_wyc_label_margin_5"
+        android:layout_marginEnd="@dimen/com_wyc_label_margin_5"
+        android:background="@drawable/com_wyc_label_round_shape_main_color"
+        android:text="@string/com_wyc_label__cancel"
+        android:textColor="@color/com_wyc_label_white_pink"
+        android:textSize="@dimen/com_wyc_label_font_size_18"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/default_size"
+        tools:ignore="TouchTargetSizeCheck" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

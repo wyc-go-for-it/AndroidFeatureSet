@@ -6,14 +6,14 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.ImageFormat;
+import android.graphics.Rect;
+import android.graphics.YuvImage;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -23,18 +23,14 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.wyc.androidfeatureset.R;
+import com.wyc.androidfeatureset.YUVUtils;
 import com.wyc.logger.Logger;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.android.Utils;
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.Rect;
-import org.opencv.imgproc.Imgproc;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.Arrays;
 
@@ -45,6 +41,7 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.ObservableOnSubscribe;
 import io.reactivex.rxjava3.schedulers.Schedulers;
+
 
 public class CaptureActivity extends AppCompatActivity implements SensorEventListener {
     private static final int CAMERA_PERMISSION = 1000;
@@ -60,9 +57,9 @@ public class CaptureActivity extends AppCompatActivity implements SensorEventLis
     @BindView(R.id.small_preview)
     ImageView small_preview;
 
+    private byte[] mCacheMatrix;
     private Bitmap mCacheBitmap;
-    private Mat mYuvFrameData;
-    private Mat mRgba;
+    private int[] mCachePixel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,7 +71,6 @@ public class CaptureActivity extends AppCompatActivity implements SensorEventLis
 
         initThumb();
         initSensor();
-
      }
 
     private final BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -82,27 +78,50 @@ public class CaptureActivity extends AppCompatActivity implements SensorEventLis
         public void onManagerConnected(int status) {
             if (status == LoaderCallbackInterface.SUCCESS){
                 preview.setPreviewBack((data, format, w, h) -> {
-                    if (mCacheBitmap == null){
-                        mCacheBitmap = Bitmap.createBitmap(w,h, Bitmap.Config.ARGB_8888);
+
+                    w = (w + 16 -1) & (-16);
+
+                    int left = 0,top = 0;
+                    final Rect rect = new Rect(left,top,w,h);
+
+                    int width = rect.width();
+                    int height = rect.height();
+
+                    if (mCacheMatrix == null){
+                        mCacheMatrix = new byte[width * (height + height / 2)];
                     }
-                    if (mYuvFrameData == null)mYuvFrameData = new Mat(h + h / 2,w, CvType.CV_8UC1);
-                    if (mRgba == null)mRgba = new Mat();
 
-                    mYuvFrameData.put(0,0,data);
+                    YUVUtils.clipYUV_420(data,w,h,mCacheMatrix,rect);
 
-                    if (format == ImageFormat.NV21)
-                        Imgproc.cvtColor(mYuvFrameData, mRgba, Imgproc.COLOR_YUV2RGBA_NV21, 4);
-                    else if (format == ImageFormat.YV12)
-                        Imgproc.cvtColor(mYuvFrameData, mRgba, Imgproc.COLOR_YUV2RGB_I420, 4);  // COLOR_YUV2RGBA_YV12 produces inverted colors
+                    //mCacheMatrix = YUVUtils.rotateYUV_420_90(mCacheMatrix,width,height,null);
 
 
-                    Utils.matToBitmap(mRgba,mCacheBitmap);
+                    mCacheMatrix = YUVUtils.rotateYUV_420_270(mCacheMatrix,width,height,null);
+
+
+                    if (mCacheBitmap == null){
+                        mCacheBitmap = Bitmap.createBitmap(height,width,Bitmap.Config.ARGB_8888);
+                    }
+                    long t = System.currentTimeMillis();
+                    mCachePixel = YUVUtils.yuv420ToARGB(mCacheMatrix,height,width,mCachePixel);
+                    mCacheBitmap.setPixels(mCachePixel,0,height,0,0,height,width);
+                    Logger.d("lose:%d",System.currentTimeMillis() - t);
+
+  /*                  YuvImage yuvImage = new YuvImage(mCacheMatrix,format,height,width,null);
+                    ByteArrayOutputStream out =
+                            new ByteArrayOutputStream();
+                    yuvImage.compressToJpeg(new Rect(0, 0, height, width), 30, out);
+
+                    byte[] compressed = out.toByteArray();
+
+                    Bitmap newBmp = BitmapFactory.decodeByteArray(compressed, 0, compressed.length);*/
 
                     small_preview.setImageBitmap(mCacheBitmap);
                 });
             }
         }
     };
+
      private void initSensor(){
          mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
          mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);

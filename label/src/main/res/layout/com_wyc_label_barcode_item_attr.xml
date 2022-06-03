@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/com_wyc_label_round_shape"
+    android:padding="@dimen/com_wyc_label_margin_8">
+
+    <TextView
+        android:id="@+id/font_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/com_wyc_label_font"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.wyc.label.MySeekBar
+        android:id="@+id/font"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="@id/font_label"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/font_label"
+        app:layout_constraintTop_toTopOf="@id/font_label" />
+
+    <TextView
+        android:id="@+id/format_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/com_wyc_label_code_format"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
+        app:layout_constraintBottom_toBottomOf="@id/format"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/format" />
+
+    <Spinner
+        android:id="@+id/format"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/com_wyc_label_height_45"
+        android:layout_marginStart="@dimen/com_wyc_label_margin_5"
+        android:layout_marginTop="@dimen/com_wyc_label_margin_18"
+        android:foreground="@drawable/com_wyc_label_spinner_style"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/format_label"
+        app:layout_constraintTop_toBottomOf="@id/content"
+        tools:ignore="TouchTargetSizeCheck,SpeakableTextPresentCheck" />
+
+    <EditText
+        android:id="@+id/content"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/com_wyc_label_height_45"
+        android:layout_marginTop="@dimen/com_wyc_label_margin_18"
+        android:background="@drawable/com_wyc_label_edit_text_with_gray_border_style"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:paddingStart="@dimen/com_wyc_label_margin_5"
+        android:paddingEnd="@dimen/com_wyc_label_margin_5"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/font" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

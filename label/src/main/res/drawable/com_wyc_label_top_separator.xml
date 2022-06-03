@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" >
+<item>
+    <shape>
+        <solid android:color="@color/com_wyc_label_gray_sub_transparent" />
+    </shape>
+</item>
+<item
+    android:top="@dimen/com_wyc_label_size_1">
+    <shape>
+        <solid android:color="@color/com_wyc_label_white" />
+    </shape>
+</item>
+</layer-list>

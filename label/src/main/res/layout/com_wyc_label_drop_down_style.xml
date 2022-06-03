@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/text1"
+    style="@style/Widget.AppCompat.TextView.SpinnerItem"
+    android:layout_width="match_parent"
+    android:layout_height="45dp"
+    android:background="@color/com_wyc_label_white"
+    android:ellipsize="marquee"
+    android:gravity="center"
+    android:textColor="@color/com_wyc_label_blue"
+    android:textSize="@dimen/com_wyc_label_font_size_14" />

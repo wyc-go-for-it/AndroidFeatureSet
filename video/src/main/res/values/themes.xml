@@ -1,0 +1,8 @@
+<resources>
+    <style name="wyc_video_ActivityTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowBackground">@color/wyc_video_black_trans</item>
+        <item name="android:windowIsTranslucent">true</item>
+    </style>
+</resources>

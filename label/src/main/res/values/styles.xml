@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="com_wyc_label_MyDialog" parent="Base.ThemeOverlay.AppCompat.Dialog">
+        <!--背景颜色及和透明程度-->
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <!--是否去除标题 -->
+        <item name="android:windowNoTitle">true</item>
+        <!--是否去除边框-->
+        <item name="android:windowFrame">@null</item>
+        <!--是否浮现在activity之上-->
+        <item name="android:windowIsFloating">true</item>
+        <!--是否模糊-->
+        <item name="android:backgroundDimEnabled">true</item>
+    </style>
+    <style name="com_wyc_label_bottom_pop_anim" parent="android:Animation">
+        <item name="android:windowEnterAnimation">@anim/com_wyc_label_pop_enter_anim</item>
+        <item name="android:windowExitAnimation">@anim/com_wyc_label_pop_exit_anim</item>
+    </style>
+    <style name="com_wyc_label_ActivityTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowBackground">@color/com_wyc_label_black_trans</item>
+        <item name="android:windowIsTranslucent">true</item>
+    </style>
+</resources>

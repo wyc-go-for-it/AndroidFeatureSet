@@ -3,4 +3,7 @@
     <string name="accessibility_desc">@string/app_name</string>
     <string name="camera_feature_sz">相机功能</string>
     <string name="picture_btn">拍照</string>
+    <string name="provider">内容提供者</string>
+    <string name="label_design">标签设计</string>
+    <string name="label_print">标签打印</string>
 </resources>

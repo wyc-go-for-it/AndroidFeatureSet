@@ -1,10 +1,11 @@
 package com.wyc.video.camera
 
-import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Rect
 import android.hardware.camera2.*
 import android.hardware.camera2.CameraDevice.StateCallback.*
 import android.hardware.camera2.CameraManager
+import android.hardware.camera2.params.MeteringRectangle
 import android.hardware.camera2.params.OutputConfiguration
 import android.hardware.camera2.params.SessionConfiguration
 import android.os.Build
@@ -12,14 +13,11 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
 import android.view.Surface
-import android.view.SurfaceHolder
 import com.wyc.logger.Logger
 import com.wyc.video.Utils
 import com.wyc.video.VideoApp
-import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import kotlin.math.abs
 
 
 /**
@@ -47,7 +45,8 @@ class CameraManager() {
     private var mPreviewSurface:Surface? = null
     private var mPreviewCaptureRequestBuilder:CaptureRequest.Builder? = null
     private var mExecutor: ExecutorService? = null
-    private var mPreviewAspectRatio = -1.0f
+    private var mAspectRatio = 0.75f
+    private var mSensorOrientation = 90
 
     init {
         initCamera()
@@ -57,7 +56,7 @@ class CameraManager() {
         val cManager = VideoApp.getInstance().getSystemService(Context.CAMERA_SERVICE) as CameraManager
         val camIdList = cManager.cameraIdList
         if (camIdList.isEmpty()){
-            logError("not find any camera with this device.")
+            Utils.logInfo("not find any camera with this device.")
             return
         }
         try {
@@ -65,6 +64,25 @@ class CameraManager() {
                 mCameraFaceId = camIdList[1]
                 mCameraBackId = camIdList[0]
             }
+
+
+
+            val characteristic = cManager.getCameraCharacteristics(getValidCameraId())
+
+            val activeRect = characteristic.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE)
+            val pixelRect = characteristic.get(CameraCharacteristics.SENSOR_INFO_PIXEL_ARRAY_SIZE)
+            val physicalRect = characteristic.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE)
+            val afRegion = characteristic.get(CameraCharacteristics.CONTROL_MAX_REGIONS_AF)
+            mSensorOrientation = characteristic.get(CameraCharacteristics.SENSOR_ORIENTATION)?:0
+
+            Utils.logInfo("sensorOrientation:$mSensorOrientation,physicalRect:$physicalRect,pixelRect:$pixelRect" +
+                    ",activeRect:$activeRect,afRegionCount:$afRegion")
+
+            activeRect?.apply {
+                mAspectRatio = height() * 1f / width() * 1f
+                Logger.d("aspectRatio:%f",mAspectRatio)
+            }
+
 /*            camIdList.forEach {
                 val characteristics = cManager.getCameraCharacteristics(it)
                 val value = characteristics.get(LENS_FACING)
@@ -76,15 +94,15 @@ class CameraManager() {
             }*/
         }catch (e:CameraAccessException){
             Utils.showToast(e.message)
-            logError(e.message)
+            Utils.logInfo(e.message)
         }catch (e: IllegalArgumentException){
             Utils.showToast(e.message)
-            logError(e.message)
+            Utils.logInfo(e.message)
         }
     }
 
     private fun startBackgroundThread(){
-        logError("start backgroundThread.")
+        Utils.logInfo("start backgroundThread.")
         stopBackgroundThread()
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
             mBackgroundThread = HandlerThread("cameraBackgroundThread")
@@ -95,7 +113,7 @@ class CameraManager() {
         }
     }
     private fun stopBackgroundThread(){
-        logError("stop backgroundThread.")
+        Utils.logInfo("stop backgroundThread.")
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
             if (mBackgroundThread != null){
                 mBackgroundThread!!.quitSafely()
@@ -104,7 +122,7 @@ class CameraManager() {
                     mBackgroundThread = null
                     mBackgroundHandler = null
                 }catch (e:InterruptedException ){
-                    logError("stop background thread error:$e")
+                    Utils.logInfo("stop background thread error:$e")
                 }
             }
         }else if (mExecutor != null){
@@ -120,7 +138,7 @@ class CameraManager() {
         }
 
         if (mCameraBackId.isBlank() && mCameraFaceId.isBlank()){
-            logError("backId and faceId both are empty.")
+            Utils.logInfo("backId and faceId both are empty.")
             return
         }
 
@@ -134,25 +152,18 @@ class CameraManager() {
             cManager.openCamera(getValidCameraId(),mStateCallback,mBackgroundHandler)
         }catch (e:SecurityException){
             Utils.showToast(e.message)
-            logError(e.message)
+            Utils.logInfo(e.message)
         }catch (e: CameraAccessException){
             Utils.showToast(e.message)
-            logError(e.message)
+            Utils.logInfo(e.message)
         }catch (e:IllegalArgumentException){
             Utils.showToast(e.message)
-            logError(e.message)
-        }
-    }
-    private fun logError(errMsg:String?){
-        if (errMsg != null) {
-            //Log.e(this::class.simpleName,errMsg)
-            Logger.d(this::class.simpleName + ":" + errMsg)
+            Utils.logInfo(e.message)
         }
     }
 
-    fun calPreViewSize(width:Int,height:Int):Float{
-
-        return  0.75f//4:3
+    fun calPreViewAspectRatio():Float{
+        return  mAspectRatio
     }
     private val mStateCallback = object  : CameraDevice.StateCallback() {
         override fun onOpened(camera: CameraDevice) {
@@ -189,10 +200,10 @@ class CameraManager() {
             }
         }catch (e: CameraAccessException){
             Utils.showToast(e.message)
-            logError(e.message)
+            Utils.logInfo(e.message)
         }catch (e:IllegalArgumentException){
             Utils.showToast(e.message)
-            logError(e.message)
+            Utils.logInfo(e.message)
         }
     }
 
@@ -204,18 +215,22 @@ class CameraManager() {
             mCameraCaptureSession = session
             try {
                 mPreviewCaptureRequestBuilder = mCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-                mPreviewCaptureRequestBuilder!!.addTarget(mPreviewSurface!!)
 
-                mPreviewCaptureRequestBuilder!!.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
-                mPreviewCaptureRequestBuilder!!.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
+                mPreviewCaptureRequestBuilder?.apply {
+                    addTarget(mPreviewSurface!!)
 
-                mCameraCaptureSession!!.setRepeatingRequest(mPreviewCaptureRequestBuilder!!.build(),null,mBackgroundHandler)
+                    set(CaptureRequest.CONTROL_AF_MODE,CameraMetadata.CONTROL_AF_MODE_AUTO)
+                    set(CaptureRequest.CONTROL_AF_TRIGGER,CameraMetadata.CONTROL_AF_TRIGGER_START)
+                    set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
+
+                    mCameraCaptureSession!!.setRepeatingRequest(build(),null,null)
+                }
             }catch (e:IllegalArgumentException){
                 Utils.showToast(e.message)
-                logError(e.message)
+                Utils.logInfo(e.message)
             }catch (e:CameraAccessException){
                 Utils.showToast(e.message)
-                logError(e.message)
+                Utils.logInfo(e.message)
             }
         }
         override fun onConfigureFailed(session: CameraCaptureSession) {
@@ -257,7 +272,7 @@ class CameraManager() {
     }
 
     fun releaseCamera(){
-        logError("start release resource.")
+        Utils.logInfo("start release resource.")
         if (mPreviewCaptureRequestBuilder != null && mPreviewSurface != null){
             mPreviewCaptureRequestBuilder!!.removeTarget(mPreviewSurface!!)
             mPreviewCaptureRequestBuilder = null
@@ -269,6 +284,33 @@ class CameraManager() {
         if (mCameraDevice != null){
             mCameraDevice!!.close()
             mCameraDevice = null
+        }
+    }
+
+    /*
+    * w,h are preview's size
+    * */
+    fun updateFocusRegion(w: Int, h: Int, l: Int, t: Int, r: Int, b: Int){
+        if (mCameraCaptureSession != null && mPreviewCaptureRequestBuilder != null){
+            mPreviewCaptureRequestBuilder!!.get(CaptureRequest.SCALER_CROP_REGION)?.apply {
+
+                val wRatio = width() * 1f / h * 1f
+                val hRatio = height() * 1f / w * 1f
+
+                val left = if (l < 0) 0 else (l * wRatio).toInt()
+                val right = if (r < 0) 0 else (r * wRatio).toInt()
+                val top = if (t < 0) 0 else (t * hRatio).toInt()
+                val bottom = if (b < 0) 0 else (b * hRatio).toInt()
+
+                val focusRect = Rect(left,top,right,bottom)
+                if (mSensorOrientation == 90 || mSensorOrientation == 270){
+                    focusRect.set(top,left,bottom,right)
+                }
+                Utils.logInfo("focusRect:$focusRect,cropRegion:$this")
+
+                mPreviewCaptureRequestBuilder!!.set(CaptureRequest.CONTROL_AF_REGIONS, arrayOf(MeteringRectangle(focusRect, 1000)))
+                mCameraCaptureSession!!.setRepeatingRequest(mPreviewCaptureRequestBuilder!!.build(),null,null)
+            }
         }
     }
 }

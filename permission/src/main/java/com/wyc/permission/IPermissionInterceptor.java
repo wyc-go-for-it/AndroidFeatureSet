@@ -2,6 +2,8 @@ package com.wyc.permission;
 
 import android.app.Activity;
 
+import androidx.fragment.app.FragmentActivity;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,7 +12,7 @@ public interface IPermissionInterceptor {
     /**
      * 权限申请拦截，可在此处先弹 Dialog 再申请权限
      */
-    default void requestPermissions(Activity activity, OnPermissionCallback callback, List<String> permissions) {
+    default void requestPermissions(FragmentActivity activity, OnPermissionCallback callback, List<String> permissions) {
         PermissionFragment.beginRequest(activity, new ArrayList<>(permissions), callback);
     }
 

@@ -6,9 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 
+import androidx.fragment.app.FragmentActivity;
+
 import java.util.List;
 
-@SuppressWarnings("deprecation, unused")
+@SuppressWarnings("unused")
 public final class XXPermissions {
 
     /** 权限设置页跳转请求码 */
@@ -159,7 +161,7 @@ public final class XXPermissions {
         }
 
         // 申请没有授予过的权限
-        getInterceptor().requestPermissions(activity, callback, mPermissions);
+        getInterceptor().requestPermissions((FragmentActivity) activity, callback, mPermissions);
     }
 
     /**

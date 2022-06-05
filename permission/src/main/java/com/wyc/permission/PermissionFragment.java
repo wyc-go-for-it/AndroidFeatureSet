@@ -1,25 +1,24 @@
 package com.wyc.permission;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.SparseBooleanArray;
+
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 
-@SuppressWarnings("deprecation")
-@TargetApi(Build.VERSION_CODES.M)
+
 public final class PermissionFragment extends Fragment implements Runnable {
 
     /** 请求的权限组 */
@@ -34,14 +33,14 @@ public final class PermissionFragment extends Fragment implements Runnable {
     /** 权限请求码存放集合 */
     private final static SparseBooleanArray REQUEST_CODE_ARRAY = new SparseBooleanArray();
 
-    public static void beginRequest(Activity activity, ArrayList<String> permissions, OnPermissionCallback callback) {
+    public static void beginRequest(FragmentActivity activity, ArrayList<String> permissions, OnPermissionCallback callback) {
         beginRequest(activity, permissions, true, callback);
     }
 
     /**
      * 开启权限申请
      */
-    private static void beginRequest(Activity activity, ArrayList<String> permissions, boolean interceptor, OnPermissionCallback callback) {
+    private static void beginRequest(FragmentActivity activity, ArrayList<String> permissions, boolean interceptor, OnPermissionCallback callback) {
         PermissionFragment fragment = new PermissionFragment();
         Bundle bundle = new Bundle();
         int requestCode;
@@ -78,15 +77,15 @@ public final class PermissionFragment extends Fragment implements Runnable {
     /**
      * 绑定 Activity
      */
-    public void attachActivity(Activity activity) {
-        activity.getFragmentManager().beginTransaction().add(this, this.toString()).commitAllowingStateLoss();
+    public void attachActivity(FragmentActivity activity) {
+        activity.getSupportFragmentManager().beginTransaction().add(this,this.toString()).commitAllowingStateLoss();
     }
 
     /**
      * 解绑 Activity
      */
-    public void detachActivity(Activity activity) {
-        activity.getFragmentManager().beginTransaction().remove(this).commitAllowingStateLoss();
+    public void detachActivity(FragmentActivity activity) {
+        activity.getSupportFragmentManager().beginTransaction().remove(this).commitAllowingStateLoss();
     }
 
     /**
@@ -217,7 +216,7 @@ public final class PermissionFragment extends Fragment implements Runnable {
      * 申请危险权限
      */
     public void requestDangerousPermission() {
-        Activity activity = getActivity();
+        FragmentActivity activity = getActivity();
         Bundle arguments = getArguments();
         if (activity == null || arguments == null) {
             return;
@@ -308,7 +307,7 @@ public final class PermissionFragment extends Fragment implements Runnable {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         Bundle arguments = getArguments();
-        Activity activity = getActivity();
+        FragmentActivity activity = getActivity();
         if (activity == null || arguments == null || mCallBack == null || requestCode != arguments.getInt(REQUEST_CODE)) {
             return;
         }

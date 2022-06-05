@@ -18,61 +18,55 @@ import com.wyc.permission.OnPermissionCallback;
 import com.wyc.permission.Permission;
 import com.wyc.permission.XXPermissions;
 import com.wyc.video.R;
+import com.wyc.video.Utils;
 import com.wyc.video.camera.AdaptiveSurfaceView;
 import com.wyc.video.camera.CameraManager;
+import com.wyc.video.camera.RecordBtn;
 
 import java.util.List;
 
-public class CameraSurfaceViewActivity extends BaseActivity implements SurfaceHolder.Callback {
+public class CameraSurfaceViewActivity extends BaseActivity {
     private CameraManager mCameraManager;
-    private AdaptiveSurfaceView mSurfaceView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setMiddleText(getString(R.string.useSurfaceView));
 
-        mSurfaceView = findViewById(R.id.preview_surface);
-        mSurfaceView.getHolder().addCallback(this);
-
+        initSurface();
+        initRecordBtn();
+    }
+    private void initSurface(){
         mCameraManager = new CameraManager();
+        AdaptiveSurfaceView surfaceView = findViewById(R.id.preview_surface);
+        surfaceView.setCameraManager(mCameraManager);
     }
 
-    @Override
-    public void surfaceCreated(@NonNull SurfaceHolder holder) {
-        float aspectRatio = mCameraManager.calPreViewSize(mSurfaceView.getWidth(),mSurfaceView.getHeight());
-        mSurfaceView.resize(aspectRatio);
-        XXPermissions.with(this)
-                .permission(Permission.CAMERA)
-                .request(new OnPermissionCallback() {
-                    @Override
-                    public void onGranted(List<String> permissions, boolean all) {
-                        mCameraManager.openCamera(holder.getSurface());
-                    }
-                    @Override
-                    public void onDenied(List<String> permissions, boolean never) {
-                        if (never){
+    private void initRecordBtn(){
+        final RecordBtn btn = findViewById(R.id.recordBtn);
+        btn.setCallback(new RecordBtn.ActionCallback() {
+            @Override
+            public void startRecord() {
+                Utils.showToast("startRecord");
+            }
 
-                        }
-                    }
-                });
-    }
+            @Override
+            public void finishRecord(long recordTime) {
+                Utils.showToast("finishRecord:" + recordTime);
+            }
 
-    @Override
-    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
-
-    }
-
-    @Override
-    public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
-        mCameraManager.releaseCamera();
-    }
-
-    public static void start(Activity c){
-        c.startActivity(new Intent(c,CameraSurfaceViewActivity.class));
+            @Override
+            public void takePicture() {
+                Utils.showToast("takePicture");
+            }
+        });
     }
 
     @Override
     public int getContentLayoutId() {
         return R.layout.activity_camera_surface_view;
+    }
+
+    public static void start(Activity c){
+        c.startActivity(new Intent(c,CameraSurfaceViewActivity.class));
     }
 }

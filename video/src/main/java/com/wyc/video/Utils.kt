@@ -6,6 +6,7 @@ import android.os.Looper
 import android.view.Surface
 import android.view.WindowManager
 import android.widget.Toast
+import com.wyc.logger.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -46,6 +47,22 @@ class Utils {
             }
 
             return o == Surface.ROTATION_0 || o == Surface.ROTATION_180
+        }
+        @JvmStatic
+        fun getScreenWidth(context: Context):Int{
+            val wm = (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager)
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
+                wm.currentWindowMetrics.bounds.width()
+            }else{
+                wm.defaultDisplay.width
+            }
+        }
+        @JvmStatic
+        fun logInfo(errMsg:String?){
+            if (errMsg != null) {
+                //Log.e(this::class.simpleName,errMsg)
+                Logger.d(errMsg)
+            }
         }
     }
 }

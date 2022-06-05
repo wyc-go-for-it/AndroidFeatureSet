@@ -8,10 +8,19 @@
 
     <com.wyc.video.camera.AdaptiveSurfaceView
         android:id="@+id/preview_surface"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <com.wyc.video.camera.RecordBtn
+        android:id="@+id/recordBtn"
+        android:layout_width="@dimen/record_size"
+        android:layout_height="@dimen/record_size"
+        android:layout_marginBottom="128dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

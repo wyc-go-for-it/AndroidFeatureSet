@@ -1,13 +1,14 @@
 package com.wyc.video.camera
 
 import android.content.Context
-import android.graphics.Rect
+import android.graphics.*
 import android.hardware.camera2.*
 import android.hardware.camera2.CameraDevice.StateCallback.*
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.params.MeteringRectangle
 import android.hardware.camera2.params.OutputConfiguration
 import android.hardware.camera2.params.SessionConfiguration
+import android.media.ImageReader
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
@@ -16,6 +17,11 @@ import android.view.Surface
 import com.wyc.logger.Logger
 import com.wyc.video.Utils
 import com.wyc.video.VideoApp
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -47,6 +53,8 @@ class CameraManager() {
     private var mExecutor: ExecutorService? = null
     private var mAspectRatio = 0.75f
     private var mSensorOrientation = 90
+    private var mImageReader : ImageReader? = null
+    private var mPicCallback:OnPicture? = null
 
     init {
         initCamera()
@@ -64,8 +72,6 @@ class CameraManager() {
                 mCameraFaceId = camIdList[1]
                 mCameraBackId = camIdList[0]
             }
-
-
 
             val characteristic = cManager.getCameraCharacteristics(getValidCameraId())
 
@@ -146,6 +152,8 @@ class CameraManager() {
         startBackgroundThread()
 
         mPreviewSurface = surface
+        mImageReader = ImageReader.newInstance(1920,1080,ImageFormat.JPEG,1)
+        mImageReader!!.setOnImageAvailableListener(imageAvailableListener,mBackgroundHandler)
 
         val cManager = VideoApp.getInstance().getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try {
@@ -191,12 +199,12 @@ class CameraManager() {
 
         try {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
-                mCameraDevice!!.createCaptureSession(listOf(mPreviewSurface),mCaptureSessionCallback,mBackgroundHandler)
+                mCameraDevice!!.createCaptureSession(listOf(mPreviewSurface,mImageReader!!.surface),mCaptureSessionCallback,mBackgroundHandler)
             }else {
-                val outputConfiguration = OutputConfiguration(mPreviewSurface!!)
-                val config = SessionConfiguration(SessionConfiguration.SESSION_REGULAR,listOf(outputConfiguration),mExecutor!!,mCaptureSessionCallback)
-                mCameraDevice!!.createCaptureSession(config)
+                val config = SessionConfiguration(SessionConfiguration.SESSION_REGULAR,listOf(OutputConfiguration(mPreviewSurface!!),
+                    OutputConfiguration(mImageReader!!.surface)),mExecutor!!,mCaptureSessionCallback)
 
+                mCameraDevice!!.createCaptureSession(config)
             }
         }catch (e: CameraAccessException){
             Utils.showToast(e.message)
@@ -242,6 +250,89 @@ class CameraManager() {
         }
     }
 
+    private val imageAvailableListener = ImageReader.OnImageAvailableListener {
+        Utils.logInfo("width:${it.width},height:${it.height},format:${it.imageFormat}")
+
+        val image = it.acquireLatestImage()
+        val byteBuffer = image.planes[0].buffer
+        val bmpBuffer  = ByteArray(byteBuffer.remaining())
+        byteBuffer.get(bmpBuffer)
+
+        Utils.logInfo("width:${it.width},height:${it.height},format:${it.imageFormat},size:${bmpBuffer.size}")
+
+        image.close()
+
+        try {
+            FileOutputStream(getPicFile()).use { fileOutputStream->
+                var bmp = BitmapFactory.decodeByteArray(bmpBuffer,0,bmpBuffer.size)
+                if (hasBack){
+                    bmp.compress(Bitmap.CompressFormat.JPEG,100,fileOutputStream)
+                }else{
+                    val matrix = Matrix()
+                    matrix.setScale(1f,-1f)
+                    bmp = Bitmap.createBitmap(bmp,0,0,bmp.width,bmp.height,matrix,false)
+                    bmp.compress(Bitmap.CompressFormat.JPEG,100,fileOutputStream)
+                }
+                mPicCallback?.onTaken(bmp)
+            }
+        }catch (e:IOException){
+            Utils.showToast("save file error:" + e.message)
+        }
+    }
+    private fun getPicFile(): File {
+        val file = getPicDir()
+        val name = String.format(Locale.CHINA, "%s%s%s.jpg", file.absolutePath, File.separator,SimpleDateFormat("yyyyMMddHHmmssSS", Locale.CHINA).format(Date()))
+        return File(name)
+    }
+    fun getPicDir():File{
+        val file = File(VideoApp.getVideoDir() + File.separator +"pic")
+        if (!file.exists()) {
+            file.mkdirs()
+        }
+        return file
+    }
+
+    interface OnPicture{
+        fun onTaken(bmp:Bitmap)
+    }
+    fun setPicCallback(callback:OnPicture?){
+        mPicCallback = callback
+    }
+
+    fun tackPic(){
+        if (mCameraDevice == null){
+            return
+        }
+
+        if (null == mCameraCaptureSession) {
+            return
+        }
+
+        try {
+
+            val picCaptureRequestBuilder = mCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
+            picCaptureRequestBuilder.apply {
+                addTarget(mImageReader!!.surface)
+                set(CaptureRequest.JPEG_ORIENTATION,mSensorOrientation)
+
+                set(CaptureRequest.CONTROL_AF_MODE,CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
+                set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
+            }
+
+            mCameraCaptureSession!!.capture(picCaptureRequestBuilder.build(),null,null)
+
+        }catch (e:IllegalArgumentException){
+            Utils.showToast(e.message)
+            Utils.logInfo(e.message)
+        }catch (e:CameraAccessException){
+            Utils.showToast(e.message)
+            Utils.logInfo(e.message)
+        }catch (e:IllegalStateException ){
+            Utils.showToast(e.message)
+            Utils.logInfo(e.message)
+        }
+    }
+
     private fun getOpenErrorMsg(code:Int):String{
         return when(code){
             ERROR_CAMERA_IN_USE->{
@@ -277,13 +368,20 @@ class CameraManager() {
             mPreviewCaptureRequestBuilder!!.removeTarget(mPreviewSurface!!)
             mPreviewCaptureRequestBuilder = null
         }
+
         if (mCameraCaptureSession != null){
             mCameraCaptureSession!!.close()
             mCameraCaptureSession = null
         }
+
         if (mCameraDevice != null){
             mCameraDevice!!.close()
             mCameraDevice = null
+        }
+
+        if (mImageReader != null){
+            mImageReader!!.close()
+            mImageReader = null
         }
     }
 
@@ -311,6 +409,12 @@ class CameraManager() {
                 mPreviewCaptureRequestBuilder!!.set(CaptureRequest.CONTROL_AF_REGIONS, arrayOf(MeteringRectangle(focusRect, 1000)))
                 mCameraCaptureSession!!.setRepeatingRequest(mPreviewCaptureRequestBuilder!!.build(),null,null)
             }
+        }
+    }
+    fun switchCamera(){
+        if (mPreviewSurface != null){
+            hasBack = !hasBack
+            openCamera(mPreviewSurface!!)
         }
     }
 }

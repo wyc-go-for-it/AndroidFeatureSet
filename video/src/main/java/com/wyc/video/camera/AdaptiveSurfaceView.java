@@ -131,7 +131,6 @@ public class AdaptiveSurfaceView extends SurfaceView implements SurfaceHolder.Ca
 
     @Override
     public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
-
     }
 
     @Override

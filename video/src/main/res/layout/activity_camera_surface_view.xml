@@ -22,5 +22,26 @@
         android:layout_marginBottom="128dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        tools:ignore="SpeakableTextPresentCheck" />
+
+    <Button
+        android:id="@+id/camera_reverse"
+        android:layout_width="@dimen/camera_reverse_btn_size"
+        android:layout_height="@dimen/camera_reverse_btn_size"
+        android:background="@drawable/camera"
+        app:layout_constraintBottom_toBottomOf="@id/recordBtn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/recordBtn"
+        app:layout_constraintTop_toTopOf="@id/recordBtn"
+        tools:ignore="TouchTargetSizeCheck,SpeakableTextPresentCheck" />
+
+    <com.wyc.video.camera.CircleImage
+        android:id="@+id/thumbnails"
+        android:layout_width="@dimen/thumbnail_size"
+        android:layout_height="@dimen/thumbnail_size"
+        app:layout_constraintBottom_toBottomOf="@id/recordBtn"
+        app:layout_constraintEnd_toStartOf="@id/recordBtn"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/recordBtn" />
 </androidx.constraintlayout.widget.ConstraintLayout>

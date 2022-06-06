@@ -36,7 +36,7 @@ public class RecordBtn extends AppCompatButton {
     private float mCenter = 0;
     private float mInnerRadius = 0;
     private final float mBorder = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,2,getResources().getDisplayMetrics());
-    private MODE mMode = MODE.RECORD;
+    private MODE mMode = MODE.PICTURE;
     private ActionCallback mCallback = null;
     private ValueAnimator mAnimator = null;
     private final int mShortVideoTime = 15;//unit second
@@ -93,9 +93,8 @@ public class RecordBtn extends AppCompatButton {
         final float r = mInnerRadius;
         if (mAnimator == null){
             mAnimator = new ValueAnimator();
-            mAnimator.setFloatValues(r,r - 8,r);
+            mAnimator.setFloatValues(r,r * 0.25f,r);
             mAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
-            mAnimator.setRepeatCount(1);
             mAnimator.setDuration(1000);
             mAnimator.addUpdateListener(animation -> {
                 mInnerRadius = (float) (Float)animation.getAnimatedValue();
@@ -242,9 +241,9 @@ public class RecordBtn extends AppCompatButton {
                     if (mTri == null){
                         float triangle_side = mInnerRadius;
                         float first_x = (float) (mCenter - triangle_side / 2 * Math.tan(Math.PI / 6));
-                        float first_y = (float) (mCenter - triangle_side / 2);
+                        float first_y = mCenter - triangle_side / 2;
 
-                        float second_y = (float) (mCenter + triangle_side / 2);
+                        float second_y = mCenter + triangle_side / 2;
 
                         float third_x = (float) (mCenter + triangle_side / 2 / Math.cos(Math.PI / 6));
                         float third_y = mCenter ;

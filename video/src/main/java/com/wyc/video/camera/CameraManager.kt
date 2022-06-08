@@ -8,15 +8,22 @@ import android.hardware.camera2.CameraManager
 import android.hardware.camera2.params.MeteringRectangle
 import android.hardware.camera2.params.OutputConfiguration
 import android.hardware.camera2.params.SessionConfiguration
+import android.media.CamcorderProfile
 import android.media.ImageReader
+import android.media.MediaCodec
+import android.media.MediaRecorder
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
+import android.util.Range
 import android.view.Surface
 import com.wyc.logger.Logger
 import com.wyc.video.Utils
 import com.wyc.video.VideoApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -40,7 +47,7 @@ import java.util.concurrent.Executors
  * @Version:        1.0
  */
 
-class CameraManager() {
+class CameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO) {
     private var mCameraFaceId:String = ""
     private var mCameraBackId:String = ""
     private var mCameraDevice:CameraDevice? = null
@@ -55,6 +62,8 @@ class CameraManager() {
     private var mSensorOrientation = 90
     private var mImageReader : ImageReader? = null
     private var mPicCallback:OnPicture? = null
+    private var mMediaRecorder:MediaRecorder? = null
+    private var mRecordSurface:Surface? = null
 
     init {
         initCamera()
@@ -79,10 +88,12 @@ class CameraManager() {
             val pixelRect = characteristic.get(CameraCharacteristics.SENSOR_INFO_PIXEL_ARRAY_SIZE)
             val physicalRect = characteristic.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE)
             val afRegion = characteristic.get(CameraCharacteristics.CONTROL_MAX_REGIONS_AF)
+            val fpsRegion = characteristic.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)
+
             mSensorOrientation = characteristic.get(CameraCharacteristics.SENSOR_ORIENTATION)?:0
 
             Utils.logInfo("sensorOrientation:$mSensorOrientation,physicalRect:$physicalRect,pixelRect:$pixelRect" +
-                    ",activeRect:$activeRect,afRegionCount:$afRegion")
+                    ",activeRect:$activeRect,afRegionCount:$afRegion,fpsRegion:" + Arrays.toString(fpsRegion))
 
             activeRect?.apply {
                 mAspectRatio = height() * 1f / width() * 1f
@@ -110,28 +121,24 @@ class CameraManager() {
     private fun startBackgroundThread(){
         Utils.logInfo("start backgroundThread.")
         stopBackgroundThread()
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
-            mBackgroundThread = HandlerThread("cameraBackgroundThread")
-            mBackgroundThread!!.start()
-            mBackgroundHandler = Handler(mBackgroundThread!!.looper)
-        }else{
-            mExecutor = Executors.newFixedThreadPool(2)
-        }
+        mBackgroundThread = HandlerThread("cameraBackgroundThread")
+        mBackgroundThread!!.start()
+        mBackgroundHandler = Handler(mBackgroundThread!!.looper)
+        mExecutor = Executors.newFixedThreadPool(2)
     }
-    private fun stopBackgroundThread(){
+    private fun stopBackgroundThread() {
         Utils.logInfo("stop backgroundThread.")
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
-            if (mBackgroundThread != null){
-                mBackgroundThread!!.quitSafely()
-                try {
-                    mBackgroundThread!!.join()
-                    mBackgroundThread = null
-                    mBackgroundHandler = null
-                }catch (e:InterruptedException ){
-                    Utils.logInfo("stop background thread error:$e")
-                }
+        if (mBackgroundThread != null) {
+            mBackgroundThread!!.quitSafely()
+            try {
+                mBackgroundThread!!.join()
+                mBackgroundThread = null
+                mBackgroundHandler = null
+            } catch (e: InterruptedException) {
+                Utils.logInfo("stop background thread error:$e")
             }
-        }else if (mExecutor != null){
+        }
+        if (mExecutor != null) {
             mExecutor!!.shutdown()
             mExecutor = null
         }
@@ -148,12 +155,12 @@ class CameraManager() {
             return
         }
 
-        releaseCamera()
+        releaseResource()
         startBackgroundThread()
 
         mPreviewSurface = surface
-        mImageReader = ImageReader.newInstance(1920,1080,ImageFormat.JPEG,1)
-        mImageReader!!.setOnImageAvailableListener(imageAvailableListener,mBackgroundHandler)
+        mImageReader = ImageReader.newInstance(4000,3000,ImageFormat.JPEG,1)
+        mImageReader!!.setOnImageAvailableListener(mImageAvailableListener,mBackgroundHandler)
 
         val cManager = VideoApp.getInstance().getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try {
@@ -180,10 +187,18 @@ class CameraManager() {
         }
 
         override fun onDisconnected(camera: CameraDevice) {
+            mCameraDevice?.apply {
+                close()
+                mCameraDevice = null
+            }
             Utils.showToast("camera has disconnected.")
         }
 
         override fun onError(camera: CameraDevice, error: Int) {
+            mCameraDevice?.apply {
+                close()
+                mCameraDevice = null
+            }
             Utils.showToast("camera open error:" + getOpenErrorMsg(error))
         }
     }
@@ -197,12 +212,14 @@ class CameraManager() {
             return
         }
 
+        initMediaRecorder()
+
         try {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
-                mCameraDevice!!.createCaptureSession(listOf(mPreviewSurface,mImageReader!!.surface),mCaptureSessionCallback,mBackgroundHandler)
+                mCameraDevice!!.createCaptureSession(listOf(mPreviewSurface,mImageReader!!.surface,mRecordSurface),mCaptureSessionCallback,mBackgroundHandler)
             }else {
                 val config = SessionConfiguration(SessionConfiguration.SESSION_REGULAR,listOf(OutputConfiguration(mPreviewSurface!!),
-                    OutputConfiguration(mImageReader!!.surface)),mExecutor!!,mCaptureSessionCallback)
+                    OutputConfiguration(mImageReader!!.surface), OutputConfiguration(mRecordSurface!!)),mExecutor!!,mCaptureSessionCallback)
 
                 mCameraDevice!!.createCaptureSession(config)
             }
@@ -221,25 +238,7 @@ class CameraManager() {
                 return
             }
             mCameraCaptureSession = session
-            try {
-                mPreviewCaptureRequestBuilder = mCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-
-                mPreviewCaptureRequestBuilder?.apply {
-                    addTarget(mPreviewSurface!!)
-
-                    set(CaptureRequest.CONTROL_AF_MODE,CameraMetadata.CONTROL_AF_MODE_AUTO)
-                    set(CaptureRequest.CONTROL_AF_TRIGGER,CameraMetadata.CONTROL_AF_TRIGGER_START)
-                    set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
-
-                    mCameraCaptureSession!!.setRepeatingRequest(build(),null,null)
-                }
-            }catch (e:IllegalArgumentException){
-                Utils.showToast(e.message)
-                Utils.logInfo(e.message)
-            }catch (e:CameraAccessException){
-                Utils.showToast(e.message)
-                Utils.logInfo(e.message)
-            }
+            createPreviewRequest()
         }
         override fun onConfigureFailed(session: CameraCaptureSession) {
             Utils.showToast("CaptureSession configure failure.")
@@ -249,8 +248,33 @@ class CameraManager() {
             stopBackgroundThread()
         }
     }
+    private fun createPreviewRequest(){
+        try {
+            if (mCameraCaptureSession != null){
+                if (mPreviewCaptureRequestBuilder != null){
+                    mCameraCaptureSession!!.setRepeatingRequest(mPreviewCaptureRequestBuilder!!.build(),null,null)
+                }else{
+                    mPreviewCaptureRequestBuilder = mCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
+                        addTarget(mPreviewSurface!!)
 
-    private val imageAvailableListener = ImageReader.OnImageAvailableListener {
+                        set(CaptureRequest.CONTROL_AF_MODE,CameraMetadata.CONTROL_AF_MODE_AUTO)
+                        set(CaptureRequest.CONTROL_AF_TRIGGER,CameraMetadata.CONTROL_AF_TRIGGER_START)
+                        set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
+
+                        mCameraCaptureSession!!.setRepeatingRequest(build(),null,null)
+                    }
+                }
+            }
+        }catch (e:IllegalArgumentException){
+            Utils.showToast(e.message)
+            Utils.logInfo(e.message)
+        }catch (e:CameraAccessException){
+            Utils.showToast(e.message)
+            Utils.logInfo(e.message)
+        }
+    }
+
+    private val mImageAvailableListener = ImageReader.OnImageAvailableListener {
         Utils.logInfo("width:${it.width},height:${it.height},format:${it.imageFormat}")
 
         val image = it.acquireLatestImage()
@@ -263,7 +287,8 @@ class CameraManager() {
         image.close()
 
         try {
-            FileOutputStream(getPicFile()).use { fileOutputStream->
+            val file = getPicFile();
+            FileOutputStream(file).use { fileOutputStream->
                 var bmp = BitmapFactory.decodeByteArray(bmpBuffer,0,bmpBuffer.size)
                 if (hasBack){
                     bmp.compress(Bitmap.CompressFormat.JPEG,100,fileOutputStream)
@@ -273,27 +298,27 @@ class CameraManager() {
                     bmp = Bitmap.createBitmap(bmp,0,0,bmp.width,bmp.height,matrix,false)
                     bmp.compress(Bitmap.CompressFormat.JPEG,100,fileOutputStream)
                 }
-                mPicCallback?.onTaken(bmp)
+                bmp.recycle()
             }
+            mPicCallback?.onTaken(file)
         }catch (e:IOException){
             Utils.showToast("save file error:" + e.message)
         }
     }
     private fun getPicFile(): File {
-        val file = getPicDir()
-        val name = String.format(Locale.CHINA, "%s%s%s.jpg", file.absolutePath, File.separator,SimpleDateFormat("yyyyMMddHHmmssSS", Locale.CHINA).format(Date()))
+        val name = String.format(Locale.CHINA, "%s%s%s.jpg", getPicDir().absolutePath, File.separator,SimpleDateFormat("yyyyMMddHHmmssSS", Locale.CHINA).format(Date()))
         return File(name)
     }
     fun getPicDir():File{
-        val file = File(VideoApp.getVideoDir() + File.separator +"pic")
-        if (!file.exists()) {
-            file.mkdirs()
+        return File(VideoApp.getVideoDir() + File.separator +"pic").apply {
+            if (!exists()) {
+                mkdirs()
+            }
         }
-        return file
     }
 
     interface OnPicture{
-        fun onTaken(bmp:Bitmap)
+        fun onTaken(file:File)
     }
     fun setPicCallback(callback:OnPicture?){
         mPicCallback = callback
@@ -309,18 +334,13 @@ class CameraManager() {
         }
 
         try {
-
-            val picCaptureRequestBuilder = mCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
-            picCaptureRequestBuilder.apply {
+            val picCaptureRequestBuilder = mCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE).apply {
                 addTarget(mImageReader!!.surface)
                 set(CaptureRequest.JPEG_ORIENTATION,mSensorOrientation)
-
                 set(CaptureRequest.CONTROL_AF_MODE,CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
                 set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
             }
-
             mCameraCaptureSession!!.capture(picCaptureRequestBuilder.build(),null,null)
-
         }catch (e:IllegalArgumentException){
             Utils.showToast(e.message)
             Utils.logInfo(e.message)
@@ -332,6 +352,131 @@ class CameraManager() {
             Utils.logInfo(e.message)
         }
     }
+
+    fun recodeVideo(){
+        launch {
+            try {
+                privateRecordVideo()
+            }catch (e:IllegalArgumentException){
+                Utils.logInfo(e.message)
+            }
+        }
+    }
+    private fun initMediaRecorder(){
+        if (mMediaRecorder == null){
+            mRecordSurface = MediaCodec.createPersistentInputSurface()
+            mMediaRecorder =
+                    /*if (Build.VERSION.SDK_INT >  Build.VERSION_CODES.R) {
+                MediaRecorder(VideoApp.getInstance())
+            } else */MediaRecorder()
+        }else{
+            mMediaRecorder!!.reset()
+        }
+        mMediaRecorder!!.apply {
+            setAudioSource(MediaRecorder.AudioSource.MIC)
+            setVideoSource(MediaRecorder.VideoSource.SURFACE)
+
+            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+
+            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+            setVideoEncoder(MediaRecorder.VideoEncoder.H264)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+                setOutputFile(getVideoFile())
+            }else{
+                setOutputFile(getVideoFile().absolutePath)
+            }
+
+            /*if (Build.VERSION.SDK_INT >  Build.VERSION_CODES.R){
+                val encoderProfiles = CamcorderProfile.getAll(getValidCameraId(),CamcorderProfile.QUALITY_720P)
+                encoderProfiles?.apply {
+                    val videos = videoProfiles
+                    if (videos.isNotEmpty()){
+                        val  videoProfile = videos[0]
+                        setVideoSize(videoProfile.width,videoProfile.height)
+                        setVideoFrameRate(videoProfile.frameRate)
+                        setVideoEncodingBitRate(videoProfile.bitrate)
+                    }
+
+                    val audios =  audioProfiles
+                    if (audios.isNotEmpty()){
+                        val audio = audios[0]
+                        setAudioChannels(audio.channels)
+                        setAudioSamplingRate(audio.sampleRate)
+                        setAudioEncodingBitRate(audio.bitrate)
+                    }
+                }
+            }else*/
+
+            val  camcorderProfile =  CamcorderProfile.get(getValidCameraId().toInt(),CamcorderProfile.QUALITY_720P)
+
+            Logger.d("camcorderProfile:$camcorderProfile")
+
+            setVideoSize(camcorderProfile.videoFrameWidth,camcorderProfile.videoFrameHeight)
+            setVideoFrameRate(camcorderProfile.videoFrameRate)
+            setVideoEncodingBitRate(camcorderProfile.videoBitRate)
+
+            setAudioChannels(camcorderProfile.audioChannels)
+            setAudioSamplingRate(camcorderProfile.audioSampleRate)
+            setAudioEncodingBitRate(camcorderProfile.audioBitRate)
+
+            setOrientationHint(90);
+
+            setInputSurface(mRecordSurface!!)
+
+            setOnErrorListener { _, what, _ -> Utils.logInfo("mediaRecorder error:$what") }
+
+            prepare()
+        }
+    }
+    private fun startRecordRequest(){
+        try {
+            val picCaptureRequestBuilder = mCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_RECORD).apply {
+                addTarget(mPreviewSurface!!)
+                addTarget(mRecordSurface!!)
+                set(CaptureRequest.CONTROL_AF_MODE,CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
+            }
+            mCameraCaptureSession!!.setRepeatingRequest(picCaptureRequestBuilder.build(),null,null)
+        }catch (e:IllegalArgumentException){
+            Utils.showToast(e.message)
+            Utils.logInfo(e.message)
+        }catch (e:CameraAccessException){
+            Utils.showToast(e.message)
+            Utils.logInfo(e.message)
+        }catch (e:IllegalStateException ){
+            Utils.showToast(e.message)
+            Utils.logInfo(e.message)
+        }
+    }
+    private fun privateRecordVideo(){
+        try {
+            mMediaRecorder?.apply {
+                startRecordRequest()
+                start()
+            }
+        }catch (e:Exception){
+            e.printStackTrace()
+        }
+    }
+    fun stopRecord(){
+        launch {
+            try {
+                mMediaRecorder!!.stop()
+                createPreviewRequest()
+            }catch (e:Exception){
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun getVideoFile(): File {
+        val file = File(VideoApp.getVideoDir() + File.separator +"video")
+        if (!file.exists()) {
+            file.mkdirs()
+        }
+        val name = String.format(Locale.CHINA, "%s%s%s.mp4", file.absolutePath, File.separator,SimpleDateFormat("yyyyMMddHHmmssSS", Locale.CHINA).format(Date()))
+        return File(name)
+    }
+
 
     private fun getOpenErrorMsg(code:Int):String{
         return when(code){
@@ -362,8 +507,12 @@ class CameraManager() {
         }else mCameraFaceId
     }
 
-    fun releaseCamera(){
+    fun releaseResource(){
         Utils.logInfo("start release resource.")
+        releaseRecorder()
+        releaseCamera()
+    }
+    private fun releaseCamera(){
         if (mPreviewCaptureRequestBuilder != null && mPreviewSurface != null){
             mPreviewCaptureRequestBuilder!!.removeTarget(mPreviewSurface!!)
             mPreviewCaptureRequestBuilder = null
@@ -382,6 +531,21 @@ class CameraManager() {
         if (mImageReader != null){
             mImageReader!!.close()
             mImageReader = null
+        }
+    }
+
+    private fun releaseRecorder(){
+        try {
+            if (mMediaRecorder != null){
+                mMediaRecorder!!.release()
+                mMediaRecorder = null
+            }
+            if (mRecordSurface != null){
+                mRecordSurface!!.release()
+                mRecordSurface = null
+            }
+        }catch (e:Exception){
+            e.printStackTrace()
         }
     }
 

@@ -8,7 +8,7 @@ import android.view.View;
 import com.wyc.video.R;
 
 
-public class VideoRelatedActivity extends BaseActivity implements View.OnClickListener {
+public class VideoRelatedActivity extends VideoBaseActivity implements View.OnClickListener {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

@@ -36,7 +36,7 @@ public class RecordBtn extends AppCompatButton {
     private float mCenter = 0;
     private float mInnerRadius = 0;
     private final float mBorder = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,2,getResources().getDisplayMetrics());
-    private MODE mMode = MODE.PICTURE;
+    private MODE mMode = MODE.SHORT_RECORD;
     private ActionCallback mCallback = null;
     private ValueAnimator mAnimator = null;
     private final int mShortVideoTime = 15;//unit second
@@ -208,6 +208,7 @@ public class RecordBtn extends AppCompatButton {
         drawInnerCircle(canvas);
         drawRecordStatus(canvas);
         drawShortRecordStatus(canvas);
+        drawShortRecordCircle(canvas);
     }
 
     @Override
@@ -216,6 +217,13 @@ public class RecordBtn extends AppCompatButton {
         mCenter = Math.min(getMeasuredWidth(),getMeasuredHeight()) >> 1;
         mOutRadius = mCenter * 0.75f;
         mInnerRadius = mOutRadius - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,8,getResources().getDisplayMetrics());
+    }
+    private void drawShortRecordCircle(Canvas canvas){
+        if (mMode == MODE.SHORT_RECORD){
+            mPaint.setColor(Color.RED);
+            mPaint.setStyle(Paint.Style.FILL);
+            canvas.drawCircle(mCenter,mCenter,mInnerRadius / 4,mPaint);
+        }
     }
 
     private void drawOutCircle(Canvas canvas){

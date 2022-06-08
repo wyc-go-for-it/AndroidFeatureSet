@@ -25,7 +25,7 @@ import com.wyc.video.VideoApp
  * @Version:        1.0
  */
 
-abstract class BaseActivity: AppCompatActivity() {
+abstract class VideoBaseActivity: AppCompatActivity() {
     private var mLeft: TextView? = null
     private var mMiddle:TextView? = null
     private var mRight:TextView? = null
@@ -70,7 +70,7 @@ abstract class BaseActivity: AppCompatActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
             this.layoutParams = layoutParams
-            View.inflate(this@BaseActivity, getContentLayoutId(), this)
+            View.inflate(this@VideoBaseActivity, getContentLayoutId(), this)
         }
     }
     abstract fun getContentLayoutId():Int

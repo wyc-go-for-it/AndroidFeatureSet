@@ -135,7 +135,7 @@ public class AdaptiveSurfaceView extends SurfaceView implements SurfaceHolder.Ca
 
     @Override
     public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
-        mCameraManager.releaseCamera();
+        mCameraManager.releaseResource();
     }
 
 }

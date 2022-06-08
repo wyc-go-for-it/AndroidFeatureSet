@@ -59,7 +59,7 @@ public class CircleImage extends AppCompatImageView {
         final Drawable drawable = getDrawable();
         if (drawable instanceof BitmapDrawable) {
             final Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
-            drawRoundByXfermode(canvas, bitmap);
+            if (bitmap != null && !bitmap.isRecycled()) drawRoundByXfermode(canvas, bitmap);
         } else {
             super.onDraw(canvas);
         }
@@ -85,11 +85,14 @@ public class CircleImage extends AppCompatImageView {
 
         mMatrix.reset();
         mMatrix.postRotate(mRotationVal,viewWidth >> 1,viewHeight >> 1);
-
-        final Bitmap b = Bitmap.createBitmap(bitmap,(bitmapWidth - viewWidth) >> 1,(bitmapHeight - viewHeight) >> 1,viewWidth,viewHeight);
-        canvas.drawBitmap(b,mMatrix,mPaint);
-        b.recycle();
-
+        if (bitmapWidth > viewWidth && bitmapHeight > viewHeight){
+            final Bitmap b = Bitmap.createBitmap(bitmap, (bitmapWidth - viewWidth) >> 1, (bitmapHeight - viewHeight) >> 1,viewWidth,viewHeight);
+            canvas.drawBitmap(b,mMatrix,mPaint);
+            b.recycle();
+        }else {
+            mMatrix.postTranslate((viewWidth - bitmapWidth) >> 1,(viewHeight - bitmapHeight) >> 1);
+            canvas.drawBitmap(bitmap,mMatrix,mPaint);
+        }
         mPaint.setXfermode(null);
 
         //draw border

@@ -7,7 +7,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.MediaRecorder;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -21,28 +21,50 @@ import com.wyc.permission.Permission;
 import com.wyc.permission.XXPermissions;
 import com.wyc.video.R;
 import com.wyc.video.Utils;
-import com.wyc.video.VideoApp;
-import com.wyc.video.camera.AdaptiveSurfaceView;
-import com.wyc.video.camera.CameraManager;
+import com.wyc.video.camera.VideoCameraManager;
 import com.wyc.video.camera.CircleImage;
 import com.wyc.video.camera.RecordBtn;
+import com.wyc.video.recorder.AbstractRecorder;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
 public class CameraSurfaceViewActivity extends VideoBaseActivity {
-    private CameraManager mCameraManager;
+    private RecordBtn mRecord;
     private CircleImage mThumbnails;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setMiddleText(getString(R.string.useSurfaceView));
 
-        initSurface();
         initRecordBtn();
         initCameraReverse();
         initThumbnails();
+        initCaptureMode();
+    }
+
+    private void initCaptureMode(){
+        Button btn = findViewById(R.id.button);
+        Button btn1 = findViewById(R.id.button2);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mRecord.setCaptureMode(VideoCameraManager.MODE.PICTURE);
+            }
+        });
+        btn1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mRecord.setCaptureMode(VideoCameraManager.MODE.RECORD);
+            }
+        });
+        findViewById(R.id.button3).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mRecord.setCaptureMode(VideoCameraManager.MODE.SHORT_RECORD);
+            }
+        });
     }
 
     private void initThumbnails(){
@@ -56,7 +78,7 @@ public class CameraSurfaceViewActivity extends VideoBaseActivity {
                 startActivity(intent);
             }
         });
-        mCameraManager.setPicCallback(this::decodeImgFile);
+        VideoCameraManager.getInstance().setPicCallback(this::decodeImgFile);
     }
 
     private Uri getImageContentUri(File imageFile) {
@@ -80,19 +102,40 @@ public class CameraSurfaceViewActivity extends VideoBaseActivity {
         }
     }
 
+    private Uri getVideoContentUri(File imageFile) {
+        final String filePath = imageFile.getAbsolutePath();
+        try(Cursor cursor = getContentResolver().query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, new String[]{MediaStore.Video.Media._ID},
+                MediaStore.Video.Media.DATA + "=? ", new String[]{filePath}, null)) {
+
+            if (cursor != null && cursor.moveToFirst()) {
+                @SuppressLint("Range") int id = cursor.getInt(cursor.getColumnIndex(MediaStore.MediaColumns._ID));
+                Uri baseUri = Uri.parse("content://media/external/images/media");
+                return Uri.withAppendedPath(baseUri, "" + id);
+            } else {
+                if (imageFile.exists()) {
+                    ContentValues values = new ContentValues();
+                    values.put(MediaStore.Video.Media.DATA, filePath);
+                    return getContentResolver().insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values);
+                } else {
+                    return null;
+                }
+            }
+        }
+    }
+
     private void initCameraReverse(){
         final Button camera_reverse = findViewById(R.id.camera_reverse);
-        camera_reverse.setOnClickListener(v -> mCameraManager.switchCamera());
-    }
-    private void initSurface(){
-        mCameraManager = new CameraManager();
-        AdaptiveSurfaceView surfaceView = findViewById(R.id.preview_surface);
-        surfaceView.setCameraManager(mCameraManager);
+        camera_reverse.setOnClickListener(v -> {
+            VideoCameraManager.getInstance().switchCamera();
+/*            if (!VideoCameraManager.getInstance().hasRecording()){
+                VideoCameraManager.getInstance().switchCamera();
+            }else Utils.showToast("recording video has been doing,Please stop recording first.");*/
+        });
     }
 
     private void initRecordBtn(){
-        final RecordBtn btn = findViewById(R.id.recordBtn);
-        btn.setCallback(new RecordBtn.ActionCallback() {
+        mRecord = findViewById(R.id.recordBtn);
+        mRecord.setCallback(new RecordBtn.ActionCallback() {
             @Override
             public void startRecord() {
                 Utils.showToast("startRecord");
@@ -101,7 +144,7 @@ public class CameraSurfaceViewActivity extends VideoBaseActivity {
                         .request(new OnPermissionCallback() {
                             @Override
                             public void onGranted(List<String> permissions, boolean all) {
-                                mCameraManager.recodeVideo();
+                                VideoCameraManager.getInstance().recodeVideo();
                             }
                             @Override
                             public void onDenied(List<String> permissions, boolean never) {
@@ -115,12 +158,12 @@ public class CameraSurfaceViewActivity extends VideoBaseActivity {
             @Override
             public void finishRecord(long recordTime) {
                 Utils.showToast("finishRecord:" + recordTime);
-                mCameraManager.stopRecord();
+                VideoCameraManager.getInstance().stopRecord(true);
             }
 
             @Override
             public void takePicture() {
-                mCameraManager.tackPic();
+                VideoCameraManager.getInstance().tackPic();
             }
         });
     }
@@ -129,17 +172,47 @@ public class CameraSurfaceViewActivity extends VideoBaseActivity {
     protected void onResume() {
         super.onResume();
         loadImg();
+        mRecord.postDelayed(()->{
+
+            VideoCameraManager.getInstance().openCamera();
+
+        },1000);
+
     }
 
     private void loadImg(){
         new Thread(() -> {
-            File picDir = mCameraManager.getPicDir();
-            File[] pics = picDir.listFiles();
+            File lastVideo = null,lastPic = null;
+            File[] pics = VideoCameraManager.getInstance().getPicDir().listFiles();
+            File[] videos = AbstractRecorder.getVideoDir().listFiles();
+
+            if (videos != null && videos.length > 0){
+                Arrays.sort(videos, (o1, o2) -> Long.compare(o1.lastModified(), o2.lastModified()));
+                lastVideo = videos[videos.length - 1];
+            }
+
             if (pics != null && pics.length > 0){
                 Arrays.sort(pics, (o1, o2) -> Long.compare(o1.lastModified(), o2.lastModified()));
-                decodeImgFile(pics[pics.length - 1]);
+                lastPic = pics[pics.length - 1];
+
             }else {
                 runOnUiThread(()-> mThumbnails.setImageBitmap(null));
+            }
+
+            if (lastPic != null && lastVideo != null){
+                if (lastPic.lastModified() > lastVideo.lastModified()){
+                    mThumbnails.setTag(getVideoContentUri(lastVideo));
+                    final Bitmap bitmap = ThumbnailUtils.createVideoThumbnail(lastVideo.getPath(), MediaStore.Images.Thumbnails.MINI_KIND);
+                    runOnUiThread(()-> mThumbnails.setImageBitmap(bitmap));
+                }else {
+                    decodeImgFile(lastPic);
+                }
+            }else if (lastPic != null){
+                decodeImgFile(lastPic);
+            }else if (lastVideo != null){
+                mThumbnails.setTag(getVideoContentUri(lastVideo));
+                final Bitmap bitmap = ThumbnailUtils.createVideoThumbnail(lastVideo.getPath(), MediaStore.Images.Thumbnails.MINI_KIND);
+                runOnUiThread(()-> mThumbnails.setImageBitmap(bitmap));
             }
         }).start();
     }
@@ -152,9 +225,15 @@ public class CameraSurfaceViewActivity extends VideoBaseActivity {
     }
 
     @Override
+    protected void onStop(){
+        super.onStop();
+        VideoCameraManager.getInstance().setPicCallback(null);
+        mRecord.stopRecord();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
-        mCameraManager.setPicCallback(null);
     }
 
     @Override

@@ -17,6 +17,8 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatButton;
+import com.wyc.video.camera.VideoCameraManager.MODE;
+import com.wyc.video.camera.VideoCameraManager.RECORD_STATUS;
 
 /**
  * @ProjectName: AndroidFeatureSet
@@ -36,7 +38,7 @@ public class RecordBtn extends AppCompatButton {
     private float mCenter = 0;
     private float mInnerRadius = 0;
     private final float mBorder = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,2,getResources().getDisplayMetrics());
-    private MODE mMode = MODE.SHORT_RECORD;
+    private MODE mMode = MODE.PICTURE;
     private ActionCallback mCallback = null;
     private ValueAnimator mAnimator = null;
     private final int mShortVideoTime = 15;//unit second
@@ -79,6 +81,7 @@ public class RecordBtn extends AppCompatButton {
                                 mCallback.startRecord();
                                 break;
                         }
+                        VideoCameraManager.getInstance().sycRecordingState(mRecordStatus);
                     }
                         break;
                     case PICTURE:
@@ -87,6 +90,7 @@ public class RecordBtn extends AppCompatButton {
                 }
             }
         });
+        VideoCameraManager.getInstance().sycCaptureMode(mMode);
     }
 
     private void startAnimation(){
@@ -286,10 +290,14 @@ public class RecordBtn extends AppCompatButton {
         }
     }
 
-    public enum MODE{
-        RECORD,PICTURE,SHORT_RECORD
+    public void setCaptureMode(MODE mode){
+        mMode = mode;
+        VideoCameraManager.getInstance().sycCaptureMode(mode);
+        invalidate();
     }
-    private enum RECORD_STATUS{
-        START,STOP
+    public void stopRecord(){
+        VideoCameraManager.getInstance().stopRecord(false);
+        mRecordStatus = RECORD_STATUS.STOP;
+        mStartRecordTime = 0;
     }
 }

@@ -6,12 +6,14 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.SurfaceTexture;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
+import android.view.Surface;
+import android.view.TextureView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.wyc.permission.OnPermissionCallback;
 import com.wyc.permission.Permission;
@@ -22,35 +24,37 @@ import java.util.List;
 /**
  * @ProjectName: AndroidFeatureSet
  * @Package: com.wyc.video.camera
- * @ClassName: AdaptiveSurfaceView
- * @Description: 自适应摄像头预览尺寸
+ * @ClassName: AdaptiveTextureView
+ * @Description: 作用描述
  * @Author: wyc
- * @CreateDate: 2022/6/2 15:55
+ * @CreateDate: 2022/6/9 17:52
  * @UpdateUser: 更新者：
- * @UpdateDate: 2022/6/2 15:55
+ * @UpdateDate: 2022/6/9 17:52
  * @UpdateRemark: 更新说明：
  * @Version: 1.0
  */
-public class AdaptiveSurfaceView extends SurfaceView implements SurfaceHolder.Callback  {
+public class AdaptiveTextureView extends TextureView implements TextureView.SurfaceTextureListener {
 
     private final float mRatio = VideoCameraManager.getInstance().calPreViewAspectRatio();
     private final Paint mPaint = new Paint();
 
     private final Rect mFocusRect = new Rect();
 
-    public AdaptiveSurfaceView(Context context) {
+    private Surface mSurface;
+
+    public AdaptiveTextureView(@NonNull Context context) {
         this(context,null);
     }
 
-    public AdaptiveSurfaceView(Context context, AttributeSet attrs) {
+    public AdaptiveTextureView(@NonNull Context context, @Nullable AttributeSet attrs) {
         this(context, attrs,0);
     }
 
-    public AdaptiveSurfaceView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public AdaptiveTextureView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         this(context, attrs, defStyleAttr,0);
     }
 
-    public AdaptiveSurfaceView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public AdaptiveTextureView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init();
     }
@@ -60,7 +64,7 @@ public class AdaptiveSurfaceView extends SurfaceView implements SurfaceHolder.Ca
         mPaint.setColor(Color.RED);
         mPaint.setStyle(Paint.Style.STROKE);
 
-        getHolder().addCallback(this);
+        setSurfaceTextureListener(this);
 
         setWillNotDraw(false);
     }
@@ -85,34 +89,26 @@ public class AdaptiveSurfaceView extends SurfaceView implements SurfaceHolder.Ca
     }
 
     @Override
-    protected void onDraw(Canvas canvas){
-        super.onDraw(canvas);
-        if (!mFocusRect.isEmpty())
-            canvas.drawRect(mFocusRect,mPaint);
-    }
-
-    @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int w = MeasureSpec.getSize(widthMeasureSpec);
+        int h = MeasureSpec.getSize(heightMeasureSpec);
         if (mRatio <= 0f) {
             super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         } else {
-            setMeasuredDimension((int) (MeasureSpec.getSize(heightMeasureSpec) * mRatio), MeasureSpec.getSize(heightMeasureSpec));
+            setMeasuredDimension((int) (MeasureSpec.getSize(heightMeasureSpec) *  mRatio), MeasureSpec.getSize(heightMeasureSpec));
         }
     }
 
     @Override
-    protected void onLayout(boolean changed,int l,int t,int r,int b){
-        super.onLayout(changed, l, t, r, b);
-    }
-
-    @Override
-    public void surfaceCreated(@NonNull SurfaceHolder holder) {
+    public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
+        surface.setDefaultBufferSize(height,width);
+        mSurface = new Surface(surface);
         XXPermissions.with(getContext())
                 .permission(Permission.CAMERA)
                 .request(new OnPermissionCallback() {
                     @Override
                     public void onGranted(List<String> permissions, boolean all) {
-                        VideoCameraManager.getInstance().addSurface(holder.getSurface());
+                        VideoCameraManager.getInstance().addSurface(mSurface);
                     }
                     @Override
                     public void onDenied(List<String> permissions, boolean never) {
@@ -124,11 +120,19 @@ public class AdaptiveSurfaceView extends SurfaceView implements SurfaceHolder.Ca
     }
 
     @Override
-    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
+    public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, int width, int height) {
+
     }
 
     @Override
-    public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
+    public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surface) {
+        if (mSurface != null)mSurface.release();
         VideoCameraManager.clear();
+        return true;
+    }
+
+    @Override
+    public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) {
+
     }
 }

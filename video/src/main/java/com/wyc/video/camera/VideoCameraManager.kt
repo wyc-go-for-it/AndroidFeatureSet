@@ -246,9 +246,11 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
         if (mCameraDevice == null){
             return
         }
-
-        mImageReader = ImageReader.newInstance(4000,3000,ImageFormat.JPEG,1)
-        mImageReader!!.setOnImageAvailableListener(mPicImageAvailableListener,mBackgroundHandler)
+        
+        if (mImageReader == null){
+            mImageReader = ImageReader.newInstance(4000,3000,ImageFormat.JPEG,1)
+            mImageReader!!.setOnImageAvailableListener(mPicImageAvailableListener,mBackgroundHandler)
+        }
 
         try {
 

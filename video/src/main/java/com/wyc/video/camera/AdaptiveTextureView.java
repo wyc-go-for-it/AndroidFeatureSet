@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
@@ -15,6 +16,7 @@ import android.view.TextureView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.wyc.logger.Logger;
 import com.wyc.permission.OnPermissionCallback;
 import com.wyc.permission.Permission;
 import com.wyc.permission.XXPermissions;
@@ -37,7 +39,7 @@ public class AdaptiveTextureView extends TextureView implements TextureView.Surf
 
     private final float mRatio = VideoCameraManager.getInstance().calPreViewAspectRatio();
     private final Paint mPaint = new Paint();
-
+    private final Matrix mMatrix = new Matrix();
     private final Rect mFocusRect = new Rect();
 
     private Surface mSurface;
@@ -66,7 +68,6 @@ public class AdaptiveTextureView extends TextureView implements TextureView.Surf
 
         setSurfaceTextureListener(this);
 
-        setWillNotDraw(false);
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -78,11 +79,11 @@ public class AdaptiveTextureView extends TextureView implements TextureView.Surf
         return super.onTouchEvent(e);
     }
 
-    private void updateFocusRect(int x,int y){
+
+    private void updateFocusRect(int x, int y){
         int region = 88;
         mFocusRect.set(x - region,y - region,x + region,y + region);
         VideoCameraManager.getInstance().updateFocusRegion(getWidth(),getHeight(), mFocusRect.left,mFocusRect.top,mFocusRect.right,mFocusRect.bottom);
-        invalidate();
         postDelayed(()->{
             mFocusRect.setEmpty();
             postInvalidate();},1500);
@@ -90,8 +91,6 @@ public class AdaptiveTextureView extends TextureView implements TextureView.Surf
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int w = MeasureSpec.getSize(widthMeasureSpec);
-        int h = MeasureSpec.getSize(heightMeasureSpec);
         if (mRatio <= 0f) {
             super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         } else {
@@ -101,8 +100,11 @@ public class AdaptiveTextureView extends TextureView implements TextureView.Surf
 
     @Override
     public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
-        surface.setDefaultBufferSize(height,width);
         mSurface = new Surface(surface);
+        if (mRatio > 0f){
+            mMatrix.setScale(1f,0.75f);
+            setTransform(mMatrix);
+        }
         XXPermissions.with(getContext())
                 .permission(Permission.CAMERA)
                 .request(new OnPermissionCallback() {

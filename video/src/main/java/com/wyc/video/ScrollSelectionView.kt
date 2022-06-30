@@ -10,6 +10,10 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
+import com.wyc.logger.Logger
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.filter
 import java.util.*
 import kotlin.math.abs
 
@@ -30,10 +34,9 @@ import kotlin.math.abs
 
 class ScrollSelectionView:View {
     private val mContentList = mutableListOf<ScrollItem>()
-    private val mCurItemList = mutableListOf<ScrollItem>()
     private val mPaint = Paint()
     private var mFontSize:Float = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, resources.displayMetrics)
-    private var mDirection = 1
+    private var mDirection = 0
     private var mCurSpace = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics)
 
     constructor(context: Context):this(context, null)
@@ -52,8 +55,25 @@ class ScrollSelectionView:View {
         return super.onTouchEvent(event)
     }
 
-    override fun onDraw(canvas: Canvas?) {
+    override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        drawContent(canvas)
+    }
+
+    private fun drawContent(canvas: Canvas){
+        mContentList.filter { it.visibility }.forEach {
+            val baseLineY = it.sHeight / 2 + (abs(mPaint.fontMetrics.ascent) - mPaint.fontMetrics.descent) / 2
+            canvas.drawText(it.name,it.sX,it.sY + baseLineY,mPaint)
+        }
+    }
+
+    private fun measureChild(){
+        val bound = Rect()
+        mContentList.forEach {
+            mPaint.getTextBounds(it.name,0,it.name.length,bound)
+            it.sWidth = bound.width()
+            it.sHeight = bound.height()
+        }
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -63,245 +83,314 @@ class ScrollSelectionView:View {
         var realWidthMeasureSpec = widthMeasureSpec
         var realHeightMeasureSpec = heightMeasureSpec
 
-        mCurItemList.clear()
+        measureChild()
 
-        val index = findSelectionIndex()
-        if (index != -1 && (mDirection == 1 && widthSpec == MeasureSpec.AT_MOST || mDirection == 0 && heightSpec == MeasureSpec.AT_MOST)){
-            if (index == 0){
-                mCurItemList.add(mContentList[index])
-                if (mContentList.size > 1){
-                    mCurItemList.add(mContentList[index + 1])
-                }
-            }else if (index == 1){
-                mCurItemList.add(mContentList[index - 1])
-                mCurItemList.add(mContentList[index])
-                if (mContentList.size > 2){
-                    mCurItemList.add(mContentList[index + 1])
-                }
-            }else{
-                mCurItemList.add(mContentList[index - 1])
-                mCurItemList.add(mContentList[index])
-                if (mContentList.size > index + 1){
-                    mCurItemList.add(mContentList[index + 1])
+        if (widthSpec == MeasureSpec.AT_MOST || heightSpec == MeasureSpec.AT_MOST){
+            var calc = 0
+
+            if ((mDirection == 1 && widthSpec == MeasureSpec.AT_MOST) || (mDirection != 1 && heightSpec == MeasureSpec.AT_MOST)){
+                val index = findSelectionIndex()
+                mContentList.forEach { it.visibility = false }
+                if (index == 0){
+                    calc++
+                    mContentList[index].visibility = true
+                    if (mContentList.size > 1){
+                        mContentList[index + 1].visibility = true
+                    }
+                }else if (index == 1){
+                    calc += 2
+                    mContentList[index - 1].visibility = true
+                    mContentList[index].visibility = true
+                    if (mContentList.size > 2){
+                        mContentList[index + 1].visibility = true
+                    }
+                }else{
+                    calc += 2
+                    mContentList[index - 1].visibility = true
+                    mContentList[index].visibility = true
+                    if (mContentList.size > index + 1){
+                        mContentList[index + 1].visibility = true
+                    }
                 }
             }
-        }
 
-        if(mCurItemList.isNotEmpty()){
 
-            val bound = Rect()
             if (mDirection == 1){//horizontal
-                val realWidth = mCurItemList.fold(0){sum,item -> mPaint.getTextBounds(item.name,0,item.name.length,bound);sum + bound.width()}
-                val maxHeight = mCurItemList.maxOf { mPaint.getTextBounds(it.name,0,it.name.length,bound);bound.height()}
-                if (widthSpec == MeasureSpec.AT_MOST){
-                    if (realWidth > 0){
-                        realWidthMeasureSpec = MeasureSpec.makeMeasureSpec((realWidth + (mCurItemList.size - 1) * mCurSpace).toInt(),MeasureSpec.EXACTLY)
-                    }
-                    if (maxHeight > 0){
-                        realHeightMeasureSpec = MeasureSpec.makeMeasureSpec(maxHeight,MeasureSpec.EXACTLY)
-                    }
+                val realWidth = mContentList.fold(0){sum,item ->
+                    if (item.visibility)sum + item.sWidth else sum + 0
+                } + paddingLeft + paddingRight
+                val maxHeight = mContentList.maxOf { if (it.visibility)it.sHeight else 0 } + paddingTop + paddingBottom
+                if (realWidth > 0 && widthSpec == MeasureSpec.AT_MOST){
+                    realWidthMeasureSpec = MeasureSpec.makeMeasureSpec((realWidth + calc * mCurSpace).toInt(),MeasureSpec.AT_MOST)
+                }else{
+                    showChild()
+                }
+                if (maxHeight > 0 && (heightSpec == MeasureSpec.AT_MOST || heightSpec == MeasureSpec.UNSPECIFIED)){
+                    realHeightMeasureSpec = MeasureSpec.makeMeasureSpec(maxHeight,MeasureSpec.AT_MOST)
                 }
             }else{//vertical
-                if (heightSpec == MeasureSpec.AT_MOST){
-                    val realHeight = mCurItemList.sumOf{mPaint.getTextBounds(it.name,0,it.name.length,bound);bound.height()}
-                    val maxWidth = mCurItemList.maxOf { mPaint.getTextBounds(it.name,0,it.name.length,bound);bound.width()}
-                    if (maxWidth > 0){
-                        realWidthMeasureSpec = MeasureSpec.makeMeasureSpec(maxWidth,MeasureSpec.EXACTLY)
+                val realHeight = mContentList.sumOf{if (it.visibility)it.sHeight else 0} + paddingTop + paddingBottom
+                val maxWidth = mContentList.maxOf { if (it.visibility)it.sWidth else 0} + paddingLeft + paddingRight
+                if (realHeight > 0 && heightSpec == MeasureSpec.AT_MOST){
+                    realHeightMeasureSpec = MeasureSpec.makeMeasureSpec((realHeight + calc * mCurSpace).toInt(),MeasureSpec.AT_MOST)
+                }else{
+                    showChild()
+                }
+                if (maxWidth > 0 && (widthSpec == MeasureSpec.AT_MOST || widthSpec == MeasureSpec.UNSPECIFIED)){
+                    realWidthMeasureSpec = MeasureSpec.makeMeasureSpec(maxWidth,MeasureSpec.AT_MOST)
+                }
+            }
+        }
+        super.onMeasure(realWidthMeasureSpec, realHeightMeasureSpec)
+    }
+
+    private fun showChild(){
+
+        val width = measuredWidth
+        val height = measuredHeight
+
+        Utils.logInfo("left:$left,top:$top,right:$right,bottom:$bottom,width:$width,height:$height")
+
+        val index = findSelectionIndex()
+
+        Utils.logInfo("index:$index")
+
+        var item:ScrollItem
+        var rSize = 0
+        var sizeDiff = 0
+        if (index == 0){
+            item = mContentList[index]
+            item.visibility = true
+
+            if (mContentList.size > 1){
+                if (mDirection == 1){
+                    sizeDiff = width - item.sWidth
+                    if (sizeDiff > 0){
+                        for (i in index + 1 until mContentList.size){
+                            item = mContentList[i]
+
+                            rSize = item.sWidth
+
+                            sizeDiff -= rSize
+                            if (sizeDiff > 0){
+                                item.visibility = true
+                            }else break
+                        }
                     }
-                    if (realHeight > 0){
-                        realHeightMeasureSpec = MeasureSpec.makeMeasureSpec((realHeight + (mCurItemList.size - 1) * mCurSpace).toInt(),MeasureSpec.EXACTLY)
+                }else{
+                    sizeDiff = height - item.sHeight
+                    if (sizeDiff > 0){
+                        for (i in index + 1 until mContentList.size){
+                            item = mContentList[i]
+
+                            rSize = item.sHeight
+
+                            sizeDiff -= rSize
+                            if (sizeDiff > 0){
+                                item.visibility = true
+                            }
+                        }
                     }
                 }
             }
 
-        }
+        }else if (index == 1){
+            item = mContentList[index]
+            item.visibility = true
 
-        super.onMeasure(realWidthMeasureSpec, realHeightMeasureSpec)
+            if (mDirection == 1){
+                sizeDiff = width - item.sWidth
+
+                if (sizeDiff > 0){
+                    item = mContentList[index - 1]
+
+                    rSize = item.sWidth
+
+                    sizeDiff -= rSize
+                    if (sizeDiff > 0){
+                        item.visibility = true
+
+                        for (i in index + 1 until mContentList.size){
+                            item = mContentList[i]
+
+                            rSize = item.sWidth
+
+                            sizeDiff -= rSize
+                            if (sizeDiff > 0){
+                                item.visibility = true
+                            }else break
+                        }
+                    }
+                }
+
+            }else{
+                sizeDiff = height - item.sHeight
+                if (sizeDiff > 0){
+                    item = mContentList[index - 1]
+
+                    rSize = item.sHeight
+
+                    sizeDiff -= rSize
+                    if (sizeDiff > 0){
+                        item.visibility = true
+
+                        for (i in index + 1 until mContentList.size){
+                            item = mContentList[i]
+
+                            rSize = item.sHeight
+
+                            sizeDiff -= rSize
+                            if (sizeDiff > 0){
+                                item.visibility = true
+                            }else break
+                        }
+                    }
+                }
+            }
+        }else{
+            item = mContentList[index]
+            item.visibility = true
+
+            var preIndex = index
+            var nextIndex = index
+            if (mDirection == 1){
+                sizeDiff = width - item.sWidth
+                if (sizeDiff > 0){
+
+                    while (preIndex-- > 0 ){
+                        item = mContentList[preIndex]
+
+                        rSize = item.sWidth
+
+                        sizeDiff -= rSize
+                        if (sizeDiff > 0){
+                            item.visibility = true
+                        }else break
+                    }
+
+                    while (nextIndex ++ < mContentList.size - 1){
+                        item = mContentList[nextIndex]
+
+                        rSize = item.sWidth
+
+                        sizeDiff -= rSize
+                        if (sizeDiff > 0){
+                            item.visibility = true
+                        }else break
+                    }
+                }
+            }else{
+                sizeDiff = height - item.sHeight
+                if (sizeDiff > 0){
+
+                    while (preIndex-- > 0){
+                        item = mContentList[preIndex]
+
+                        rSize = item.sHeight
+
+                        sizeDiff -= rSize
+                        if (sizeDiff > 0){
+                            item.visibility = true
+                        }else break
+                    }
+
+                    while (nextIndex ++ < mContentList.size - 1){
+                        item = mContentList[nextIndex]
+
+                        rSize = item.sHeight
+
+                        sizeDiff -= rSize
+                        if (sizeDiff > 0){
+                            item.visibility = true
+                        }else break
+                    }
+                }
+            }
+        }
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)
 
-        if (mCurItemList.isEmpty()){
-            val index = findSelectionIndex()
+        updatePosition(left,top,right,bottom)
 
-            Utils.logInfo("index:$index")
+        Utils.logInfo(mContentList.toTypedArray().contentToString())
+    }
 
-            if (index == -1)return
+    private fun updatePosition(left: Int, top: Int, right: Int, bottom: Int){
+        val index = findSelectionIndex()
 
+        val width = right - left
+        val height = bottom  -top
 
-            val width = right - left
-            val height = bottom  -top
+        val selItem = mContentList[index]
+        if (!selItem.hasSel)selItem.hasSel = true
 
-            val bound = Rect()
-            var item:ScrollItem
-            var rSize = 0
-            var sizeDiff = 0
-            if (index == 0){
-                item = mContentList[index]
-                mCurItemList.add(item)
+        selItem.sX = ((width - selItem.sWidth) shr 1).toFloat()
+        selItem.sY = ((height - selItem.sHeight) shr 1).toFloat()
 
-                if (mContentList.size > 1){
-                    mPaint.getTextBounds(item.name,0,item.name.length,bound)
-                    if (mDirection == 1){
-                        sizeDiff = width - bound.width()
-                        if (sizeDiff > 0){
-                            for (i in index + 1 until mContentList.size){
-                                item = mContentList[i]
-                                mPaint.getTextBounds(item.name,0,item.name.length,bound)
-                                rSize = bound.width()
+        var preIndex = index
+        var nextIndex = index
 
-                                sizeDiff -= rSize
-                                if (sizeDiff > 0){
-                                    mCurItemList.add(item)
-                                }else break
-                            }
-                        }
-                    }else{
-                        sizeDiff = height - bound.height()
-                        if (sizeDiff > 0){
-                            for (i in index + 1 until mContentList.size){
-                                item = mContentList[i]
-                                mPaint.getTextBounds(item.name,0,item.name.length,bound)
-                                rSize = bound.height()
+        var sumHor = selItem.sX
+        var item:ScrollItem
+        var preSize: Int
 
-                                sizeDiff -= rSize
-                                if (sizeDiff > 0){
-                                    mCurItemList.add(item)
-                                }
-                            }
-                        }
-                    }
+        if (mDirection == 1){
+            while (preIndex-- > 0){
+                item = mContentList[preIndex]
+                if (item.visibility){
+                    item.sY = ((height - item.sHeight) shr 1).toFloat()
+
+                    sumHor -= mCurSpace
+                    item.sX = sumHor - item.sWidth
+                    sumHor = item.sX
                 }
+            }
 
-            }else if (index == 1){
-                item = mContentList[index]
-                mCurItemList.add(item)
+            sumHor = selItem.sX
+            preSize = selItem.sWidth
+            while (nextIndex ++ < mContentList.size - 1){
+                item = mContentList[nextIndex]
+                if (item.visibility){
+                    item.sY = ((height - item.sHeight) shr 1).toFloat()
 
-                mPaint.getTextBounds(item.name,0,item.name.length,bound)
+                    sumHor += mCurSpace
+                    item.sX = sumHor + preSize
+                    sumHor = item.sX
 
-                if (mDirection == 1){
-                    sizeDiff = width - bound.width()
-
-                    if (sizeDiff > 0){
-                        item = mContentList[index - 1]
-                        mPaint.getTextBounds(item.name,0,item.name.length,bound)
-                        rSize = bound.width()
-
-                        sizeDiff -= rSize
-                        if (sizeDiff > 0){
-                            mCurItemList.add(item)
-
-                            for (i in index + 1 until mContentList.size){
-                                item = mContentList[i]
-                                mPaint.getTextBounds(item.name,0,item.name.length,bound)
-                                rSize = bound.width()
-
-                                sizeDiff -= rSize
-                                if (sizeDiff > 0){
-                                    mCurItemList.add(item)
-                                }else break
-                            }
-                        }
-                    }
-
-                }else{
-                    sizeDiff = height - bound.height()
-                    if (sizeDiff > 0){
-                        item = mContentList[index - 1]
-                        mPaint.getTextBounds(item.name,0,item.name.length,bound)
-                        rSize = bound.height()
-
-                        sizeDiff -= rSize
-                        if (sizeDiff > 0){
-                            mCurItemList.add(item)
-
-                            for (i in index + 1 until mContentList.size){
-                                item = mContentList[i]
-                                mPaint.getTextBounds(item.name,0,item.name.length,bound)
-                                rSize = bound.height()
-
-                                sizeDiff -= rSize
-                                if (sizeDiff > 0){
-                                    mCurItemList.add(item)
-                                }else break
-                            }
-                        }
-                    }
+                    preSize = item.sWidth
                 }
-            }else{
-                item = mContentList[index]
-                mCurItemList.add(item)
+            }
+        }else{
+            sumHor = selItem.sY
+            while (preIndex-- > 0){
+                item = mContentList[preIndex]
+                if (item.visibility){
+                    item.sX = ((width - item.sWidth) shr 1).toFloat()
 
-                mPaint.getTextBounds(item.name,0,item.name.length,bound)
+                    sumHor -= mCurSpace
+                    item.sY = sumHor - item.sHeight
+                    sumHor = item.sY
 
-                var preIndex = 0
-                var nextIndex = 0
-                if (mDirection == 1){
-                    sizeDiff = width - bound.width()
-                    if (sizeDiff > 0){
+                }
+            }
 
-                        preIndex = index + 1
-                        nextIndex = index + 2
+            sumHor = selItem.sY
+            preSize = selItem.sHeight
+            while (nextIndex ++ < mContentList.size - 1){
+                item = mContentList[nextIndex]
+                if (item.visibility){
+                    item.sX = ((width - item.sWidth) shr 1).toFloat()
 
-                        while (preIndex-- > 0 || nextIndex ++ > 0){
-                            if (preIndex > 0){
-                                item = mContentList[preIndex]
-                                mPaint.getTextBounds(item.name,0,item.name.length,bound)
-                                rSize = bound.width()
+                    sumHor += mCurSpace
+                    item.sY = sumHor + preSize
+                    sumHor = item.sY
 
-                                sizeDiff -= rSize
-                                if (sizeDiff > 0){
-                                    mCurItemList.add(preIndex,item)
-                                }else break
-                            }
-                           if (nextIndex < mContentList.size){
-                               item = mContentList[nextIndex]
-                               mPaint.getTextBounds(item.name,0,item.name.length,bound)
-                               rSize = bound.width()
-
-                               sizeDiff -= rSize
-                               if (sizeDiff > 0){
-                                   mCurItemList.add(nextIndex,item)
-                               }else break
-                           }
-                        }
-                    }
-                }else{
-                    sizeDiff = height - bound.height()
-                    if (sizeDiff > 0){
-
-                        preIndex = index + 1
-                        nextIndex = index + 2
-
-                        while (preIndex-- > 0 || nextIndex ++ > 0){
-                            if (preIndex > 0){
-                                item = mContentList[preIndex]
-                                mPaint.getTextBounds(item.name,0,item.name.length,bound)
-                                rSize = bound.height()
-
-                                sizeDiff -= rSize
-                                if (sizeDiff > 0){
-                                    mCurItemList.add(preIndex,item)
-                                }else break
-                            }
-                            if (nextIndex < mContentList.size){
-                                item = mContentList[nextIndex]
-                                mPaint.getTextBounds(item.name,0,item.name.length,bound)
-                                rSize = bound.height()
-
-                                sizeDiff -= rSize
-                                if (sizeDiff > 0){
-                                    mCurItemList.add(nextIndex,item)
-                                }else break
-                            }
-                        }
-                    }
+                    preSize = item.sHeight
                 }
             }
         }
-
-        Utils.logInfo(mCurItemList.toTypedArray().contentToString())
     }
 
     private fun findSelectionIndex():Int{
@@ -312,7 +401,7 @@ class ScrollSelectionView:View {
                 }
             }
         }
-        return -1
+        return mContentList.size / 2
     }
 
     fun addAll(items: Collection<ScrollItem>){
@@ -322,5 +411,15 @@ class ScrollSelectionView:View {
         mContentList.add(item)
     }
 
-    data class ScrollItem(private val id:Int,val name:String,val hasSel:Boolean = false)
+    data class ScrollItem(val id:Int, val name:String, var hasSel:Boolean = false){
+        var visibility:Boolean = false
+        var sX = 0f
+        var sY = 0f
+        var sWidth = 0
+        var sHeight = 0
+
+        override fun toString(): String {
+            return "ScrollItem(id=$id, name='$name', hasSel=$hasSel, visibility=$visibility, sX=$sX, sY=$sY, sWidth=$sWidth, sHeight=$sHeight)"
+        }
+    }
 }

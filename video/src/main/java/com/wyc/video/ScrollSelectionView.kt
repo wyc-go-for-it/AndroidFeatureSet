@@ -10,12 +10,11 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import com.wyc.logger.Logger
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.filter
-import java.util.*
 import kotlin.math.abs
+import kotlin.math.asin
+import kotlin.math.sqrt
 
 
 /**
@@ -35,9 +34,15 @@ import kotlin.math.abs
 class ScrollSelectionView:View {
     private val mContentList = mutableListOf<ScrollItem>()
     private val mPaint = Paint()
-    private var mFontSize:Float = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, resources.displayMetrics)
-    private var mDirection = 0
+    private var mFontSize:Float = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16f, resources.displayMetrics)
+    private var mDirection = 1
     private var mCurSpace = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics)
+    private var downX = 0f
+    private var downY = 0f
+    private var mTouchSlop = 0
+    private var mChildOffset = 0f
+
+    private var hasOverEdge  = false
 
     constructor(context: Context):this(context, null)
     constructor(context: Context, attrs: AttributeSet?):this(context, attrs, 0)
@@ -45,14 +50,114 @@ class ScrollSelectionView:View {
         init()
     }
     private fun init(){
-        mPaint.color = Color.BLUE
+        mPaint.color = Color.WHITE
         mPaint.isAntiAlias = true
         mPaint.textSize = mFontSize
+
+        mTouchSlop = ViewConfiguration.get(context).scaledTouchSlop
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        when(event.action){
+            MotionEvent.ACTION_DOWN ->{
+                downX = event.x
+                downY = event.y
+                return true
+            }
+            MotionEvent.ACTION_MOVE ->{
+                if (!hasOverEdge){
+                    val moveX = event.x
+                    val moveY = event.y
+
+                    val xDiff = abs(moveX - downX)
+                    val yDiff = abs(moveY - downY)
+
+                    if (xDiff > mTouchSlop || yDiff > mTouchSlop ) {
+
+                        if (mChildOffset == 0f){
+                            mChildOffset = if (mDirection == 1) moveX else moveY
+                        } else{
+                            val squareRoot = sqrt((xDiff * xDiff + yDiff * yDiff).toDouble())
+                            val degreeX = asin(yDiff / squareRoot) * 180 / Math.PI
+                            val degreeY = asin(xDiff / squareRoot) * 180 / Math.PI
+                            if (mDirection == 1 && degreeX < 45){
+                                if (moveX < downX){
+                                    updatePosition(0,moveX - mChildOffset)
+                                }else{
+                                    updatePosition(1,mChildOffset - moveX)
+                                }
+                            }
+                            if (mDirection != 1 && degreeY < 45){
+                                if (moveY < downY){
+                                    updatePosition(2,moveY - mChildOffset)
+                                }else{
+                                    updatePosition(3,mChildOffset - moveY)
+                                }
+                            }
+                            mChildOffset = 0f
+                        }
+                    }
+                }
+            }
+            MotionEvent.ACTION_UP ->{
+                mChildOffset = 0f
+            }
+        }
         return super.onTouchEvent(event)
+    }
+
+        /**
+         * @param slideDirection 0 左， 1 右 ，2 上， 3 下
+         * */
+    private fun updatePosition(slideDirection:Int,offset:Float){
+            when(slideDirection){
+                0->{
+                    mContentList.forEachIndexed {index,it->
+                        it.sX += offset
+                        selectItem(0,it)
+                        if (index == mContentList.size - 1 && it.sX + it.sWidth < (width shr 1)){
+                            it.sX  = ((width shr 1) - it.sWidth).toFloat()
+                            it.hasSel = true
+                            hasOverEdge = true
+                        }else hasOverEdge = false
+                    }
+                }
+                1->{
+                    mContentList.forEachIndexed {index,it->
+                        it.sX -= offset
+                        selectItem(1,it)
+                    }
+                }
+                2->{
+                    mContentList.forEachIndexed {index,it->
+                        it.sY += offset
+                        selectItem(2,it)
+                    }
+                }
+                3->{
+                    mContentList.forEachIndexed {index,it->
+                        it.sY -= offset
+                        selectItem(3,it)
+                    }
+                }
+            }
+            postInvalidate()
+    }
+
+    private fun selectItem(slideDirection:Int,item: ScrollItem){
+        when(slideDirection){
+            0,1->{
+                item.hasSel = item.sX + item.sWidth > (width shr 1) && (width shr 1) > item.sX
+            }
+            2,3->{
+                item.hasSel = item.sY + item.sHeight > (height shr 1) && (height shr 1) > item.sY
+            }
+        }
+    }
+    private fun hasOverSlide(item: ScrollItem){
+
+
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -63,8 +168,17 @@ class ScrollSelectionView:View {
     private fun drawContent(canvas: Canvas){
         mContentList.filter { it.visibility }.forEach {
             val baseLineY = it.sHeight / 2 + (abs(mPaint.fontMetrics.ascent) - mPaint.fontMetrics.descent) / 2
+            if (it.hasSel){
+                mPaint.color = Color.RED
+            }else mPaint.color = Color.WHITE
             canvas.drawText(it.name,it.sX,it.sY + baseLineY,mPaint)
         }
+        mPaint.color = Color.GREEN
+        if (mDirection == 1)
+            canvas.drawCircle((width shr 1) - 4f, height - 8f,8f,mPaint)
+        else
+            canvas.drawCircle(8f, (height shr 1) - 4f,8f,mPaint)
+        mPaint.color = Color.WHITE
     }
 
     private fun measureChild(){
@@ -312,12 +426,12 @@ class ScrollSelectionView:View {
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)
 
-        updatePosition(left,top,right,bottom)
+        initPosition(left,top,right,bottom)
 
         Utils.logInfo(mContentList.toTypedArray().contentToString())
     }
 
-    private fun updatePosition(left: Int, top: Int, right: Int, bottom: Int){
+    private fun initPosition(left: Int, top: Int, right: Int, bottom: Int){
         val index = findSelectionIndex()
 
         val width = right - left
@@ -420,6 +534,21 @@ class ScrollSelectionView:View {
 
         override fun toString(): String {
             return "ScrollItem(id=$id, name='$name', hasSel=$hasSel, visibility=$visibility, sX=$sX, sY=$sY, sWidth=$sWidth, sHeight=$sHeight)"
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as ScrollItem
+
+            if (id != other.id) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            return id
         }
     }
 }

@@ -9,8 +9,10 @@ import android.graphics.Rect
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.MotionEvent
+import android.view.VelocityTracker
 import android.view.View
 import android.view.ViewConfiguration
+import android.widget.OverScroller
 import com.wyc.logger.Logger
 import kotlin.math.abs
 import kotlin.math.asin
@@ -39,125 +41,246 @@ class ScrollSelectionView:View {
     private var mCurSpace = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics)
     private var downX = 0f
     private var downY = 0f
-    private var mTouchSlop = 0
-    private var mChildOffset = 0f
 
-    private var hasOverEdge  = false
+    private var mChildOffset = 0f
+    private var mScroller: OverScroller = OverScroller(context)
+    private var mVelocityTracker: VelocityTracker? = null
+    private var mMinimumVelocity = 0
+    private var mMaximumVelocity = 0
+    private var mActivePointerId = -1
+
+    private var mSlideDirection = SLIDEDIRECTION.LIFT
+
+    private var mListener:OnScrollFinish? = null
 
     constructor(context: Context):this(context, null)
     constructor(context: Context, attrs: AttributeSet?):this(context, attrs, 0)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int):super(context, attrs, defStyleAttr){
         init()
+
+        initVelocity()
     }
+
+    private fun initVelocity() {
+        val configuration = ViewConfiguration.get(context)
+        mMinimumVelocity = configuration.scaledMinimumFlingVelocity
+        mMaximumVelocity = configuration.scaledMaximumFlingVelocity
+    }
+
     private fun init(){
         mPaint.color = Color.WHITE
         mPaint.isAntiAlias = true
         mPaint.textSize = mFontSize
-
-        mTouchSlop = ViewConfiguration.get(context).scaledTouchSlop
     }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when(event.action){
             MotionEvent.ACTION_DOWN ->{
+                initVelocityTrackerIfNotExists()
                 downX = event.x
                 downY = event.y
+
+                mActivePointerId = event.getPointerId(0)
+                mVelocityTracker!!.addMovement(event)
+
                 return true
             }
             MotionEvent.ACTION_MOVE ->{
-                if (!hasOverEdge){
-                    val moveX = event.x
-                    val moveY = event.y
+                mVelocityTracker!!.addMovement(event)
 
-                    val xDiff = abs(moveX - downX)
-                    val yDiff = abs(moveY - downY)
+                val moveX = event.x
+                val moveY = event.y
 
-                    if (xDiff > mTouchSlop || yDiff > mTouchSlop ) {
+                val xDiff = abs(moveX - downX)
+                val yDiff = abs(moveY - downY)
 
-                        if (mChildOffset == 0f){
-                            mChildOffset = if (mDirection == 1) moveX else moveY
-                        } else{
-                            val squareRoot = sqrt((xDiff * xDiff + yDiff * yDiff).toDouble())
-                            val degreeX = asin(yDiff / squareRoot) * 180 / Math.PI
-                            val degreeY = asin(xDiff / squareRoot) * 180 / Math.PI
-                            if (mDirection == 1 && degreeX < 45){
-                                if (moveX < downX){
-                                    updatePosition(0,moveX - mChildOffset)
-                                }else{
-                                    updatePosition(1,mChildOffset - moveX)
-                                }
-                            }
-                            if (mDirection != 1 && degreeY < 45){
-                                if (moveY < downY){
-                                    updatePosition(2,moveY - mChildOffset)
-                                }else{
-                                    updatePosition(3,mChildOffset - moveY)
-                                }
-                            }
-                            mChildOffset = 0f
+                if (mChildOffset == 0f){
+                    mChildOffset = if (mDirection == 1) moveX else moveY
+                } else{
+                    val squareRoot = sqrt((xDiff * xDiff + yDiff * yDiff).toDouble())
+                    val degreeX = asin(yDiff / squareRoot) * 180 / Math.PI
+                    val degreeY = asin(xDiff / squareRoot) * 180 / Math.PI
+                    if (mDirection == 1 && degreeX < 45){
+                        if (moveX < downX){
+                            mSlideDirection = SLIDEDIRECTION.LIFT
+                            updatePosition(mChildOffset - moveX)
+                        }else{
+                            mSlideDirection = SLIDEDIRECTION.RIGHT
+                            updatePosition(moveX - mChildOffset)
                         }
                     }
+                    if (mDirection != 1 && degreeY < 45){
+                        if (moveY < downY){
+                            mSlideDirection = SLIDEDIRECTION.UP
+                            updatePosition(mChildOffset - moveY)
+                        }else{
+                            mSlideDirection = SLIDEDIRECTION.DOWN
+                            updatePosition(moveY - mChildOffset)
+                        }
+                    }
+                    mChildOffset = 0f
                 }
             }
             MotionEvent.ACTION_UP ->{
                 mChildOffset = 0f
+
+                mVelocityTracker?.apply {
+
+                    computeCurrentVelocity(1000, mMaximumVelocity.toFloat())
+                    val initialVelocity = if (mSlideDirection == SLIDEDIRECTION.LIFT || mSlideDirection == SLIDEDIRECTION.RIGHT)
+                        getXVelocity(mActivePointerId).toInt() else getYVelocity(mActivePointerId).toInt()
+
+                    mActivePointerId = -1
+
+                    recycleVelocityTracker()
+
+                    if ( abs(initialVelocity) > mMinimumVelocity) {
+                        when(mSlideDirection){
+                            SLIDEDIRECTION.LIFT->{
+                                mScroller.fling(downX.toInt(), 0, initialVelocity / 8 ,0, 0  ,event.x.toInt(), 0,  0)
+                            }
+                            SLIDEDIRECTION.RIGHT->{
+                                mScroller.startScroll(downX.toInt(),0,downX.toInt() - event.x.toInt(),0)
+                            }
+                            SLIDEDIRECTION.UP->{
+                                mScroller.fling(0, downY.toInt(),  0,initialVelocity / 8, 0  ,0, 0,  event.y.toInt())
+                            }
+                            SLIDEDIRECTION.DOWN->{
+                                mScroller.startScroll(0,downY.toInt(),0,downY.toInt() - event.y.toInt())
+                            }
+                        }
+                        startScroll()
+                    }else if (downX != event.x || downY != event.y) adjustPosition()
+                }
             }
         }
         return super.onTouchEvent(event)
     }
 
-        /**
-         * @param slideDirection 0 左， 1 右 ，2 上， 3 下
-         * */
-    private fun updatePosition(slideDirection:Int,offset:Float){
-            when(slideDirection){
-                0->{
-                    mContentList.forEachIndexed {index,it->
-                        it.sX += offset
-                        selectItem(0,it)
-                        if (index == mContentList.size - 1 && it.sX + it.sWidth < (width shr 1)){
-                            it.sX  = ((width shr 1) - it.sWidth).toFloat()
-                            it.hasSel = true
-                            hasOverEdge = true
-                        }else hasOverEdge = false
+    private fun startScroll() {
+        if (mScroller.computeScrollOffset()) {
+            if (mScroller.isFinished){
+                adjustPosition()
+            }else{
+                when(mSlideDirection){
+                    SLIDEDIRECTION.LIFT,SLIDEDIRECTION.RIGHT->{
+                        updatePosition(mScroller.currX.toFloat() - mScroller.finalX)
+                        postDelayed({ startScroll() },40)
+                    }
+                    SLIDEDIRECTION.UP,SLIDEDIRECTION.DOWN->{
+                        updatePosition(mScroller.currY.toFloat() - mScroller.finalY)
+                        postDelayed({ startScroll() },40)
                     }
                 }
-                1->{
-                    mContentList.forEachIndexed {index,it->
-                        it.sX -= offset
-                        selectItem(1,it)
-                    }
-                }
-                2->{
-                    mContentList.forEachIndexed {index,it->
-                        it.sY += offset
-                        selectItem(2,it)
-                    }
-                }
-                3->{
-                    mContentList.forEachIndexed {index,it->
-                        it.sY -= offset
-                        selectItem(3,it)
-                    }
-                }
-            }
-            postInvalidate()
-    }
-
-    private fun selectItem(slideDirection:Int,item: ScrollItem){
-        when(slideDirection){
-            0,1->{
-                item.hasSel = item.sX + item.sWidth > (width shr 1) && (width shr 1) > item.sX
-            }
-            2,3->{
-                item.hasSel = item.sY + item.sHeight > (height shr 1) && (height shr 1) > item.sY
             }
         }
     }
-    private fun hasOverSlide(item: ScrollItem){
+
+    private fun adjustPosition(){
+        mContentList.find { it.hasSel }?.apply {
+        val diff = when(mSlideDirection){
+                SLIDEDIRECTION.LIFT->{
+                    sX.toInt() + sWidth / 2 - (width shr 1)
+                }
+                SLIDEDIRECTION.RIGHT->{
+                    -(sX.toInt() + sWidth / 2 - (width shr 1))
+                }
+                SLIDEDIRECTION.UP->{
+                    sY.toInt() + sHeight / 2 - (height shr 1)
+                }
+                SLIDEDIRECTION.DOWN->{
+                    -(sY.toInt() + sHeight / 2 - (height shr 1))
+                }
+            }
+            updatePosition(diff.toFloat())
+
+            mListener?.finish(this)
+        }
+    }
+
+    fun setListener(scroll: OnScrollFinish){
+        mListener = scroll
+    }
 
 
+    private fun initVelocityTrackerIfNotExists() {
+        if (mVelocityTracker == null) {
+            mVelocityTracker = VelocityTracker.obtain()
+        }
+    }
+
+    private fun recycleVelocityTracker() {
+        if (mVelocityTracker != null) {
+            mVelocityTracker!!.recycle()
+            mVelocityTracker = null
+        }
+    }
+
+    enum class SLIDEDIRECTION{
+        LIFT,RIGHT,UP,DOWN
+    }
+
+    private fun updatePosition(offset:Float){
+        if (offset == 0f)return
+        if (checkEdge(mSlideDirection,offset)){
+            Logger.d("offset:%f",offset)
+            when(mSlideDirection){
+                SLIDEDIRECTION.LIFT->{
+                    mContentList.forEach {
+                        it.sX -= offset
+                        selectItem(SLIDEDIRECTION.LIFT,it)
+                    }
+                }
+                SLIDEDIRECTION.RIGHT->{
+                    mContentList.forEach {
+                        it.sX += offset
+                        selectItem(SLIDEDIRECTION.RIGHT,it)
+                    }
+                }
+                SLIDEDIRECTION.UP->{
+                    mContentList.forEach {
+                        it.sY -= offset
+                        selectItem(SLIDEDIRECTION.UP,it)
+                    }
+                }
+                SLIDEDIRECTION.DOWN->{
+                    mContentList.forEach {
+                        it.sY += offset
+                        selectItem(SLIDEDIRECTION.DOWN,it)
+                    }
+                }
+            }
+            invalidate()
+        }
+    }
+
+    private fun checkEdge(dire:SLIDEDIRECTION,offset:Float):Boolean{
+        return when(dire){
+            SLIDEDIRECTION.LIFT->{
+                mContentList[mContentList.size - 1].sX + mContentList[mContentList.size - 1].sWidth > (width shr 1) + offset
+            }
+            SLIDEDIRECTION.RIGHT->{
+                mContentList[0].sX < (width shr 1) - offset
+            }
+            SLIDEDIRECTION.UP->{
+                mContentList[mContentList.size - 1].sY + mContentList[mContentList.size - 1].sHeight > (height shr 1) + offset
+            }
+            SLIDEDIRECTION.DOWN->{
+                mContentList[0].sY < (height shr 1) - offset
+            }
+        }
+    }
+
+    private fun selectItem(slideDirection:SLIDEDIRECTION,item: ScrollItem){
+        when(slideDirection){
+            SLIDEDIRECTION.LIFT,SLIDEDIRECTION.RIGHT->{
+                item.hasSel = item.sX + item.sWidth > (width shr 1) && (width shr 1) > item.sX
+            }
+            SLIDEDIRECTION.UP,SLIDEDIRECTION.DOWN->{
+                item.hasSel = item.sY + item.sHeight > (height shr 1) && (height shr 1) > item.sY
+            }
+        }
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -508,11 +631,9 @@ class ScrollSelectionView:View {
     }
 
     private fun findSelectionIndex():Int{
-        run out@{
-            mContentList.forEachIndexed{index,item ->
-                if (item.hasSel){
-                    return index
-                }
+        mContentList.forEachIndexed{index,item ->
+            if (item.hasSel){
+                return index
             }
         }
         return mContentList.size / 2
@@ -551,4 +672,9 @@ class ScrollSelectionView:View {
             return id
         }
     }
+
+    interface OnScrollFinish{
+        fun finish(item: ScrollItem)
+    }
+
 }

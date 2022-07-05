@@ -356,6 +356,9 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
         }catch (e:CameraAccessException){
             Utils.showToast(e.message)
             Utils.logInfo(e.message)
+        }catch (e:IllegalStateException){
+            Utils.showToast(e.message)
+            Utils.logInfo(e.message)
         }
     }
 

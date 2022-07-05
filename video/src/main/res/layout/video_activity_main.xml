@@ -31,7 +31,7 @@
 
     <com.wyc.video.ScrollSelectionView
         android:id="@+id/scrollSelectionView"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="#2E1A1A"
         android:padding="18dp"

@@ -5,8 +5,11 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 
+import androidx.annotation.NonNull;
+
 import com.wyc.video.R;
 import com.wyc.video.ScrollSelectionView;
+import com.wyc.video.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +36,7 @@ public class VideoRelatedActivity extends VideoBaseActivity implements View.OnCl
         list.add(new ScrollSelectionView.ScrollItem(5,"短视频5",false));
         list.add(new ScrollSelectionView.ScrollItem(6,"短视频6",false));
         view.addAll(list);
+        view.setListener(item -> Utils.showToast(item.toString()));
     }
 
     @Override

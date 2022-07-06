@@ -291,9 +291,11 @@ public class RecordBtn extends AppCompatButton {
     }
 
     public void setCaptureMode(MODE mode){
-        mMode = mode;
-        VideoCameraManager.getInstance().sycCaptureMode(mode);
-        invalidate();
+        if (mMode != mode){
+            mMode = mode;
+            VideoCameraManager.getInstance().sycCaptureMode(mode);
+            invalidate();
+        }
     }
     public void stopRecord(){
         VideoCameraManager.getInstance().stopRecord(false);

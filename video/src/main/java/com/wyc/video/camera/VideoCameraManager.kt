@@ -455,6 +455,14 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
 
     private fun startRecordRequest(){
         try {
+            if (mCameraDevice == null){
+                return
+            }
+
+            if (null == mCameraCaptureSession) {
+                return
+            }
+
             val recordCaptureRequestBuilder = mCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_RECORD).apply {
                 mPreviewList.forEach {
                     addTarget(it)
@@ -501,7 +509,7 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
     }
 
     fun stopRecord(preview:Boolean){
-        if (mMode != MODE.PICTURE && mRecordStatus == RECORD_STATUS.START){
+        if (mMediaRecorder != null && mMode != MODE.PICTURE && mRecordStatus == RECORD_STATUS.START){
             mRecordStatus = RECORD_STATUS.STOP
             launch {
                 mMediaRecorder!!.stop()

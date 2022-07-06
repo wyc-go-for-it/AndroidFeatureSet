@@ -20,6 +20,7 @@ import com.wyc.permission.OnPermissionCallback;
 import com.wyc.permission.Permission;
 import com.wyc.permission.XXPermissions;
 import com.wyc.video.R;
+import com.wyc.video.ScrollSelectionView;
 import com.wyc.video.Utils;
 import com.wyc.video.camera.VideoCameraManager;
 import com.wyc.video.camera.CircleImage;
@@ -27,6 +28,7 @@ import com.wyc.video.camera.RecordBtn;
 import com.wyc.video.recorder.AbstractRecorder;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -45,24 +47,24 @@ public class CameraSurfaceViewActivity extends VideoBaseActivity {
     }
 
     private void initCaptureMode(){
-        Button btn = findViewById(R.id.button);
-        Button btn1 = findViewById(R.id.button2);
-        btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mRecord.setCaptureMode(VideoCameraManager.MODE.PICTURE);
-            }
-        });
-        btn1.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mRecord.setCaptureMode(VideoCameraManager.MODE.RECORD);
-            }
-        });
-        findViewById(R.id.button3).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mRecord.setCaptureMode(VideoCameraManager.MODE.SHORT_RECORD);
+        final ScrollSelectionView view = findViewById(R.id.mode_selection);
+        view.addItem(new ScrollSelectionView.ScrollItem(1,"照相",true));
+        view.addItem(new ScrollSelectionView.ScrollItem(2,"视频",false));
+        view.addItem(new ScrollSelectionView.ScrollItem(3,"短视频",false));
+
+        view.setFontSize(18);
+
+        view.setListener(item -> {
+            switch (item.getId()){
+                case 1:
+                    mRecord.setCaptureMode(VideoCameraManager.MODE.PICTURE);
+                    break;
+                case 2:
+                    mRecord.setCaptureMode(VideoCameraManager.MODE.RECORD);
+                    break;
+                case 3:
+                    mRecord.setCaptureMode(VideoCameraManager.MODE.SHORT_RECORD);
+                    break;
             }
         });
     }

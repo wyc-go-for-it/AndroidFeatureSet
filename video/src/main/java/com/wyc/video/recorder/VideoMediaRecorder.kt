@@ -1,15 +1,18 @@
 package com.wyc.video.recorder
 
+import android.content.Context
 import android.graphics.ImageFormat
 import android.media.CamcorderProfile
 import android.media.ImageReader
 import android.media.MediaRecorder
 import android.os.Build
+import android.os.storage.StorageManager
 import android.view.Surface
 import android.view.TextureView
 import com.wyc.video.Utils
 import com.wyc.video.VideoApp
 import com.wyc.video.camera.VideoCameraManager
+import java.io.FileInputStream
 
 
 /**
@@ -44,9 +47,9 @@ class VideoMediaRecorder :AbstractRecorder() {
 
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-                    setOutputFile(createVideoFile())
+                    setOutputFile(mFile)
                 }else{
-                    setOutputFile(createVideoFile().absolutePath)
+                    setOutputFile(mFile.absolutePath)
                 }
 
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
@@ -125,5 +128,6 @@ class VideoMediaRecorder :AbstractRecorder() {
             mMediaRecorder!!.release()
             mMediaRecorder = null
         }
+        super.release()
     }
 }

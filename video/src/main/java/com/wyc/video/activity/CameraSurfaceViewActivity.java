@@ -9,8 +9,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.CancellationSignal;
 import android.provider.MediaStore;
+import android.util.Size;
 import android.view.View;
 import android.widget.Button;
 
@@ -28,6 +31,7 @@ import com.wyc.video.camera.RecordBtn;
 import com.wyc.video.recorder.AbstractRecorder;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -202,10 +206,23 @@ public class CameraSurfaceViewActivity extends VideoBaseActivity {
             }
 
             if (lastPic != null && lastVideo != null){
-                if (lastPic.lastModified() > lastVideo.lastModified()){
+                if (lastPic.lastModified() < lastVideo.lastModified()){
                     mThumbnails.setTag(getVideoContentUri(lastVideo));
-                    final Bitmap bitmap = ThumbnailUtils.createVideoThumbnail(lastVideo.getPath(), MediaStore.Images.Thumbnails.MINI_KIND);
-                    runOnUiThread(()-> mThumbnails.setImageBitmap(bitmap));
+                    final Bitmap bitmap;
+                    try {
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q){
+                            bitmap = ThumbnailUtils.createVideoThumbnail(lastVideo.getPath(), MediaStore.Images.Thumbnails.MINI_KIND);
+                        }else
+                            bitmap = ThumbnailUtils.createVideoThumbnail(lastVideo,
+                                    new Size(VideoCameraManager.getInstance().getVWidth(),VideoCameraManager.getInstance().getVHeight()),new CancellationSignal());
+
+                        runOnUiThread(()-> {
+                            mThumbnails.setVideo(true);
+                            mThumbnails.setImageBitmap(bitmap);
+                        });
+                    }catch (IOException e){
+                        e.printStackTrace();
+                    }
                 }else {
                     decodeImgFile(lastPic);
                 }
@@ -213,8 +230,21 @@ public class CameraSurfaceViewActivity extends VideoBaseActivity {
                 decodeImgFile(lastPic);
             }else if (lastVideo != null){
                 mThumbnails.setTag(getVideoContentUri(lastVideo));
-                final Bitmap bitmap = ThumbnailUtils.createVideoThumbnail(lastVideo.getPath(), MediaStore.Images.Thumbnails.MINI_KIND);
-                runOnUiThread(()-> mThumbnails.setImageBitmap(bitmap));
+                final Bitmap bitmap;
+                try {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q){
+                        bitmap = ThumbnailUtils.createVideoThumbnail(lastVideo.getPath(), MediaStore.Images.Thumbnails.MINI_KIND);
+                    }else
+                        bitmap = ThumbnailUtils.createVideoThumbnail(lastVideo,
+                                new Size(VideoCameraManager.getInstance().getVWidth(),VideoCameraManager.getInstance().getVHeight()),new CancellationSignal());
+
+                    runOnUiThread(()-> {
+                        mThumbnails.setVideo(true);
+                        mThumbnails.setImageBitmap(bitmap);
+                    });
+                }catch (IOException e){
+                    e.printStackTrace();
+                }
             }
         }).start();
     }
@@ -223,7 +253,10 @@ public class CameraSurfaceViewActivity extends VideoBaseActivity {
         options.inSampleSize = 8;
         Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath(),options);
         mThumbnails.setTag(getImageContentUri(file));
-        runOnUiThread(()-> mThumbnails.setImageBitmap(bitmap));
+        runOnUiThread(()-> {
+            mThumbnails.setVideo(false);
+            mThumbnails.setImageBitmap(bitmap);
+        });
     }
 
     @Override

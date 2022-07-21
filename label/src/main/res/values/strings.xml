@@ -2,6 +2,7 @@
 <resources>
     <string name="com_wyc_label_label_name">标签名称：</string>
     <string name="com_wyc_label_label_width">宽度：</string>
+    <string name="com_wyc_label_label_height">高度：</string>
     <string name="com_wyc_label_default_format">默认格式：</string>
     <string name="com_wyc_label_OK">确定</string>
     <string name="com_wyc_label__cancel">取消</string>

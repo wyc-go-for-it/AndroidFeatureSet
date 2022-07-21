@@ -102,7 +102,7 @@ public class AdaptiveTextureView extends TextureView implements TextureView.Surf
     public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
         mSurface = new Surface(surface);
         if (mRatio > 0f){
-            mMatrix.setScale(1f,0.75f);
+            mMatrix.setScale(1f,mRatio);
             setTransform(mMatrix);
         }
         XXPermissions.with(getContext())

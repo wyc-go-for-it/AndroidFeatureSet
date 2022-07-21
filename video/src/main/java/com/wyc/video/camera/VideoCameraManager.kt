@@ -7,6 +7,7 @@ import android.hardware.camera2.CameraDevice.StateCallback.*
 import android.hardware.camera2.params.MeteringRectangle
 import android.hardware.camera2.params.OutputConfiguration
 import android.hardware.camera2.params.SessionConfiguration
+import android.media.CamcorderProfile
 import android.media.ImageReader
 import android.os.Build
 import android.os.Handler
@@ -57,6 +58,7 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
     private var mAspectRatio = 0.75f
     private var mSensorOrientation = 90
     private var mImageReader : ImageReader? = null
+    private var mImageReaderYUV : ImageReader? = null
     private var mPicCallback:OnPicture? = null
     private var mMediaRecorder:VideoMediaRecorder? = null
     private var mMode = MODE.PICTURE
@@ -66,11 +68,15 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
 
     private val mPreviewList = mutableListOf<Surface>()
 
+    var vWidth = 1280
+    var vHeight = 720
+
     init {
         initCamera()
     }
 
     companion object{
+
         private var sCameraManager:VideoCameraManager? = null
         @JvmStatic
         fun getInstance():VideoCameraManager{
@@ -114,11 +120,15 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
             val fpsRegion = characteristic.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)
             val capabilities = characteristic.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES)
 
+            val  camcorderProfile =  CamcorderProfile.get(getValidCameraId().toInt(), CamcorderProfile.QUALITY_720P)
+            vWidth = camcorderProfile.videoFrameWidth
+            vHeight = camcorderProfile.videoFrameHeight
+
             mSensorOrientation = characteristic.get(CameraCharacteristics.SENSOR_ORIENTATION)?:0
 
             Utils.logInfo("sensorOrientation:$mSensorOrientation,physicalRect:$physicalRect,pixelRect:$pixelRect" +
                     ",activeRect:$activeRect,afRegionCount:$afRegion,fpsRegion:" + Arrays.toString(fpsRegion)+
-                    ",capabilities:" + Arrays.toString(capabilities))
+                    ",capabilities:" + Arrays.toString(capabilities) + "vWidth:$vWidth" +",vHeight:$vHeight")
 
             activeRect?.apply {
                 mAspectRatio = height() * 1f / width() * 1f
@@ -288,10 +298,14 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
         }
         if (!hasSwitchCamera)mMediaRecorder!!.configure()
 
+        mImageReaderYUV = ImageReader.newInstance(1280,720,ImageFormat.YUV_420_888,1)
+        mImageReaderYUV!!.setOnImageAvailableListener(mImageReaderYUVCallback,mBackgroundHandler)
+
         try {
             val listSurface = mutableListOf<Surface>()
             listSurface.addAll(mPreviewList)
             listSurface.add(mMediaRecorder!!.getSurface())
+            listSurface.add(mImageReaderYUV!!.surface)
 
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
                 mCameraDevice!!.createCaptureSession(listSurface,mCaptureSessionCallback,mBackgroundHandler)
@@ -311,6 +325,17 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
             Utils.showToast(e.message)
             Utils.logInfo(e.message)
         }
+    }
+
+
+    private val mImageReaderYUVCallback = ImageReader.OnImageAvailableListener {
+        Logger.d("yuvWidth:%d,yuvHeight:%d",it.width,it.height)
+
+        val image = it.acquireLatestImage()
+        val  count = image.planes
+        Logger.d("planes:%d,format:%s",count.size,image.format)
+
+        image.close()
     }
 
     private val mCaptureSessionCallback = object : CameraCaptureSession.StateCallback(){
@@ -334,6 +359,7 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
     }
     private fun createPreviewRequest(){
         try {
+
             if (mCameraCaptureSession != null){
                 if (mPreviewCaptureRequestBuilder != null){
                     mCameraCaptureSession!!.setRepeatingRequest(mPreviewCaptureRequestBuilder!!.build(),null,null)
@@ -469,6 +495,7 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
                 }
 
                 addTarget(mMediaRecorder!!.getSurface())
+                addTarget(mImageReaderYUV!!.surface)
 
                 set(CaptureRequest.CONTROL_AF_MODE,CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
                 set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
@@ -583,6 +610,10 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
             mImageReader!!.close()
             mImageReader = null
         }
+        if (mImageReaderYUV != null){
+            mImageReaderYUV!!.close()
+            mImageReaderYUV = null
+        }
     }
 
     private fun releaseRecorder(){
@@ -644,4 +675,5 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
     enum class RECORD_STATUS {
         START, STOP
     }
+
 }

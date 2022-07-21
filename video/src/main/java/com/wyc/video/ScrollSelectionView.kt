@@ -367,13 +367,6 @@ class ScrollSelectionView:View {
                         if (mContentList.size > 1){
                             mContentList[index + 1].visibility = true
                         }
-                    }else if (index == 1){
-                        calc += 2
-                        mContentList[index - 1].visibility = true
-                        mContentList[index].visibility = true
-                        if (mContentList.size > 2){
-                            mContentList[index + 1].visibility = true
-                        }
                     }else{
                         calc += 2
                         mContentList[index - 1].visibility = true

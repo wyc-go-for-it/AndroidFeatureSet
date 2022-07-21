@@ -6,6 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.drawable.BitmapDrawable;
@@ -16,6 +17,8 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatImageView;
+
+import com.wyc.video.Utils;
 
 /**
  * @ProjectName: AndroidFeatureSet
@@ -33,6 +36,9 @@ public class CircleImage extends AppCompatImageView {
     private Paint mPaint;
     private Matrix mMatrix;
     private float mRotationVal;
+    private boolean hasVideo = false;
+    private Path mTri = null;
+
     public CircleImage(@NonNull Context context) {
         this(context,null);
     }
@@ -100,6 +106,12 @@ public class CircleImage extends AppCompatImageView {
         canvas.drawCircle(circle_x, circle_y,circle_radius, mPaint);
         mPaint.setStyle(Paint.Style.FILL);
 
+        if (hasVideo){
+            if (mTri == null){
+                mTri = Utils.calRoundTriangle(Math.min(getMeasuredWidth(),getMeasuredHeight()) >> 1,0.75f,6f);
+            }
+            canvas.drawPath(mTri,mPaint);
+        }
         canvas.restore();
     }
     public void setMatrix(float a){
@@ -107,5 +119,8 @@ public class CircleImage extends AppCompatImageView {
             mRotationVal = a;
             postInvalidate();
         }
+    }
+    public void setVideo(boolean b){
+        hasVideo = b;
     }
 }

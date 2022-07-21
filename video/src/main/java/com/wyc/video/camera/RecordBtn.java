@@ -17,6 +17,8 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatButton;
+
+import com.wyc.video.Utils;
 import com.wyc.video.camera.VideoCameraManager.MODE;
 import com.wyc.video.camera.VideoCameraManager.RECORD_STATUS;
 
@@ -251,19 +253,7 @@ public class RecordBtn extends AppCompatButton {
             switch (mRecordStatus){
                 case STOP:
                     if (mTri == null){
-                        float triangle_side = mInnerRadius;
-                        float first_x = (float) (mCenter - triangle_side / 2 * Math.tan(Math.PI / 6));
-                        float first_y = mCenter - triangle_side / 2;
-
-                        float second_y = mCenter + triangle_side / 2;
-
-                        float third_x = (float) (mCenter + triangle_side / 2 / Math.cos(Math.PI / 6));
-                        float third_y = mCenter ;
-
-                        mTri = new Path();
-                        mTri.moveTo(first_x,first_y);
-                        mTri.lineTo(first_x,second_y);
-                        mTri.lineTo(third_x,third_y);
+                        mTri = Utils.calRoundTriangle(mCenter,mInnerRadius / mCenter,6f);
                     }
                     canvas.drawPath(mTri,mPaint);
                     break;

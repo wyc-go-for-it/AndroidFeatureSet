@@ -96,7 +96,7 @@
         android:id="@+id/height_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/com_wyc_label_label_width"
+        android:text="@string/com_wyc_label_label_height"
         android:textColor="@color/com_wyc_label_text_color"
         android:textSize="@dimen/com_wyc_label_font_size_16"
         app:layout_constraintBottom_toBottomOf="@id/label_height"

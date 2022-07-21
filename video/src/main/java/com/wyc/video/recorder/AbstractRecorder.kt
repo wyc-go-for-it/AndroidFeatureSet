@@ -1,7 +1,9 @@
 package com.wyc.video.recorder
 
+import androidx.annotation.CallSuper
 import com.wyc.video.VideoApp
 import java.io.File
+import java.io.FileInputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -21,6 +23,19 @@ import java.util.*
  */
 
 abstract class AbstractRecorder:IRecorder {
+    protected val mFile = createVideoFile()
+
+    @CallSuper
+    override fun release() {
+
+        if (mFile.exists()){
+            FileInputStream(mFile).use {
+                if (it.available() == 0){
+                    mFile.delete()
+                }
+            }
+        }
+    }
     companion object{
         @JvmStatic
         fun getVideoDir():File{
@@ -28,7 +43,7 @@ abstract class AbstractRecorder:IRecorder {
         }
 
     }
-    protected fun createVideoFile(): File {
+    private fun createVideoFile(): File {
         val file = getVideoDir()
         val name = String.format(Locale.CHINA, "%s%s%s.mp4", file.absolutePath, File.separator,
             SimpleDateFormat("yyyyMMddHHmmssSS", Locale.CHINA).format(Date()))

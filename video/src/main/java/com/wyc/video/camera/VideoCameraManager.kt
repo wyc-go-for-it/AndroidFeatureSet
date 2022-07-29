@@ -16,6 +16,8 @@ import android.view.Surface
 import com.wyc.logger.Logger
 import com.wyc.video.Utils
 import com.wyc.video.VideoApp
+import com.wyc.video.recorder.IRecorder
+import com.wyc.video.recorder.VideoMediaCodec
 import com.wyc.video.recorder.VideoMediaRecorder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,11 +25,13 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.lang.reflect.InvocationTargetException
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.Semaphore
+import java.util.concurrent.atomic.AtomicBoolean
 
 
 /**
@@ -44,7 +48,7 @@ import java.util.concurrent.Semaphore
  * @Version:        1.0
  */
 
-class VideoCameraManager private constructor() : CoroutineScope by CoroutineScope(Dispatchers.IO) {
+class VideoCameraManager constructor() : CoroutineScope by CoroutineScope(Dispatchers.IO) {
 
     private var mCameraFaceId:String = ""
     private var mCameraBackId:String = ""
@@ -57,10 +61,10 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
     private var mExecutor: ExecutorService? = null
     private var mAspectRatio = 0.75f
     private var mSensorOrientation = 90
-    private var mImageReader : ImageReader? = null
-    private var mImageReaderYUV : ImageReader? = null
+    private var mPicImageReader : ImageReader? = null
+
     private var mPicCallback:OnPicture? = null
-    private var mMediaRecorder:VideoMediaRecorder? = null
+    private var mMediaRecorder:IRecorder? = null
     private var mMode = MODE.PICTURE
     private var mRecordStatus = RECORD_STATUS.STOP
 
@@ -76,7 +80,6 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
     }
 
     companion object{
-
         private var sCameraManager:VideoCameraManager? = null
         @JvmStatic
         fun getInstance():VideoCameraManager{
@@ -257,16 +260,16 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
             return
         }
         
-        if (mImageReader == null){
-            mImageReader = ImageReader.newInstance(4000,3000,ImageFormat.JPEG,1)
-            mImageReader!!.setOnImageAvailableListener(mPicImageAvailableListener,mBackgroundHandler)
+        if (mPicImageReader == null){
+            mPicImageReader = ImageReader.newInstance(4000,3000,ImageFormat.JPEG,1)
+            mPicImageReader!!.setOnImageAvailableListener(mPicImageAvailableListener,mBackgroundHandler)
         }
 
         try {
 
             val listSurface = mutableListOf<Surface>()
             listSurface.addAll(mPreviewList)
-            listSurface.add(mImageReader!!.surface)
+            listSurface.add(mPicImageReader!!.surface)
 
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
                 mCameraDevice!!.createCaptureSession(listSurface,mCaptureSessionCallback,mBackgroundHandler)
@@ -294,18 +297,15 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
         }
 
         if (mMediaRecorder == null){
-            mMediaRecorder = VideoMediaRecorder()
+            mMediaRecorder = VideoMediaCodec()
         }
         if (!hasSwitchCamera)mMediaRecorder!!.configure()
 
-        mImageReaderYUV = ImageReader.newInstance(1280,720,ImageFormat.YUV_420_888,1)
-        mImageReaderYUV!!.setOnImageAvailableListener(mImageReaderYUVCallback,mBackgroundHandler)
 
         try {
             val listSurface = mutableListOf<Surface>()
             listSurface.addAll(mPreviewList)
             listSurface.add(mMediaRecorder!!.getSurface())
-            listSurface.add(mImageReaderYUV!!.surface)
 
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
                 mCameraDevice!!.createCaptureSession(listSurface,mCaptureSessionCallback,mBackgroundHandler)
@@ -325,17 +325,6 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
             Utils.showToast(e.message)
             Utils.logInfo(e.message)
         }
-    }
-
-
-    private val mImageReaderYUVCallback = ImageReader.OnImageAvailableListener {
-        Logger.d("yuvWidth:%d,yuvHeight:%d",it.width,it.height)
-
-        val image = it.acquireLatestImage()
-        val  count = image.planes
-        Logger.d("planes:%d,format:%s",count.size,image.format)
-
-        image.close()
     }
 
     private val mCaptureSessionCallback = object : CameraCaptureSession.StateCallback(){
@@ -359,10 +348,9 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
     }
     private fun createPreviewRequest(){
         try {
-
             if (mCameraCaptureSession != null){
                 if (mPreviewCaptureRequestBuilder != null){
-                    mCameraCaptureSession!!.setRepeatingRequest(mPreviewCaptureRequestBuilder!!.build(),null,null)
+                    mCameraCaptureSession!!.setRepeatingRequest(mPreviewCaptureRequestBuilder!!.build(),null,mBackgroundHandler)
                 }else{
                     mPreviewCaptureRequestBuilder = mCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
                         mPreviewList.forEach {
@@ -450,7 +438,7 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
 
         try {
             val picCaptureRequestBuilder = mCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE).apply {
-                addTarget(mImageReader!!.surface)
+                addTarget(mPicImageReader!!.surface)
                 set(CaptureRequest.JPEG_ORIENTATION,mSensorOrientation)
 
                 set(CaptureRequest.CONTROL_AF_MODE,CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
@@ -495,7 +483,6 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
                 }
 
                 addTarget(mMediaRecorder!!.getSurface())
-                addTarget(mImageReaderYUV!!.surface)
 
                 set(CaptureRequest.CONTROL_AF_MODE,CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
                 set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
@@ -585,6 +572,7 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
 
     private fun releaseResource(){
         Utils.logInfo("start release resource.")
+        mPicCallback = null
         releaseRecorder()
         releaseCamera()
     }
@@ -606,13 +594,9 @@ class VideoCameraManager private constructor() : CoroutineScope by CoroutineScop
             mCameraDevice = null
         }
 
-        if (mImageReader != null){
-            mImageReader!!.close()
-            mImageReader = null
-        }
-        if (mImageReaderYUV != null){
-            mImageReaderYUV!!.close()
-            mImageReaderYUV = null
+        if (mPicImageReader != null){
+            mPicImageReader!!.close()
+            mPicImageReader = null
         }
     }
 

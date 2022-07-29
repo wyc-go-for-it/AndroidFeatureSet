@@ -178,12 +178,6 @@ public class CameraSurfaceViewActivity extends VideoBaseActivity {
     protected void onResume() {
         super.onResume();
         loadImg();
-        mRecord.postDelayed(()->{
-
-            VideoCameraManager.getInstance().openCamera();
-
-        },1000);
-
     }
 
     private void loadImg(){

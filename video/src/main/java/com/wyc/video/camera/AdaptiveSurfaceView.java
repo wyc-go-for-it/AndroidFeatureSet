@@ -113,6 +113,7 @@ public class AdaptiveSurfaceView extends SurfaceView implements SurfaceHolder.Ca
                     @Override
                     public void onGranted(List<String> permissions, boolean all) {
                         VideoCameraManager.getInstance().addSurface(holder.getSurface());
+                        VideoCameraManager.getInstance().openCamera();
                     }
                     @Override
                     public void onDenied(List<String> permissions, boolean never) {

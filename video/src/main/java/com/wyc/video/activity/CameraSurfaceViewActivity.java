@@ -133,9 +133,6 @@ public class CameraSurfaceViewActivity extends VideoBaseActivity {
         final Button camera_reverse = findViewById(R.id.camera_reverse);
         camera_reverse.setOnClickListener(v -> {
             VideoCameraManager.getInstance().switchCamera();
-/*            if (!VideoCameraManager.getInstance().hasRecording()){
-                VideoCameraManager.getInstance().switchCamera();
-            }else Utils.showToast("recording video has been doing,Please stop recording first.");*/
         });
     }
 
@@ -165,6 +162,7 @@ public class CameraSurfaceViewActivity extends VideoBaseActivity {
             public void finishRecord(long recordTime) {
                 Utils.showToast("finishRecord:" + recordTime);
                 VideoCameraManager.getInstance().stopRecord(true);
+                loadImg();
             }
 
             @Override
@@ -178,6 +176,7 @@ public class CameraSurfaceViewActivity extends VideoBaseActivity {
     protected void onResume() {
         super.onResume();
         loadImg();
+        VideoCameraManager.getInstance().sycCaptureMode(mRecord.getCurMode());
     }
 
     private void loadImg(){
@@ -256,8 +255,8 @@ public class CameraSurfaceViewActivity extends VideoBaseActivity {
     @Override
     protected void onStop(){
         super.onStop();
-        VideoCameraManager.getInstance().setPicCallback(null);
         mRecord.stopRecord();
+        VideoCameraManager.getInstance().setPicCallback(null);
     }
 
     @Override

@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @Version:        1.0
  */
 
-class VideoCameraManager constructor() : CoroutineScope by CoroutineScope(Dispatchers.IO) {
+class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO) {
 
     private var mCameraFaceId:String = ""
     private var mCameraBackId:String = ""
@@ -60,15 +60,12 @@ class VideoCameraManager constructor() : CoroutineScope by CoroutineScope(Dispat
     private var mPreviewCaptureRequestBuilder:CaptureRequest.Builder? = null
     private var mExecutor: ExecutorService? = null
     private var mAspectRatio = 0.75f
-    private var mSensorOrientation = 90
     private var mPicImageReader : ImageReader? = null
 
     private var mPicCallback:OnPicture? = null
     private var mMediaRecorder:IRecorder? = null
     private var mMode = MODE.PICTURE
     private var mRecordStatus = RECORD_STATUS.STOP
-
-    private var hasSwitchCamera = false
 
     private val mPreviewList = mutableListOf<Surface>()
 
@@ -95,10 +92,17 @@ class VideoCameraManager constructor() : CoroutineScope by CoroutineScope(Dispat
         @JvmStatic
         fun clear(){
             if (sCameraManager != null){
+                sCameraManager!!.mPicCallback = null
                 sCameraManager!!.releaseResource()
                 sCameraManager = null
             }
         }
+    }
+
+    fun getOrientation():Int{
+        val cManager =  VideoApp.getInstance().getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val characteristic = cManager.getCameraCharacteristics(getValidCameraId())
+        return characteristic.get(CameraCharacteristics.SENSOR_ORIENTATION)?:0
     }
 
     private fun initCamera(){
@@ -127,9 +131,9 @@ class VideoCameraManager constructor() : CoroutineScope by CoroutineScope(Dispat
             vWidth = camcorderProfile.videoFrameWidth
             vHeight = camcorderProfile.videoFrameHeight
 
-            mSensorOrientation = characteristic.get(CameraCharacteristics.SENSOR_ORIENTATION)?:0
+            val sensorOrientation = characteristic.get(CameraCharacteristics.SENSOR_ORIENTATION)?:0
 
-            Utils.logInfo("sensorOrientation:$mSensorOrientation,physicalRect:$physicalRect,pixelRect:$pixelRect" +
+            Utils.logInfo("sensorOrientation:$sensorOrientation,physicalRect:$physicalRect,pixelRect:$pixelRect" +
                     ",activeRect:$activeRect,afRegionCount:$afRegion,fpsRegion:" + Arrays.toString(fpsRegion)+
                     ",capabilities:" + Arrays.toString(capabilities) + "vWidth:$vWidth" +",vHeight:$vHeight")
 
@@ -159,7 +163,6 @@ class VideoCameraManager constructor() : CoroutineScope by CoroutineScope(Dispat
     fun sycCaptureMode(mode:MODE){
         if (mMode != mode){
             mMode = mode
-            hasSwitchCamera = false
             openCamera()
         }
     }
@@ -168,16 +171,17 @@ class VideoCameraManager constructor() : CoroutineScope by CoroutineScope(Dispat
     }
 
     private fun startBackgroundThread(){
-        Utils.logInfo("start backgroundThread.")
         stopBackgroundThread()
+        Utils.logInfo("start backgroundThread.")
         mBackgroundThread = HandlerThread("cameraBackgroundThread")
         mBackgroundThread!!.start()
         mBackgroundHandler = Handler(mBackgroundThread!!.looper)
         mExecutor = Executors.newFixedThreadPool(2)
     }
     private fun stopBackgroundThread() {
-        Utils.logInfo("stop backgroundThread.")
         if (mBackgroundThread != null) {
+            Utils.logInfo("stop backgroundThread.")
+
             mBackgroundThread!!.quitSafely()
             try {
                 mBackgroundThread!!.join()
@@ -299,8 +303,8 @@ class VideoCameraManager constructor() : CoroutineScope by CoroutineScope(Dispat
         if (mMediaRecorder == null){
             mMediaRecorder = VideoMediaCodec()
         }
-        if (!hasSwitchCamera)mMediaRecorder!!.configure()
 
+        mMediaRecorder!!.configure()
 
         try {
             val listSurface = mutableListOf<Surface>()
@@ -333,10 +337,7 @@ class VideoCameraManager constructor() : CoroutineScope by CoroutineScope(Dispat
                 return
             }
             mCameraCaptureSession = session
-            if (hasSwitchCamera){
-                hasSwitchCamera = false
-                startRecordRequest()
-            }else createPreviewRequest()
+            createPreviewRequest()
         }
         override fun onConfigureFailed(session: CameraCaptureSession) {
             Utils.showToast("CaptureSession configure failure.")
@@ -423,6 +424,7 @@ class VideoCameraManager constructor() : CoroutineScope by CoroutineScope(Dispat
     interface OnPicture{
         fun onTaken(file:File)
     }
+
     fun setPicCallback(callback:OnPicture?){
         mPicCallback = callback
     }
@@ -439,7 +441,7 @@ class VideoCameraManager constructor() : CoroutineScope by CoroutineScope(Dispat
         try {
             val picCaptureRequestBuilder = mCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE).apply {
                 addTarget(mPicImageReader!!.surface)
-                set(CaptureRequest.JPEG_ORIENTATION,mSensorOrientation)
+                set(CaptureRequest.JPEG_ORIENTATION,getOrientation())
 
                 set(CaptureRequest.CONTROL_AF_MODE,CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
                 set(CaptureRequest.CONTROL_AF_TRIGGER,CameraMetadata.CONTROL_AF_TRIGGER_START)
@@ -460,7 +462,10 @@ class VideoCameraManager constructor() : CoroutineScope by CoroutineScope(Dispat
 
     fun recodeVideo(){
         launch {
-            mMediaRecorder?.apply {
+            if (mCameraDevice == null){
+                openCamera()
+            }
+            mMediaRecorder!!.apply {
                 start()
                 startRecordRequest()
             }
@@ -562,8 +567,9 @@ class VideoCameraManager constructor() : CoroutineScope by CoroutineScope(Dispat
             mCameraBackId
         }else mCameraFaceId
     }
-    fun getOrientation():Int{
-        return mSensorOrientation
+
+    fun isBack():Boolean{
+        return hasBack
     }
 
     fun hasRecording():Boolean{
@@ -572,7 +578,6 @@ class VideoCameraManager constructor() : CoroutineScope by CoroutineScope(Dispat
 
     private fun releaseResource(){
         Utils.logInfo("start release resource.")
-        mPicCallback = null
         releaseRecorder()
         releaseCamera()
     }
@@ -601,8 +606,6 @@ class VideoCameraManager constructor() : CoroutineScope by CoroutineScope(Dispat
     }
 
     private fun releaseRecorder(){
-        if (hasSwitchCamera)return
-
         if (mMediaRecorder != null){
             mMediaRecorder!!.release()
             mMediaRecorder = null
@@ -627,7 +630,8 @@ class VideoCameraManager constructor() : CoroutineScope by CoroutineScope(Dispat
                     val bottom = if (b < 0) 0 else (b * hRatio).toInt()
 
                     val focusRect = Rect(left,top,right,bottom)
-                    if (mSensorOrientation == 90 || mSensorOrientation == 270){
+                    val orientation = getOrientation()
+                    if (orientation == 90 || orientation == 270){
                         focusRect.set(top,left,bottom,right)
                     }
                     Utils.logInfo("focusRect:$focusRect,cropRegion:$this")
@@ -644,7 +648,6 @@ class VideoCameraManager constructor() : CoroutineScope by CoroutineScope(Dispat
     fun switchCamera(){
         if (mPreviewList.isNotEmpty()){
             hasBack = !hasBack
-            if (mMode != MODE.PICTURE)hasSwitchCamera = true
             openCamera()
         }
     }

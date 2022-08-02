@@ -47,9 +47,9 @@ class VideoMediaRecorder :AbstractRecorder() {
 
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-                    setOutputFile(mFile)
+                    setOutputFile(getFile())
                 }else{
-                    setOutputFile(mFile.absolutePath)
+                    setOutputFile(getFile().absolutePath)
                 }
 
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)

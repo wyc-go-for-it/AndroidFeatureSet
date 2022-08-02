@@ -1,6 +1,7 @@
 package com.wyc.video.recorder
 
 import androidx.annotation.CallSuper
+import com.wyc.video.Utils
 import com.wyc.video.VideoApp
 import java.io.File
 import java.io.FileInputStream
@@ -23,8 +24,17 @@ import java.util.*
  */
 
 abstract class AbstractRecorder:IRecorder {
-    protected val mFile = createVideoFile()
+    private var mFile = createVideoFile()
 
+
+    protected fun getFile():File{
+        mFile = createVideoFile()
+        return mFile
+    }
+
+    protected fun finalize(){
+        Utils.logInfo(javaClass.simpleName + " has finalized")
+    }
     @CallSuper
     override fun release() {
 

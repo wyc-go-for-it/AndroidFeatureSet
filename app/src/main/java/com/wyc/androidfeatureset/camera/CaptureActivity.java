@@ -7,7 +7,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
-import android.graphics.YuvImage;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -22,15 +21,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.wyc.video.YUVUtils;
 import com.wyc.androidfeatureset.R;
-import com.wyc.androidfeatureset.YUVUtils;
 import com.wyc.logger.Logger;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.Arrays;
 
@@ -97,6 +95,7 @@ public class CaptureActivity extends AppCompatActivity implements SensorEventLis
 
 
                     mCacheMatrix = YUVUtils.rotateYUV_420_270(mCacheMatrix,width,height,null);
+                    //YUVUtils.flipYUV_420By_180(mCacheMatrix,width,height);
 
 
                     if (mCacheBitmap == null){

@@ -1,15 +1,8 @@
-package com.wyc.androidfeatureset;
+package com.wyc.video;
 
-import android.graphics.Bitmap;
-import android.graphics.Matrix;
 import android.graphics.Rect;
 
 import androidx.annotation.NonNull;
-
-import com.wyc.logger.Logger;
-
-import java.util.Arrays;
-import java.util.Locale;
 
 public class YUVUtils {
 
@@ -153,7 +146,7 @@ public class YUVUtils {
     }
 
     public static byte[] rotateYUV_420_90(@NonNull byte[] src, int s_w, int s_h,byte[] dst){
-        /*
+        /* NV21
         YYYY
         YYYY
         VUVU

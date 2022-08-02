@@ -292,4 +292,7 @@ public class RecordBtn extends AppCompatButton {
         mRecordStatus = RECORD_STATUS.STOP;
         mStartRecordTime = 0;
     }
+    public MODE getCurMode(){
+        return mMode;
+    }
 }

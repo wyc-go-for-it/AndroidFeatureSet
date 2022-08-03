@@ -10,6 +10,7 @@ import android.view.Surface
 import com.wyc.video.Utils
 import com.wyc.video.YUVUtils
 import com.wyc.video.camera.VideoCameraManager
+import com.wyc.video.camera.VideoCameraManager.Companion.getInstance
 import java.nio.ByteBuffer
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.locks.ReentrantLock
@@ -31,6 +32,10 @@ import kotlin.concurrent.thread
  */
 
 class VideoMediaCodec:AbstractRecorder() {
+    private val WIDTH = getInstance().vWidth
+    private val HEIGHT = getInstance().vHeight
+    private val FRAME_RATE = getInstance().mBestFPSRange.upper
+
     private var mImageReaderYUV : ImageReader? = null
     private var mImageReaderThread:HandlerThread? = null
     private val mImageReaderLock = ReentrantLock()
@@ -87,32 +92,37 @@ class VideoMediaCodec:AbstractRecorder() {
                                 mStopAudio = false
 
 
-                                val audioData = ByteArray(1024)
+                                val audioData = ByteArray(2048)
                                 val bufferInfo = MediaCodec.BufferInfo()
                                 while (!mStopAudio){
 
-                                    val len = audio.read(audioData,0,1024)
-                                    val inputIndex = dequeueInputBuffer(1000 * 100)
-                                    if (inputIndex > -1){
-                                        getInputBuffer(inputIndex)?.apply {
-                                            clear()
-                                            put(audioData)
+                                    val len = audio.read(audioData,0,2048)
+                                    if (len > 0){
+                                        val inputIndex = dequeueInputBuffer(1000 * 100)
+                                        if (inputIndex > -1){
+                                            getInputBuffer(inputIndex)?.apply {
+                                                clear()
+                                                put(audioData)
+                                            }
+
+                                            queueInputBuffer(inputIndex,0,len,calAudioPts(len),0)
                                         }
 
-                                        queueInputBuffer(inputIndex,0,len,calAudioPts(1024),0)
-                                    }
-
-                                    val  outputIndex = dequeueOutputBuffer(bufferInfo,1000 * 100)
-                                    if (outputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED){
-                                        addTrackAudio(outputFormat)
-                                    }else if (outputIndex > -1){
-                                        getOutputBuffer(outputIndex)?.apply {
-                                            Log.e("AudioCodec","inputIndex:${inputIndex},outputIndex:${outputIndex},len:${len},pts:${bufferInfo.presentationTimeUs}")
-                                            writeDataAudio(this,bufferInfo)
+                                        val  outputIndex = dequeueOutputBuffer(bufferInfo,1000 * 100)
+                                        if (outputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED){
+                                            addTrackAudio(outputFormat)
+                                        }else if (outputIndex > -1){
+                                            getOutputBuffer(outputIndex)?.apply {
+                                                Log.e("AudioCodec","inputIndex:${inputIndex},outputIndex:${outputIndex},len:${len},size:${bufferInfo.size},pts:${bufferInfo.presentationTimeUs}")
+                                                writeDataAudio(this,bufferInfo)
+                                            }
+                                            releaseOutputBuffer(outputIndex,false)
                                         }
-                                        releaseOutputBuffer(outputIndex,false)
                                     }
-
+                                }
+                                val inputIndex = dequeueInputBuffer(1000 * 100)
+                                if (inputIndex > -1){
+                                    queueInputBuffer(inputIndex,0,0,0,MediaCodec.BUFFER_FLAG_END_OF_STREAM)
                                 }
                             }catch (e:Exception){
                                 e.printStackTrace()
@@ -133,13 +143,13 @@ class VideoMediaCodec:AbstractRecorder() {
     }
 
     private fun calAudioPts(size: Int): Long {
+        val perSampleByte = 1024 * 2
         return if (mAudioBaseTime == 0L){
-            mAudioBaseTime += 1000 * 1000 * size / sampleRateInHz
+            mAudioBaseTime += 1000 * 1000 *  1024/ 44100   * size / perSampleByte
             0L
         }else{
             val pts = mAudioBaseTime
-            mAudioBaseTime += 1000 * 1000 * size /sampleRateInHz
-            Log.d("mAudioBaseTime:",mAudioBaseTime.toString())
+            mAudioBaseTime += 1000 * 1000 *  1024/ 44100  * size / perSampleByte
             pts
         }
     }
@@ -509,8 +519,5 @@ class VideoMediaCodec:AbstractRecorder() {
     companion object{
         const val MIMETYPE = "video/avc"
         const val AudioMIMETYPE = MediaFormat.MIMETYPE_AUDIO_AAC
-        const val WIDTH = 1280
-        const val HEIGHT = 720
-        const val FRAME_RATE = 25
     }
 }

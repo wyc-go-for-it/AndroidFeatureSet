@@ -12,6 +12,7 @@ import android.media.ImageReader
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
+import android.util.Range
 import android.view.Surface
 import com.wyc.logger.Logger
 import com.wyc.video.Utils
@@ -69,6 +70,8 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO) {
 
     private val mPreviewList = mutableListOf<Surface>()
 
+    var mBestFPSRange: Range<Int> =  Range(30,30)
+
     var vWidth = 1280
     var vHeight = 720
 
@@ -124,7 +127,10 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO) {
             val pixelRect = characteristic.get(CameraCharacteristics.SENSOR_INFO_PIXEL_ARRAY_SIZE)
             val physicalRect = characteristic.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE)
             val afRegion = characteristic.get(CameraCharacteristics.CONTROL_MAX_REGIONS_AF)
+
             val fpsRegion = characteristic.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)
+            selectBaseFPS(fpsRegion)
+
             val capabilities = characteristic.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES)
 
             val  camcorderProfile =  CamcorderProfile.get(getValidCameraId().toInt(), CamcorderProfile.QUALITY_720P)
@@ -157,6 +163,11 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO) {
         }catch (e: IllegalArgumentException){
             Utils.showToast(e.message)
             Utils.logInfo(e.message)
+        }
+    }
+    private fun selectBaseFPS(range: Array<Range<Int>>?){
+        range?.apply {
+            mBestFPSRange = this[this.size - 1]
         }
     }
 
@@ -360,6 +371,7 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO) {
 
                         set(CaptureRequest.CONTROL_AF_MODE,CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
                         set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
+                        set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, mBestFPSRange)
 
                         mCameraCaptureSession!!.setRepeatingRequest(build(),mCaptureCallback,mBackgroundHandler)
                     }
@@ -491,6 +503,7 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO) {
 
                 set(CaptureRequest.CONTROL_AF_MODE,CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
                 set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
+                set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, mBestFPSRange);
             }
             mCameraCaptureSession!!.setRepeatingRequest(recordCaptureRequestBuilder.build(),mCaptureCallback,mBackgroundHandler)
         }catch (e:IllegalArgumentException){

@@ -14,6 +14,22 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++11"
+                //生成多个版本的so文件
+                abiFilters 'arm64-v8a','armeabi-v7a','x86','x86_64'
+            }
+        }
+
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/java/com/wyc/video/FFmpegPlay/cpp/CMakeLists.txt"
+            version "3.10.2"
+        }
     }
 
     buildTypes {

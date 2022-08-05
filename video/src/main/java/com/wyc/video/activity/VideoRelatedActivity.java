@@ -4,9 +4,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-
+import com.wyc.video.FFmpegPlay.ffmpegApi.FFMediaPlayer;
 import com.wyc.video.R;
 import com.wyc.video.ScrollSelectionView;
 import com.wyc.video.Utils;
@@ -24,6 +24,17 @@ public class VideoRelatedActivity extends VideoBaseActivity implements View.OnCl
         findViewById(R.id.surfaceView).setOnClickListener(this);
 
         test();
+        showFFmpegInfo();
+        showFFmpegCodec();
+    }
+
+    private void showFFmpegInfo(){
+        final TextView tv = findViewById(R.id.ffmpeg_version);
+        tv.setText(FFMediaPlayer.getFFmpegVersion());
+    }
+    private void showFFmpegCodec(){
+        final TextView tv = findViewById(R.id.ffmpeg_codec);
+        tv.setText(FFMediaPlayer.getFFmpegAllCodecName());
     }
 
     private void test(){

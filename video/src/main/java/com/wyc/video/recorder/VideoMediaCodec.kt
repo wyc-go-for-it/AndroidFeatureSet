@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
 import android.view.Surface
+import com.wyc.logger.Logger
 import com.wyc.video.Utils
 import com.wyc.video.YUVUtils
 import com.wyc.video.camera.VideoCameraManager
@@ -40,6 +41,7 @@ class VideoMediaCodec:AbstractRecorder() {
     private var mImageReaderThread:HandlerThread? = null
     private val mImageReaderLock = ReentrantLock()
 
+    @Volatile
     private var mVideoCodec: MediaCodec? = null
     private var mCodeThread:HandlerThread? = null
     private val mCodeLock = ReentrantLock()
@@ -132,6 +134,7 @@ class VideoMediaCodec:AbstractRecorder() {
 
                                 stop()
                                 release()
+                                mAudioTrackIndex = -1
                             }
                         }
                     }
@@ -364,7 +367,6 @@ class VideoMediaCodec:AbstractRecorder() {
     }
 
     override fun start() {
-        startImageReaderThread()
         startCodeThread()
 
         initMediaMuxer()
@@ -380,6 +382,7 @@ class VideoMediaCodec:AbstractRecorder() {
             e.printStackTrace()
         }
 
+        startImageReaderThread()
         mImageReaderYUV!!.setOnImageAvailableListener(mImageReaderYUVCallback,Handler(mImageReaderThread!!.looper))
 
     }
@@ -400,6 +403,7 @@ class VideoMediaCodec:AbstractRecorder() {
                 mVideoCodec = null
 
                 mVideoBaseTime = 0L
+                mVideoTrackIndex = -1
             }finally {
                 mCodeLock.unlock()
             }
@@ -409,7 +413,9 @@ class VideoMediaCodec:AbstractRecorder() {
 
         stopMuxer()
 
+        mImageReaderYUV?.setOnImageAvailableListener(null,null)
         stopImageReaderThread()
+
         stopCodeThread()
     }
 

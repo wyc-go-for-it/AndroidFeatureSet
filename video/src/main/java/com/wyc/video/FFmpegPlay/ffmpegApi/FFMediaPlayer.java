@@ -22,7 +22,15 @@ public class FFMediaPlayer {
     public static String getFFmpegAllCodecName(){
         return nativeGetCodecNames();
     }
+    public static String getFFmpegDemuxerName(){
+        return nativeGetDemuxerNames();
+    }
+    public static String getFFmpegMuxerName(){
+        return nativeGetMuxerNames();
+    }
 
     private static native String nativeGetFFmpegVersion();
     private static native String nativeGetCodecNames();
+    private static native String nativeGetDemuxerNames();
+    private static native String nativeGetMuxerNames();
 }

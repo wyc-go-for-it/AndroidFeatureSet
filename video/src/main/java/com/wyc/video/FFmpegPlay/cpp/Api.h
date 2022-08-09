@@ -11,7 +11,8 @@ extern "C"{
 
 JNIEXPORT jstring JNICALL GetFFmpegVersion(JNIEnv *env);
 JNIEXPORT jstring JNICALL GetCodecNames(JNIEnv *env);
-
+JNIEXPORT jstring JNICALL GetDemuxerNames(JNIEnv *env);
+JNIEXPORT jstring JNICALL GetMuxerNames(JNIEnv *env);
 #ifdef __cplusplus
 }
 #endif

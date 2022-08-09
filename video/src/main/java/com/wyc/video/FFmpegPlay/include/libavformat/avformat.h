@@ -315,8 +315,8 @@
 #include "libavcodec/defs.h"
 #include "libavcodec/packet.h"
 
-#include "../libavutil/dict.h"
-#include "../libavutil/log.h"
+#include "libavutil/dict.h"
+#include "libavutil/log.h"
 
 #include "avio.h"
 #include "libavformat/version_major.h"

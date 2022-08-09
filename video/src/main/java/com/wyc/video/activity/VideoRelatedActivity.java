@@ -13,6 +13,7 @@ import com.wyc.video.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 
 public class VideoRelatedActivity extends VideoBaseActivity implements View.OnClickListener {
@@ -26,6 +27,7 @@ public class VideoRelatedActivity extends VideoBaseActivity implements View.OnCl
         test();
         showFFmpegInfo();
         showFFmpegCodec();
+        showFFmpegMuxer();
     }
 
     private void showFFmpegInfo(){
@@ -35,6 +37,11 @@ public class VideoRelatedActivity extends VideoBaseActivity implements View.OnCl
     private void showFFmpegCodec(){
         final TextView tv = findViewById(R.id.ffmpeg_codec);
         tv.setText(FFMediaPlayer.getFFmpegAllCodecName());
+    }
+    private void showFFmpegMuxer(){
+        final TextView tv = findViewById(R.id.ffmpeg_muxer);
+        final String muxers = String.format(Locale.CHINA,"%s\n%s",FFMediaPlayer.getFFmpegMuxerName(),FFMediaPlayer.getFFmpegDemuxerName());
+        tv.setText(muxers);
     }
 
     private void test(){

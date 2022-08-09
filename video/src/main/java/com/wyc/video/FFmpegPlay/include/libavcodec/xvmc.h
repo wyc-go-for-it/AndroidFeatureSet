@@ -31,7 +31,7 @@
 
 #include <X11/extensions/XvMC.h>
 
-#include "../libavutil/attributes.h"
+#include "libavutil/attributes.h"
 #include "avcodec.h"
 
 /**

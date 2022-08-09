@@ -4,18 +4,17 @@
 #include "jni.h"
 #include "Api.h"
 
-//由于 FFmpeg 库是 C 语言实现的，告诉编译器按照 C 的规则进行编译
 extern "C" {
-#include "../include/libavcodec/version.h"
-#include "../include/libavcodec/version.h"
-#include "../include/libavcodec/avcodec.h"
-#include "../include/libavformat/version.h"
-#include "../include/libavutil/version.h"
-#include "../include/libavfilter/version.h"
-#include "../include/libswresample/version.h"
-#include "../include/libswscale/version.h"
-#include "../include/libavformat/avformat.h"
-#include "../include/libavcodec/codec.h"
+#include "libavcodec/version.h"
+#include "libavcodec/version.h"
+#include "libavcodec/avcodec.h"
+#include "libavformat/version.h"
+#include "libavutil/version.h"
+#include "libavfilter/version.h"
+#include "libswresample/version.h"
+#include "libswscale/version.h"
+#include "libavformat/avformat.h"
+#include "libavcodec/codec.h"
 };
 
 #ifdef __cplusplus
@@ -65,9 +64,33 @@ JNIEXPORT jstring JNICALL GetCodecNames(JNIEnv *env){
     return env->NewStringUTF(strBuffer);
 }
 
+JNIEXPORT jstring JNICALL GetDemuxerNames(JNIEnv *env){
+    char strBuffer[1024 * 4] = {0};
+    void *i = nullptr;
+    const  AVInputFormat *first;
+    while ((first = av_demuxer_iterate(&i))){
+        strcat(strBuffer,"demuxer:");
+        strcat(strBuffer, first->long_name);
+        strcat(strBuffer,"\n");
+    }
+    return env->NewStringUTF(strBuffer);
+}
+
+JNIEXPORT jstring JNICALL GetMuxerNames(JNIEnv *env){
+    char strBuffer[1024 * 4] = {0};
+    void *i = nullptr;
+    const  AVOutputFormat *first;
+    while ((first = av_muxer_iterate(&i))){
+        strcat(strBuffer,"muxer:");
+        strcat(strBuffer, first->long_name);
+        strcat(strBuffer,"\n");
+    }
+    return env->NewStringUTF(strBuffer);
+}
+
 JNIEXPORT jint JNI_OnLoad(JavaVM* vm,void * r){
     LOGD("JNI_OnLoad");
-    JNIEnv* env = NULL;
+    JNIEnv* env = nullptr;
     jint result = -1;
     if (vm->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK) {
         LOGD("JNI_OnLoad failure");
@@ -75,7 +98,9 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm,void * r){
     };
     JNINativeMethod methods [] = {
             {"nativeGetFFmpegVersion","()Ljava/lang/String;",(void *)GetFFmpegVersion},
-            {"nativeGetCodecNames","()Ljava/lang/String;", (void *)GetCodecNames}
+            {"nativeGetCodecNames","()Ljava/lang/String;", (void *)GetCodecNames},
+            {"nativeGetDemuxerNames","()Ljava/lang/String;", (void *) GetDemuxerNames},
+            {"nativeGetMuxerNames","()Ljava/lang/String;", (void *) GetMuxerNames}
     };
     jclass ffPlay = env->FindClass("com/wyc/video/FFmpegPlay/ffmpegApi/FFMediaPlayer");
     if (!ffPlay){

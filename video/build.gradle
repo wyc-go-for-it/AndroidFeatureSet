@@ -25,6 +25,12 @@ android {
 
     }
 
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['src/main/java/com/wyc/video/FFmpegPlay/jniLibs']
+        }
+    }
+
     externalNativeBuild {
         cmake {
             path "src/main/java/com/wyc/video/FFmpegPlay/cpp/CMakeLists.txt"

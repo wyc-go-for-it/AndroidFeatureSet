@@ -14,8 +14,11 @@ import com.wyc.video.camera.VideoCameraManager
 import com.wyc.video.camera.VideoCameraManager.Companion.getInstance
 import java.nio.ByteBuffer
 import java.util.concurrent.ArrayBlockingQueue
-import java.util.concurrent.locks.ReentrantLock
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.LockSupport
 import kotlin.concurrent.thread
+import kotlin.math.max
+import kotlin.math.min
 
 
 /**
@@ -39,20 +42,20 @@ class VideoMediaCodec:AbstractRecorder() {
 
     private var mImageReaderYUV : ImageReader? = null
     private var mImageReaderThread:HandlerThread? = null
-    private val mImageReaderLock = ReentrantLock()
+    private var mImageReaderHandler:Handler? = null
 
     @Volatile
     private var mVideoCodec: MediaCodec? = null
-    private var mCodeThread:HandlerThread? = null
-    private val mCodeLock = ReentrantLock()
+    private var mCodecThread:HandlerThread? = null
+    private var mCodecHandler:Handler? = null
 
+    private var isFirstVideoFrame = true
+    private var isFirstAudioFrame = true
     private var mMediaMuxer:MediaMuxer? = null
+    @Volatile
     private var mVideoTrackIndex = -1
     @Volatile
-    private var mVideoBaseTime = 0L
-
-    @Volatile
-    private var mReadyMuxer = false
+    private var mVideoFrameTime = -1L
 
     private val audioSource = MediaRecorder.AudioSource.MIC
     private val sampleRateInHz = 44100
@@ -60,10 +63,11 @@ class VideoMediaCodec:AbstractRecorder() {
     private val audioFormat = AudioFormat.ENCODING_PCM_16BIT
     private val channels = 1
     @Volatile
-    private var mAudioBaseTime = 0L
+    private var mAudioFrameTime = -1L
 
     @Volatile
     private var mStopAudio = true
+    @Volatile
     private var mAudioTrackIndex = -1
 
     private val  YUVQueue: ArrayBlockingQueue<ByteArray>  = ArrayBlockingQueue<ByteArray> (10)
@@ -93,11 +97,10 @@ class VideoMediaCodec:AbstractRecorder() {
 
                                 mStopAudio = false
 
-
                                 val audioData = ByteArray(2048)
                                 val bufferInfo = MediaCodec.BufferInfo()
-                                while (!mStopAudio){
 
+                                while (!mStopAudio){
                                     val len = audio.read(audioData,0,2048)
                                     if (len > 0){
                                         val inputIndex = dequeueInputBuffer(1000 * 100)
@@ -106,7 +109,6 @@ class VideoMediaCodec:AbstractRecorder() {
                                                 clear()
                                                 put(audioData)
                                             }
-
                                             queueInputBuffer(inputIndex,0,len,calAudioPts(len),0)
                                         }
 
@@ -115,7 +117,6 @@ class VideoMediaCodec:AbstractRecorder() {
                                             addTrackAudio(outputFormat)
                                         }else if (outputIndex > -1){
                                             getOutputBuffer(outputIndex)?.apply {
-                                                Log.e("AudioCodec","inputIndex:${inputIndex},outputIndex:${outputIndex},len:${len},size:${bufferInfo.size},pts:${bufferInfo.presentationTimeUs}")
                                                 writeDataAudio(this,bufferInfo)
                                             }
                                             releaseOutputBuffer(outputIndex,false)
@@ -134,7 +135,7 @@ class VideoMediaCodec:AbstractRecorder() {
 
                                 stop()
                                 release()
-                                mAudioTrackIndex = -1
+                                Log.e("audio:","release")
                             }
                         }
                     }
@@ -146,13 +147,14 @@ class VideoMediaCodec:AbstractRecorder() {
     }
 
     private fun calAudioPts(size: Int): Long {
-        val perSampleByte = 1024 * 2
-        return if (mAudioBaseTime == 0L){
-            mAudioBaseTime += 1000 * 1000 *  1024/ 44100   * size / perSampleByte
+        val perSampleByte = 1024 * 2L
+        return if (mAudioFrameTime == -1L){
+            if (hasTrackFinish())
+                mAudioFrameTime = 1000 * 1000 *  1024/ 44100   * size / perSampleByte
             0L
         }else{
-            val pts = mAudioBaseTime
-            mAudioBaseTime += 1000 * 1000 *  1024/ 44100  * size / perSampleByte
+            val pts = mAudioFrameTime
+            mAudioFrameTime += 1000 * 1000 *  1024/ 44100  * size / perSampleByte
             pts
         }
     }
@@ -194,48 +196,32 @@ class VideoMediaCodec:AbstractRecorder() {
 
                 setCallback(object : MediaCodec.Callback() {
                     override fun onInputBufferAvailable(codec: MediaCodec, index: Int) {
-
                         try {
-                            mCodeLock.lock()
-
                             if (mVideoCodec != null){
-                                val bytes = YUVQueue.take()
-                                val bufferInfo = codec.getInputBuffer(index)
-                                bufferInfo!!.put(bytes)
-                                codec.queueInputBuffer(index,0,bytes.size,calVideoPts(),0)
+                                YUVQueue.poll(100,TimeUnit.MILLISECONDS)?.apply {
+                                    codec.getInputBuffer(index)?.put(this)
+                                    if (isFirstVideoFrame){
+                                        if (hasTrackFinish())isFirstVideoFrame = false
+                                        codec.queueInputBuffer(index,0,size,calVideoPts(),MediaCodec.BUFFER_FLAG_KEY_FRAME)
+                                    }else
+                                        codec.queueInputBuffer(index,0,size,calVideoPts(),0)
+                                }
                             }
-
                         }catch (_:InterruptedException){
-
-                        }finally {
-                            mCodeLock.unlock()
                         }
                     }
                     override fun onOutputBufferAvailable(codec: MediaCodec, index: Int, info: MediaCodec.BufferInfo) {
-                        try {
-                            mCodeLock.lock()
+                        if (mVideoCodec != null){
+                            val mediaFormat = codec.getOutputFormat(index)
 
-                            if (mVideoCodec != null){
-                                val mediaFormat = codec.getOutputFormat(index)
-
-                                codec.getOutputBuffer(index)?.apply {
-                                    val offset = info.offset
-                                    val size = info.size
-                                    val presentTimes = info.presentationTimeUs
-
-                                    Log.e("onOutputBufferAvailable","offset:${offset},size:${size},presentTimes:${presentTimes}")
-
-                                    writeDataVideo(this,info)
-                                }
-
-                                codec.releaseOutputBuffer(index,false)
-                            }else  {
-                                info.set(0,0,info.presentationTimeUs,MediaCodec.BUFFER_FLAG_END_OF_STREAM)
-                                writeDataVideo(ByteBuffer.allocate(0),info)
+                            codec.getOutputBuffer(index)?.apply {
+                                val offset = info.offset
+                                val size = info.size
+                                val presentTimes = info.presentationTimeUs
+                                writeDataVideo(this,info)
                             }
 
-                        }finally {
-                            mCodeLock.unlock()
+                            codec.releaseOutputBuffer(index,false)
                         }
                     }
 
@@ -246,7 +232,7 @@ class VideoMediaCodec:AbstractRecorder() {
                     override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {
                         addTrackVideo(format)
                     }
-                },Handler(mCodeThread!!.looper))
+                }, mCodecHandler)
 
                 val format = createMediaFormat()
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
@@ -260,68 +246,62 @@ class VideoMediaCodec:AbstractRecorder() {
         }
     }
     private fun calVideoPts():Long{
-        return if (mVideoBaseTime == 0L){
-            mVideoBaseTime += (1 * 1000 * 1000 / FRAME_RATE)
+        return if (mVideoFrameTime == -1L){
+            if (hasTrackFinish())
+                mVideoFrameTime = (1000 * 1000L / FRAME_RATE)
             0L
         }else{
-            val pts = mVideoBaseTime
-            mVideoBaseTime += (1 * 1000 * 1000 / FRAME_RATE)
+            val pts = mVideoFrameTime
+            mVideoFrameTime += (1 * 1000 * 1000 / FRAME_RATE)
             pts
         }
     }
 
     private val mImageReaderYUVCallback = ImageReader.OnImageAvailableListener {
-        try {
-            mImageReaderLock.lock()
+        it.acquireLatestImage()?.let {image->
+            if (image.format == ImageFormat.YUV_420_888){
+                val w = image.width
+                val h = image.height
 
-            it.acquireLatestImage()?.let {image->
-                if (image.format == ImageFormat.YUV_420_888){
-                    val w = image.width
-                    val h = image.height
+                val  planes = image.planes
+                val yPlane = planes[0]
+                val uPlane = planes[1]
+                val vPlane = planes[2]
 
-                    val  planes = image.planes
-                    val yPlane = planes[0]
-                    val uPlane = planes[1]
-                    val vPlane = planes[2]
+                val yBuffer = yPlane.buffer
+                val uBuffer = uPlane.buffer
+                val vBuffer = vPlane.buffer
 
-                    val yBuffer = yPlane.buffer
-                    val uBuffer = uPlane.buffer
-                    val vBuffer = vPlane.buffer
+                mYuvBuffer.rewind()
+                mYuvBuffer.put(yBuffer)
+                var index = 0
+                val pos = vBuffer.limit()
+                val pixelStride = vPlane.pixelStride
+                while (index < pos - 1){
+                    mYuvBuffer.put(uBuffer.get(index))
+                    mYuvBuffer.put(vBuffer.get(index))
+                    index += pixelStride
+                }
 
-                    mYuvBuffer.rewind()
-                    mYuvBuffer.put(yBuffer)
-                    var index = 0
-                    val pos = vBuffer.limit()
-                    val pixelStride = vPlane.pixelStride
-                    while (index < pos - 1){
-                        mYuvBuffer.put(uBuffer.get(index))
-                        mYuvBuffer.put(vBuffer.get(index))
-                        index += pixelStride
-                    }
+                val bytes = ByteArray(w * h * ImageFormat.getBitsPerPixel(ImageFormat.YUV_420_888) / 8)
+                if (getInstance().isBack())
+                    YUVUtils.rotateYUV_420_90(mYuvBuffer.array(),w,h,bytes)
+                else {
+                    YUVUtils.rotateYUV_420_270(mYuvBuffer.array(),w,h,bytes)
+                }
 
-                    val bytes = ByteArray(w * h * ImageFormat.getBitsPerPixel(ImageFormat.YUV_420_888) / 8)
-                    if (VideoCameraManager.getInstance().isBack())
-                        YUVUtils.rotateYUV_420_90(mYuvBuffer.array(),w,h,bytes)
-                    else {
-                        YUVUtils.rotateYUV_420_270(mYuvBuffer.array(),w,h,bytes)
-                    }
-
-                    try {
-                        YUVQueue.put(bytes)
-                    }catch (_:InterruptedException){
-                        YUVQueue.clear()
-                    }
+                try {
+                    YUVQueue.put(bytes)
+                }catch (_:InterruptedException){
+                    YUVQueue.clear()
+                }
 
 /*                    Log.e("",String.format(
                         Locale.CHINA,"yuvWidth:%d,yuvHeight:%d,YpixelStride:%d,YrowStride:%d,VpixelStride:%d,VrowStride:%d,UpixelStride:%d,UrowStride:%d",
                         it.width,it.height,yPlane.pixelStride,yPlane.rowStride,vPlane.pixelStride,vPlane.rowStride,uPlane.pixelStride,uPlane.rowStride))*/
 
-                }
-                image.close()
             }
-
-        }finally {
-            mImageReaderLock.unlock()
+            image.close()
         }
     }
 
@@ -373,8 +353,8 @@ class VideoMediaCodec:AbstractRecorder() {
 
         YUVQueue.clear()
 
-        initAudioCodec()
         initVideoCodec()
+        initAudioCodec()
 
         try {
             mVideoCodec!!.start()
@@ -383,40 +363,36 @@ class VideoMediaCodec:AbstractRecorder() {
         }
 
         startImageReaderThread()
-        mImageReaderYUV!!.setOnImageAvailableListener(mImageReaderYUVCallback,Handler(mImageReaderThread!!.looper))
+        mImageReaderYUV!!.setOnImageAvailableListener(mImageReaderYUVCallback,mImageReaderHandler)
 
     }
 
     override fun stop() {
-        if (mVideoCodec != null){
-            try {
-                mCodeThread?.interrupt()
-
-                mCodeLock.lock()
-
-                try {
-                    mVideoCodec!!.stop()
-                }catch (e:IllegalStateException){
-                    e.printStackTrace()
-                }
-                mVideoCodec!!.release()
-                mVideoCodec = null
-
-                mVideoBaseTime = 0L
-                mVideoTrackIndex = -1
-            }finally {
-                mCodeLock.unlock()
-            }
-        }
+        stopMuxer()
 
         stopAudioRecord()
 
-        stopMuxer()
+        stopCodec()
 
         mImageReaderYUV?.setOnImageAvailableListener(null,null)
         stopImageReaderThread()
-
-        stopCodeThread()
+    }
+    private fun stopCodec(){
+        if (mCodecHandler != null && mCodecThread != null){
+            mCodecHandler!!.post {
+                if (mVideoCodec != null){
+                    try {
+                        mVideoCodec!!.stop()
+                    }catch (e:IllegalStateException){
+                        e.printStackTrace()
+                    }
+                    mVideoCodec!!.release()
+                    mVideoCodec = null
+                    Log.e("video:","release")
+                }
+            }
+        }
+        stopCodecThread()
     }
 
     private fun initMediaMuxer(){
@@ -426,43 +402,53 @@ class VideoMediaCodec:AbstractRecorder() {
 
     private fun addTrackVideo(mf:MediaFormat) {
         mMediaMuxer?.apply {
-            synchronized(this@VideoMediaCodec){
-                mVideoTrackIndex = addTrack(mf)
-                if (mVideoTrackIndex != -1 && mAudioTrackIndex != -1){
-                    start()
-                    mReadyMuxer = true
-                }
+            mVideoTrackIndex = addTrack(mf)
+            Logger.d("VideoTrackIndex:%d",mVideoTrackIndex)
+            if (mVideoTrackIndex != -1 && mAudioTrackIndex != -1){
+                start()
             }
         }
     }
     private fun addTrackAudio(mf: MediaFormat){
         mMediaMuxer?.apply {
-            synchronized(this@VideoMediaCodec){
-                mAudioTrackIndex = addTrack(mf)
-                if (mVideoTrackIndex != -1 && mAudioTrackIndex != -1){
-                    start()
-                    mReadyMuxer = true
-                }
+            mAudioTrackIndex = addTrack(mf)
+            Logger.d("AudioTrackIndex:%d",mAudioTrackIndex)
+            if (mVideoTrackIndex != -1 && mAudioTrackIndex != -1){
+                start()
             }
         }
     }
 
     private fun writeDataVideo(byteBuf:ByteBuffer ,bufferInfo: MediaCodec.BufferInfo){
-        if (mReadyMuxer && mMediaMuxer != null){
+        if (readyMuxer()){
+            Log.e("videoData:",String.format("VideoTrackIndex:%d,presentationTimeUs:%d,key_frame:%d",mVideoTrackIndex,bufferInfo.presentationTimeUs,bufferInfo.flags))
             mMediaMuxer!!.writeSampleData(mVideoTrackIndex,byteBuf,bufferInfo)
         }
     }
 
     private fun writeDataAudio(byteBuf:ByteBuffer ,bufferInfo: MediaCodec.BufferInfo){
-        if (mReadyMuxer && mMediaMuxer != null){
+        if (readyMuxer()){
+            if (isFirstAudioFrame){
+                bufferInfo.presentationTimeUs = 0
+                isFirstAudioFrame = false
+            }
+            Log.e("audioData:",String.format("AudioTrackIndex:%d,presentationTimeUs:%d",mAudioTrackIndex,bufferInfo.presentationTimeUs))
             mMediaMuxer!!.writeSampleData(mAudioTrackIndex,byteBuf,bufferInfo)
         }
     }
+    private fun readyMuxer():Boolean{
+        return hasTrackFinish() && mVideoFrameTime != -1L && mAudioFrameTime != -1L && mMediaMuxer != null
+    }
+    private fun hasTrackFinish():Boolean{
+        return mVideoTrackIndex != -1 && mAudioTrackIndex != -1
+    }
+
 
     private fun stopMuxer(){
         if (mMediaMuxer != null){
             try {
-                mReadyMuxer = false
+                writeLastFrame()
+
                 mMediaMuxer!!.stop()
                 mMediaMuxer!!.release()
                 mMediaMuxer = null
@@ -471,37 +457,59 @@ class VideoMediaCodec:AbstractRecorder() {
             }
         }
     }
+    private fun writeLastFrame(){
+        if (mVideoFrameTime != -1L && mAudioFrameTime != -1L){
+            val info = MediaCodec.BufferInfo()
+            Logger.d("videoBaseTime:%s,audioBaseTime:%s",mVideoFrameTime,mAudioFrameTime)
+            info.set(0,0, max(mAudioFrameTime,mVideoFrameTime),MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+            mMediaMuxer!!.writeSampleData(mVideoTrackIndex, ByteBuffer.allocate(0),info)
+            mMediaMuxer!!.writeSampleData(mAudioTrackIndex, ByteBuffer.allocate(0),info)
+
+            mVideoTrackIndex = -1
+            mAudioTrackIndex = -1
+
+            mVideoFrameTime = -1L
+            mAudioFrameTime = -1L
+
+            isFirstAudioFrame = true
+            isFirstVideoFrame = true
+        }
+    }
 
     private fun stopAudioRecord(){
         mStopAudio = true
     }
 
     override fun release() {
-        if (mImageReaderYUV != null){
-            try {
-                mImageReaderThread?.interrupt()
-                mImageReaderLock.lock()
-                mImageReaderYUV!!.close()
-                mImageReaderYUV = null
-            }finally {
-                mImageReaderLock.unlock()
-            }
-        }
+        stopYUV()
         stop()
         super.release()
     }
+    private fun stopYUV(){
+        if (mImageReaderHandler != null && mImageReaderThread != null){
+            mImageReaderHandler!!.post {
+                if (mImageReaderYUV != null){
+                    mImageReaderYUV!!.close()
+                    mImageReaderYUV = null
+                }
+            }
+            mImageReaderThread!!.interrupt()
+        }
+    }
 
     private fun startCodeThread(){
-        stopCodeThread()
-        mCodeThread = HandlerThread("CodeThread")
-        mCodeThread!!.start()
+        stopCodecThread()
+        mCodecThread = HandlerThread("CodecThread")
+        mCodecThread!!.start()
+        mCodecHandler = Handler(mCodecThread!!.looper)
     }
-    private fun stopCodeThread() {
-        if (mCodeThread != null) {
-            mCodeThread!!.quitSafely()
+    private fun stopCodecThread() {
+        if (mCodecThread != null) {
+            mCodecThread!!.quitSafely()
             try {
-                mCodeThread!!.join()
-                mCodeThread = null
+                mCodecThread!!.join()
+                mCodecThread = null
+                mCodecHandler = null
             } catch (e: InterruptedException) {
             }
         }
@@ -511,6 +519,7 @@ class VideoMediaCodec:AbstractRecorder() {
         stopImageReaderThread()
         mImageReaderThread = HandlerThread("ImageReaderThread")
         mImageReaderThread!!.start()
+        mImageReaderHandler = Handler(mImageReaderThread!!.looper)
     }
     private fun stopImageReaderThread() {
         if (mImageReaderThread != null) {
@@ -518,6 +527,7 @@ class VideoMediaCodec:AbstractRecorder() {
             try {
                 mImageReaderThread!!.join()
                 mImageReaderThread = null
+                mImageReaderHandler = null
             } catch (e: InterruptedException) {
             }
         }

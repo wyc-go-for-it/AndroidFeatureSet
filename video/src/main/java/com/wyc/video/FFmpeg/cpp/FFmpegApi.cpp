@@ -25,7 +25,7 @@ static const char *TAG="FFmpegApi";
 #define LOGD(fmt, args...) __android_log_print(ANDROID_LOG_DEBUG, TAG, fmt, ##args)
 #define LOGE(fmt, args...) __android_log_print(ANDROID_LOG_ERROR, TAG, fmt, ##args)
 
-JNIEXPORT jstring JNICALL  GetFFmpegVersion(JNIEnv *env)
+JNIEXPORT jstring JNICALL  GetFFmpegVersion(JNIEnv *env,jclass cls)
 {
     char strBuffer[1024 * 4] = {0};
     strcat(strBuffer, "libavcodec : ");
@@ -48,7 +48,7 @@ JNIEXPORT jstring JNICALL  GetFFmpegVersion(JNIEnv *env)
     return env->NewStringUTF(strBuffer);
 }
 
-JNIEXPORT jstring JNICALL GetCodecNames(JNIEnv *env){
+JNIEXPORT jstring JNICALL GetCodecNames(JNIEnv *env,jclass cls){
     char strBuffer[1024 * 4] = {0};
     void *i = nullptr;
     const AVCodec *first;
@@ -64,7 +64,7 @@ JNIEXPORT jstring JNICALL GetCodecNames(JNIEnv *env){
     return env->NewStringUTF(strBuffer);
 }
 
-JNIEXPORT jstring JNICALL GetDemuxerNames(JNIEnv *env){
+JNIEXPORT jstring JNICALL GetDemuxerNames(JNIEnv *env,jclass cls){
     char strBuffer[1024 * 4] = {0};
     void *i = nullptr;
     const  AVInputFormat *first;
@@ -76,7 +76,7 @@ JNIEXPORT jstring JNICALL GetDemuxerNames(JNIEnv *env){
     return env->NewStringUTF(strBuffer);
 }
 
-JNIEXPORT jstring JNICALL GetMuxerNames(JNIEnv *env){
+JNIEXPORT jstring JNICALL GetMuxerNames(JNIEnv *env,jclass cls){
     char strBuffer[1024 * 4] = {0};
     void *i = nullptr;
     const  AVOutputFormat *first;
@@ -95,14 +95,14 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm,void * r){
     if (vm->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK) {
         LOGD("JNI_OnLoad failure");
         return result;
-    };
+    }
     JNINativeMethod methods [] = {
             {"nativeGetFFmpegVersion","()Ljava/lang/String;",(void *)GetFFmpegVersion},
             {"nativeGetCodecNames","()Ljava/lang/String;", (void *)GetCodecNames},
             {"nativeGetDemuxerNames","()Ljava/lang/String;", (void *) GetDemuxerNames},
             {"nativeGetMuxerNames","()Ljava/lang/String;", (void *) GetMuxerNames}
     };
-    jclass ffPlay = env->FindClass("com/wyc/video/FFmpegPlay/ffmpegApi/FFMediaPlayer");
+    jclass ffPlay = env->FindClass("com/wyc/video/FFmpeg/ffmpegApi/FFMediaPlayer");
     if (!ffPlay){
         LOGD("FindClass failure");
         return result;

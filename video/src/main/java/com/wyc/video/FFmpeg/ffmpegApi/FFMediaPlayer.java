@@ -1,4 +1,4 @@
-package com.wyc.video.FFmpegPlay.ffmpegApi;
+package com.wyc.video.FFmpeg.ffmpegApi;
 
 /**
  * @ProjectName: AndroidFeatureSet

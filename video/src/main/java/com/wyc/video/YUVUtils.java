@@ -280,4 +280,18 @@ public class YUVUtils {
 
         return dst;
     }
+
+    static {
+        System.loadLibrary("YUVUtils");
+    }
+
+    public static int[] fastYuv420ToARGB(byte[] src, int s_w, int s_h , int[] pixels){
+        return nativeYuv420ToARGB(src,s_w,s_h,pixels);
+    }
+    public static byte[] fastRotateYUV_420_270(byte[] src, int s_w, int s_h,byte[] dst){
+        return nativeRotateYUV_420_270(src,s_w,s_h,dst);
+    }
+
+    private static native int[] nativeYuv420ToARGB(byte[] src, int s_w, int s_h, int[] pixels);
+    private static native byte[] nativeRotateYUV_420_270(@NonNull byte[] src, int s_w, int s_h,byte[] dst);
 }

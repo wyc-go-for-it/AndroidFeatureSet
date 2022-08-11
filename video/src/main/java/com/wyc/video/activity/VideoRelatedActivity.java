@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
-import com.wyc.video.FFmpegPlay.ffmpegApi.FFMediaPlayer;
+import com.wyc.video.FFmpeg.ffmpegApi.FFMediaPlayer;
 import com.wyc.video.R;
 import com.wyc.video.ScrollSelectionView;
 import com.wyc.video.Utils;

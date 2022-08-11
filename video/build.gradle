@@ -19,7 +19,7 @@ android {
             cmake {
                 cppFlags "-std=c++11"
                 //生成多个版本的so文件
-                abiFilters 'arm64-v8a','armeabi-v7a','x86','x86_64'
+                abiFilters 'arm64-v8a','armeabi-v7a'
             }
         }
 
@@ -27,13 +27,13 @@ android {
 
     sourceSets {
         main {
-            jniLibs.srcDirs = ['src/main/java/com/wyc/video/FFmpegPlay/jniLibs']
+            jniLibs.srcDirs = ['src/main/java/com/wyc/video/FFmpeg/jniLibs']
         }
     }
 
     externalNativeBuild {
         cmake {
-            path "src/main/java/com/wyc/video/FFmpegPlay/cpp/CMakeLists.txt"
+            path "src/main/java/com/wyc/video/FFmpeg/cpp/CMakeLists.txt"
             version "3.10.2"
         }
     }

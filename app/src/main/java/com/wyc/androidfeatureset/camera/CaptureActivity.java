@@ -13,6 +13,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -75,6 +76,7 @@ public class CaptureActivity extends AppCompatActivity implements SensorEventLis
         @Override
         public void onManagerConnected(int status) {
             if (status == LoaderCallbackInterface.SUCCESS){
+                //format NV21
                 preview.setPreviewBack((data, format, w, h) -> {
 
                     w = (w + 16 -1) & (-16);
@@ -93,18 +95,18 @@ public class CaptureActivity extends AppCompatActivity implements SensorEventLis
 
                     //mCacheMatrix = YUVUtils.rotateYUV_420_90(mCacheMatrix,width,height,null);
 
-
-                    mCacheMatrix = YUVUtils.rotateYUV_420_270(mCacheMatrix,width,height,null);
+                    long t = System.currentTimeMillis();
+                    mCacheMatrix = YUVUtils.fastRotateYUV_420_270(mCacheMatrix,width,height,null);
                     //YUVUtils.flipYUV_420By_180(mCacheMatrix,width,height);
-
+                    Log.e("rotateYUV_420_270","lose:" + (System.currentTimeMillis() - t));
 
                     if (mCacheBitmap == null){
                         mCacheBitmap = Bitmap.createBitmap(height,width,Bitmap.Config.ARGB_8888);
                     }
-                    long t = System.currentTimeMillis();
-                    mCachePixel = YUVUtils.yuv420ToARGB(mCacheMatrix,height,width,mCachePixel);
+
+                    mCachePixel = YUVUtils.fastYuv420ToARGB(mCacheMatrix,height,width,mCachePixel);
                     mCacheBitmap.setPixels(mCachePixel,0,height,0,0,height,width);
-                    Logger.d("lose:%d",System.currentTimeMillis() - t);
+
 
   /*                  YuvImage yuvImage = new YuvImage(mCacheMatrix,format,height,width,null);
                     ByteArrayOutputStream out =

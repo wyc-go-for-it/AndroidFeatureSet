@@ -409,7 +409,7 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO) {
                     bmp.compress(Bitmap.CompressFormat.JPEG,100,fileOutputStream)
                 }else{
                     val matrix = Matrix()
-                    matrix.setScale(1f,-1f)
+                    matrix.setScale(-1f,1f)
                     bmp = Bitmap.createBitmap(bmp,0,0,bmp.width,bmp.height,matrix,false)
                     bmp.compress(Bitmap.CompressFormat.JPEG,100,fileOutputStream)
                 }

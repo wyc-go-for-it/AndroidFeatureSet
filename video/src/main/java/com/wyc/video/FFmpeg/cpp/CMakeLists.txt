@@ -8,6 +8,7 @@ set(jnilibs ${CMAKE_SOURCE_DIR}/../jniLibs)
 set(libname FFmpegApi)
 
 include_directories(../include)
+include_directories(../include/libyuv)
 
 link_directories(${jnilibs}/${CMAKE_ANDROID_ARCH_ABI})
 
@@ -70,6 +71,6 @@ add_library( # Sets the name of the library.
         )
 target_link_libraries(
         ${yuvlib}
-
+        yuv
         log
 )

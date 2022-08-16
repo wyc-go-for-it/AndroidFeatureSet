@@ -5,6 +5,8 @@
 #include "android/log.h"
 #include "jni.h"
 #include "android/log.h"
+#include "libyuv/libyuv.h"
+#include <memory>
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,6 +16,8 @@ static const char *TAG = "YUVUtils";
 #define LOGD(fmt, args...) __android_log_print(ANDROID_LOG_DEBUG, TAG, fmt, ##args)
 #define LOGE(fmt, args...) __android_log_print(ANDROID_LOG_ERROR, TAG, fmt, ##args)
 
+static uint8_t * NV21TOI420(uint8_t *nv21_data,jint size,jint width,jint height);
+
 void JNI_ThrowByName(JNIEnv *env, const char *name, const char *msg) {
     jclass cls = env->FindClass(name);
     if (cls != nullptr) {
@@ -22,101 +26,66 @@ void JNI_ThrowByName(JNIEnv *env, const char *name, const char *msg) {
     env->DeleteLocalRef(cls);
 }
 
-JNIEXPORT jintArray JNICALL
-yuv420ToARGB(JNIEnv *env, jclass cls, jbyteArray src, jint s_w, jint s_h, jintArray pixels) {
-/*
-NV21
+auto deleter = [](uint8_t *p){
+    LOGE("delete:%p",p);
+    delete[] p;
+};
 
-YYYY
-YYYY
-VUVU
+/**
+ * src NV21 数据
+ * */
+JNIEXPORT jintArray JNICALL yuvNV21ToARGB(JNIEnv *env, jclass cls, jbyteArray src_nv21, jint s_w, jint s_h, jintArray pixels) {
 
-*/
 
-    jint srcLen = env->GetArrayLength(src);
-    if (s_w * s_h * 1.5 > srcLen) {
-        JNI_ThrowByName(env, "java/lang/IllegalArgumentException", "src is too small.");
-        return nullptr;
-    }
+    jbyte *jSrc = env->GetByteArrayElements(src_nv21, nullptr);
+    jint len = env->GetArrayLength(src_nv21);
 
-    if (pixels != nullptr) {
-        int pixelsLen = env->GetArrayLength(pixels);
-        if (pixelsLen < s_w * s_h) {
-            JNI_ThrowByName(env, "java/lang/IllegalArgumentException", "src is too small.");
-            return nullptr;
-        }
-    } else {
+    if (pixels == nullptr){
         pixels = env->NewIntArray(s_w * s_h);
     }
 
-    jint r, g, b;
-    jint y = 0, v = 0, u = 0;
-    jint xOffset, yOffset;
-
     jint *jpixels = env->GetIntArrayElements(pixels, nullptr);
-    jbyte *jSrc = env->GetByteArrayElements(src, nullptr);
-
-    for (int j = 0; j < s_h; j++) {
-        xOffset = j * s_w;
-        yOffset = s_h * s_w + (j >> 1) * s_w;
-        for (int i = 0; i < s_w; i++) {
-            y = (jSrc[xOffset + i] & 0xff);
-
-            if ((i & 1) == 0) {
-                v = (0xff & jSrc[yOffset++]) - 128;
-                u = (0xff & jSrc[yOffset++]) - 128;
-            }
-
-            r = y + v + ((v * 103) >> 8);
-            g = y - ((u * 88) >> 8) - ((v * 183) >> 8);
-            b = y + u + ((u * 198) >> 8);
-
-            if (r < 0)
-                r = 0;
-            else if (r > 255)
-                r = 255;
-            if (g < 0)
-                g = 0;
-            else if (g > 255)
-                g = 255;
-            if (b < 0)
-                b = 0;
-            else if (b > 255)
-                b = 255;
-
-            jpixels[xOffset + i] = 0xff000000 | (r << 16) | (g << 8) | b;
-
-/*                int y1192 = 1192 * y;
-                r = (y1192 + 1634 * v);
-                g = (y1192 - 833 * v - 400 * u);
-                b = (y1192 + 2066 * u);
-                if (r < 0)
-                    r = 0;
-                else if (r > 262143)
-                    r = 262143;
-                if (g < 0)
-                    g = 0;
-                else if (g > 262143)
-                    g = 262143;
-                if (b < 0)
-                    b = 0;
-                else if (b > 262143)
-                    b = 262143;
 
 
-                pixels[xOffset + i] = 0xff000000 | ((r << 6) & 0xff0000)
-                        | ((g >> 2) & 0xff00) | ((b >> 10) & 0xff);*/
-        }
-    }
-    env->ReleaseByteArrayElements(src, jSrc, 0);
-    env->ReleaseIntArrayElements(pixels, jpixels, 0);
+    auto dst = std::unique_ptr<uint8_t,void(*)(uint8_t *)>(NV21TOI420(reinterpret_cast<uint8_t *>(jSrc), len, s_w, s_h),deleter);
+
+    jint src_y_size = s_w * s_h;
+    jint src_u_size = (s_w >> 1) * (s_h >> 1);
+    auto *dst_i420_y_data = dst.get();
+    uint8_t *dst_i420_u_data = dst_i420_y_data + src_y_size;
+    uint8_t *dst_i420_v_data = dst_i420_u_data + src_u_size;
+
+    libyuv::I420ToARGB(dst_i420_y_data, s_w, dst_i420_u_data, s_w >> 1, dst_i420_v_data, s_w >> 1,
+                       reinterpret_cast<uint8_t *>(jpixels), s_w * 4, s_w, s_h);
+
+    env->ReleaseByteArrayElements(src_nv21,jSrc,0);
+    env->ReleaseIntArrayElements(pixels,jpixels,0);
 
     return pixels;
 }
 
+static uint8_t * NV21TOI420(uint8_t *nv21_data,jint size,jint width,jint height){
+
+    auto *dst = new uint8_t[size];
+
+    jint src_y_size = width * height;
+    jint src_u_size = (width >> 1) * (height >> 1);
+
+    auto *src_nv21_y_data = nv21_data;
+    uint8_t *src_nv21_vu_data = src_nv21_y_data + src_y_size;
+
+    auto *dst_i420_y_data = reinterpret_cast<uint8_t *>(dst);
+    uint8_t *dst_i420_u_data = dst_i420_y_data + src_y_size;
+    uint8_t *dst_i420_v_data = dst_i420_u_data + src_u_size;
+
+    libyuv::NV21ToI420(src_nv21_y_data,width,src_nv21_vu_data,width,dst_i420_y_data,width,dst_i420_u_data,width >> 1,dst_i420_v_data,width >> 1,width,height);
+
+    return dst;
+}
+
 
 JNIEXPORT jbyteArray JNICALL
-rotateYUV_420_270(JNIEnv *env, jclass cls, jbyteArray src, jint s_w, jint s_h, jbyteArray dst) {
+rotateYUV_NV21_270(JNIEnv *env, jclass cls, jbyteArray src, jint s_w, jint s_h, jbyteArray dst) {
 /*
 YYYY
 YYYY
@@ -127,32 +96,33 @@ VUVU
 
     if (dst == nullptr)dst = env->NewByteArray(srcLen);
 
-
     jbyte  *jSrc = env->GetByteArrayElements(src, nullptr);
     jbyte  *jDst = env->GetByteArrayElements(dst,nullptr);
 
-    int srcOffset;
-    for (int i = 0; i < s_h; i++) {
-        srcOffset = i * s_w;
-        for (int j = 0; j < s_w; j++) {
-            jDst[(s_w - 1 - j) * s_h + i] = jSrc[srcOffset + j];
-        }
-    }
+    auto i420Dst = std::unique_ptr<uint8_t,void(*)(uint8_t *)>(NV21TOI420(reinterpret_cast<uint8_t *>(jSrc), srcLen, s_w, s_h),deleter);
 
-    int tOffset = s_w * s_h, offset;
-    for (int i = s_h, k = 0; i < s_h + s_h / 2; i++, k++) {
-        srcOffset = i * s_w;
-        for (int j = s_w; j > 0; j -= 2) {
-            offset = tOffset + ((s_w - j) >> 1) * s_h - (s_h - i) * 2;
-            jDst[offset] = jSrc[srcOffset + j - 2];
-            jDst[offset + 1] = jSrc[srcOffset + j - 1];
-        }
-    }
+    jint src_y_size = s_w * s_h;
+    jint src_u_size = (s_w >> 1) * (s_h >> 1);
+    auto *src_i420_y_data = i420Dst.get();
+    uint8_t *src_i420_u_data = src_i420_y_data + src_y_size;
+    uint8_t *src_i420_v_data = src_i420_u_data + src_u_size;
+
+    auto *dst_i420_y_data = reinterpret_cast<uint8_t *>(jDst);
+    uint8_t *dst_i420_u_data = dst_i420_y_data + src_y_size;
+    uint8_t *dst_i420_v_data = dst_i420_u_data + src_u_size;
+
+    libyuv::I420Rotate(src_i420_y_data,s_w,src_i420_u_data,s_w >> 1,src_i420_v_data,s_w >> 1,
+                       dst_i420_y_data,s_h,dst_i420_u_data,s_h >> 1,dst_i420_v_data,s_h >> 1,
+                       s_w,s_h,libyuv::RotationMode::kRotate270);
+
+    auto *dst_nv21_y_data = reinterpret_cast<uint8_t *>(jSrc);
+    uint8_t *dst_i420_vu_data = dst_nv21_y_data + src_y_size;
+    libyuv::I420ToNV21(dst_i420_y_data,s_w,dst_i420_u_data,s_w >> 1,dst_i420_v_data,s_w >> 1,dst_nv21_y_data,s_w,dst_i420_vu_data,s_w,s_w,s_h);
 
     env->ReleaseByteArrayElements(src,jSrc,0);
     env->ReleaseByteArrayElements(dst,jDst,0);
 
-    return dst;
+    return src;
 }
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *unused) {
@@ -164,8 +134,8 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *unused) {
     }
 
     const JNINativeMethod nativeMethods[] = {
-            {"nativeYuv420ToARGB", "([BII[I)[I", reinterpret_cast<void *>(yuv420ToARGB)},
-            {"nativeRotateYUV_420_270","([BII[B)[B",reinterpret_cast<void *>(rotateYUV_420_270)}
+            {"nativeYuv420ToARGB", "([BII[I)[I", reinterpret_cast<void *>(yuvNV21ToARGB)},
+            {"nativeRotateYUV_420_270","([BII[B)[B",reinterpret_cast<void *>(rotateYUV_NV21_270)}
     };
 
     jclass utils = env->FindClass("com/wyc/video/YUVUtils");

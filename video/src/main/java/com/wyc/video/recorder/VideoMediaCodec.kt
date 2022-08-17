@@ -13,6 +13,7 @@ import com.wyc.video.YUVUtils
 import com.wyc.video.camera.VideoCameraManager
 import com.wyc.video.camera.VideoCameraManager.Companion.getInstance
 import java.nio.ByteBuffer
+import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.LockSupport
@@ -103,21 +104,23 @@ class VideoMediaCodec:AbstractRecorder() {
                                 while (!mStopAudio){
                                     val len = audio.read(audioData,0,2048)
                                     if (len > 0){
+                                        val presentationTime = calAudioPts(len)
                                         val inputIndex = dequeueInputBuffer(1000 * 100)
                                         if (inputIndex > -1){
                                             getInputBuffer(inputIndex)?.apply {
                                                 clear()
                                                 put(audioData)
                                             }
-                                            queueInputBuffer(inputIndex,0,len,calAudioPts(len),0)
+                                            queueInputBuffer(inputIndex,0,len,presentationTime,0)
                                         }
 
                                         val  outputIndex = dequeueOutputBuffer(bufferInfo,1000 * 100)
                                         if (outputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED){
                                             addTrackAudio(outputFormat)
                                         }else if (outputIndex > -1){
-                                            getOutputBuffer(outputIndex)?.apply {
-                                                writeDataAudio(this,bufferInfo)
+                                            val buffer = getOutputBuffer(outputIndex)
+                                            if (buffer != null && presentationTime > 0){
+                                                writeDataAudio(buffer,bufferInfo)
                                             }
                                             releaseOutputBuffer(outputIndex,false)
                                         }
@@ -198,13 +201,18 @@ class VideoMediaCodec:AbstractRecorder() {
                     override fun onInputBufferAvailable(codec: MediaCodec, index: Int) {
                         try {
                             if (mVideoCodec != null){
-                                YUVQueue.poll(100,TimeUnit.MILLISECONDS)?.apply {
-                                    codec.getInputBuffer(index)?.put(this)
-                                    if (isFirstVideoFrame){
-                                        if (hasTrackFinish())isFirstVideoFrame = false
-                                        codec.queueInputBuffer(index,0,size,calVideoPts(),MediaCodec.BUFFER_FLAG_KEY_FRAME)
-                                    }else
+                                val buffer = codec.getInputBuffer(index)
+                                if (buffer != null){
+                                    val byteArray = YUVQueue.poll(100,TimeUnit.MILLISECONDS)
+                                    if (byteArray != null){
+                                        val size = byteArray.size
+                                        buffer.put(byteArray)
+
                                         codec.queueInputBuffer(index,0,size,calVideoPts(),0)
+
+                                    }else {
+                                        codec.queueInputBuffer(index,0,0,calVideoPts(),0)
+                                    }
                                 }
                             }
                         }catch (_:InterruptedException){
@@ -213,14 +221,11 @@ class VideoMediaCodec:AbstractRecorder() {
                     override fun onOutputBufferAvailable(codec: MediaCodec, index: Int, info: MediaCodec.BufferInfo) {
                         if (mVideoCodec != null){
                             val mediaFormat = codec.getOutputFormat(index)
-
-                            codec.getOutputBuffer(index)?.apply {
-                                val offset = info.offset
-                                val size = info.size
-                                val presentTimes = info.presentationTimeUs
-                                writeDataVideo(this,info)
+                            if (info.size > 0){
+                                codec.getOutputBuffer(index)?.apply {
+                                    writeDataVideo(this,info)
+                                }
                             }
-
                             codec.releaseOutputBuffer(index,false)
                         }
                     }
@@ -296,9 +301,9 @@ class VideoMediaCodec:AbstractRecorder() {
                     YUVQueue.clear()
                 }
 
-/*                    Log.e("",String.format(
+                    Log.e("",String.format(
                         Locale.CHINA,"yuvWidth:%d,yuvHeight:%d,YpixelStride:%d,YrowStride:%d,VpixelStride:%d,VrowStride:%d,UpixelStride:%d,UrowStride:%d",
-                        it.width,it.height,yPlane.pixelStride,yPlane.rowStride,vPlane.pixelStride,vPlane.rowStride,uPlane.pixelStride,uPlane.rowStride))*/
+                        it.width,it.height,yPlane.pixelStride,yPlane.rowStride,vPlane.pixelStride,vPlane.rowStride,uPlane.pixelStride,uPlane.rowStride))
 
             }
             image.close()
@@ -421,7 +426,7 @@ class VideoMediaCodec:AbstractRecorder() {
 
     private fun writeDataVideo(byteBuf:ByteBuffer ,bufferInfo: MediaCodec.BufferInfo){
         if (readyMuxer()){
-            Log.e("videoData:",String.format("VideoTrackIndex:%d,presentationTimeUs:%d,key_frame:%d",mVideoTrackIndex,bufferInfo.presentationTimeUs,bufferInfo.flags))
+            Log.e("videoData:",String.format("VideoTrackIndex:%d,presentationTimeUs:%d,key_frame:%d,size:%d",mVideoTrackIndex,bufferInfo.presentationTimeUs,bufferInfo.flags,bufferInfo.size))
             mMediaMuxer!!.writeSampleData(mVideoTrackIndex,byteBuf,bufferInfo)
         }
     }
@@ -432,7 +437,7 @@ class VideoMediaCodec:AbstractRecorder() {
                 bufferInfo.presentationTimeUs = 0
                 isFirstAudioFrame = false
             }
-            Log.e("audioData:",String.format("AudioTrackIndex:%d,presentationTimeUs:%d",mAudioTrackIndex,bufferInfo.presentationTimeUs))
+            Log.e("audioData:",String.format("AudioTrackIndex:%d,presentationTimeUs:%d,size:%d",mAudioTrackIndex,bufferInfo.presentationTimeUs,bufferInfo.size))
             mMediaMuxer!!.writeSampleData(mAudioTrackIndex,byteBuf,bufferInfo)
         }
     }

@@ -22,10 +22,20 @@ import com.wyc.label.printer.LabelPrintUtils;
 import com.wyc.logger.Logger;
 import com.wyc.video.activity.VideoRelatedActivity;
 
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
+
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final int BROADCAST_PORT = 1234;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +43,77 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         LabelPrintUtils.openPrinter();
+
+
+        serveTest();
+        test();
+
+    }
+
+    private void serveTest(){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                try {
+                    DatagramSocket datagramSocket = new DatagramSocket(BROADCAST_PORT, InetAddress.getByName("0.0.0.0"));
+                    datagramSocket.setBroadcast(true);
+
+                    while (true) {
+                        byte[] buf = new byte[1024];
+                        // 接收数据
+                        DatagramPacket packet = new DatagramPacket(buf, buf.length);
+                        datagramSocket.receive(packet);
+                        String content = new String(packet.getData()).trim();
+                        Logger.d(content);
+                        Logger.d(packet.getAddress().getHostAddress());
+                    }
+
+                }catch (IOException e){
+                    e.printStackTrace();
+                }
+
+            }
+        }).start();
+    }
+
+    private void test(){
+
+        try {
+
+
+            DatagramSocket datagramSocket = new DatagramSocket();
+            datagramSocket.setBroadcast(true);
+            // 获取本地所有网络接口
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = interfaces.nextElement();
+                if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                    continue;
+                }
+                // getInterfaceAddresses()方法返回绑定到该网络接口的所有 IP 的集合
+                for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
+                    InetAddress broadcast = interfaceAddress.getBroadcast();
+                    // 不广播回环网络接口
+                    if (broadcast  == null) {
+                        continue;
+                    }
+                    // 发送广播报文
+                    try {
+                        byte[] data = "你好".getBytes();
+                        DatagramPacket sendPacket = new DatagramPacket(data,
+                                data.length, broadcast, BROADCAST_PORT);
+                        datagramSocket.send(sendPacket);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    Logger.d("发送请求:%s", getClass().getName() + ">>> Request packet sent to: " +
+                            broadcast.getHostAddress() + "; Interface: " + networkInterface.getDisplayName());
+                }
+            }
+        }catch (IOException e){
+            e.printStackTrace();
+        }
     }
 
     @Override

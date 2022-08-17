@@ -20,6 +20,7 @@
     <queries><!--20220425 提示拒绝访问需要权限，增加provider包路径之后正常-->
         <package android:name="com.android.wyc.contentproviderclient"/>
     </queries>
+    <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
         android:name=".MyApp"

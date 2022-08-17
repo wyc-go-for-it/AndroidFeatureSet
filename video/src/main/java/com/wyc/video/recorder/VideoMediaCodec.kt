@@ -50,8 +50,7 @@ class VideoMediaCodec:AbstractRecorder() {
     private var mCodecThread:HandlerThread? = null
     private var mCodecHandler:Handler? = null
 
-    private var isFirstVideoFrame = true
-    private var isFirstAudioFrame = true
+    private var hasKeyFrame = false
     private var mMediaMuxer:MediaMuxer? = null
     @Volatile
     private var mVideoTrackIndex = -1
@@ -207,11 +206,9 @@ class VideoMediaCodec:AbstractRecorder() {
                                     if (byteArray != null){
                                         val size = byteArray.size
                                         buffer.put(byteArray)
-
-                                        codec.queueInputBuffer(index,0,size,calVideoPts(),0)
-
+                                        codec.queueInputBuffer(index,0,size,0,0)
                                     }else {
-                                        codec.queueInputBuffer(index,0,0,calVideoPts(),0)
+                                        codec.queueInputBuffer(index,0,0,0,0)
                                     }
                                 }
                             }
@@ -426,6 +423,12 @@ class VideoMediaCodec:AbstractRecorder() {
 
     private fun writeDataVideo(byteBuf:ByteBuffer ,bufferInfo: MediaCodec.BufferInfo){
         if (readyMuxer()){
+            if (!hasKeyFrame){
+                bufferInfo.flags = MediaCodec.BUFFER_FLAG_KEY_FRAME
+                hasKeyFrame = true
+            }else{
+                bufferInfo.presentationTimeUs = calVideoPts()
+            }
             Log.e("videoData:",String.format("VideoTrackIndex:%d,presentationTimeUs:%d,key_frame:%d,size:%d",mVideoTrackIndex,bufferInfo.presentationTimeUs,bufferInfo.flags,bufferInfo.size))
             mMediaMuxer!!.writeSampleData(mVideoTrackIndex,byteBuf,bufferInfo)
         }
@@ -433,16 +436,12 @@ class VideoMediaCodec:AbstractRecorder() {
 
     private fun writeDataAudio(byteBuf:ByteBuffer ,bufferInfo: MediaCodec.BufferInfo){
         if (readyMuxer()){
-            if (isFirstAudioFrame){
-                bufferInfo.presentationTimeUs = 0
-                isFirstAudioFrame = false
-            }
             Log.e("audioData:",String.format("AudioTrackIndex:%d,presentationTimeUs:%d,size:%d",mAudioTrackIndex,bufferInfo.presentationTimeUs,bufferInfo.size))
             mMediaMuxer!!.writeSampleData(mAudioTrackIndex,byteBuf,bufferInfo)
         }
     }
     private fun readyMuxer():Boolean{
-        return hasTrackFinish() && mVideoFrameTime != -1L && mAudioFrameTime != -1L && mMediaMuxer != null
+        return hasTrackFinish() && mMediaMuxer != null
     }
     private fun hasTrackFinish():Boolean{
         return mVideoTrackIndex != -1 && mAudioTrackIndex != -1
@@ -475,9 +474,6 @@ class VideoMediaCodec:AbstractRecorder() {
 
             mVideoFrameTime = -1L
             mAudioFrameTime = -1L
-
-            isFirstAudioFrame = true
-            isFirstVideoFrame = true
         }
     }
 

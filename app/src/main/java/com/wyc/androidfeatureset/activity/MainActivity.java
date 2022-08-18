@@ -25,6 +25,7 @@ import com.wyc.video.activity.VideoRelatedActivity;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
@@ -36,6 +37,7 @@ import butterknife.OnClick;
 public class MainActivity extends AppCompatActivity {
 
     private static final int BROADCAST_PORT = 1234;
+    private volatile boolean start = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,38 +53,51 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void serveTest(){
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
+        new Thread(() -> {
 
-                try {
-                    DatagramSocket datagramSocket = new DatagramSocket(BROADCAST_PORT, InetAddress.getByName("0.0.0.0"));
-                    datagramSocket.setBroadcast(true);
+            try(DatagramSocket datagramSocket = new DatagramSocket(BROADCAST_PORT, InetAddress.getByName("0.0.0.0"))){
+                datagramSocket.setBroadcast(true);
 
-                    while (true) {
-                        byte[] buf = new byte[1024];
-                        // 接收数据
-                        DatagramPacket packet = new DatagramPacket(buf, buf.length);
-                        datagramSocket.receive(packet);
-                        String content = new String(packet.getData()).trim();
-                        Logger.d(content);
-                        Logger.d(packet.getAddress().getHostAddress());
-                    }
+                byte[] buf = new byte[1024];
+                // 接收数据
+                DatagramPacket packet = new DatagramPacket(buf, buf.length);
+                datagramSocket.receive(packet);
+                String content = new String(packet.getData()).trim();
 
-                }catch (IOException e){
-                    e.printStackTrace();
-                }
+                Logger.d("server IP :%s,receive：%s,client IP:%s",getLocalIP(),content,packet.getAddress().getHostAddress());
 
+            }catch (IOException e){
+                e.printStackTrace();
             }
+
         }).start();
+    }
+
+    private String getLocalIP(){
+        try {
+            // 获取本地所有网络接口
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = interfaces.nextElement();
+                if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                    continue;
+                }
+                // getInterfaceAddresses()方法返回绑定到该网络接口的所有 IP 的集合
+                for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
+                    InetAddress address = interfaceAddress.getAddress();
+                    if (address instanceof Inet4Address)
+                    return interfaceAddress.getAddress().getHostAddress();
+                }
+            }
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        return "";
     }
 
     private void test(){
 
-        try {
-
-
-            DatagramSocket datagramSocket = new DatagramSocket();
+        try(DatagramSocket datagramSocket = new DatagramSocket()) {
             datagramSocket.setBroadcast(true);
             // 获取本地所有网络接口
             Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
@@ -120,6 +135,12 @@ public class MainActivity extends AppCompatActivity {
     public void onResume(){
         super.onResume();
         checkSelfPermission();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        start = false;
     }
 
     private void checkSelfPermission(){

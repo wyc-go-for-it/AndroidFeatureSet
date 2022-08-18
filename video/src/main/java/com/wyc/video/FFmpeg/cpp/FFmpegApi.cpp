@@ -3,6 +3,7 @@
 #include "android/log.h"
 #include "jni.h"
 #include "Api.h"
+#include "./recorder/MediaCoder.h"
 
 extern "C" {
 #include "libavcodec/version.h"

@@ -12,7 +12,7 @@ include_directories(../include/libyuv)
 
 link_directories(${jnilibs}/${CMAKE_ANDROID_ARCH_ABI})
 
-#file(GLOB src-files ${CMAKE_SOURCE_DIR}/*.cpp)
+file(GLOB custom-files ${CMAKE_SOURCE_DIR}/recorder/*.cpp)
 aux_source_directory(./ src-files)
 
 add_library( # Sets the name of the library.
@@ -23,6 +23,7 @@ add_library( # Sets the name of the library.
 
         # Provides a relative path to your source file(s).
         ${src-files}
+        ${custom-files}
         )
 
 set(third-party-libs

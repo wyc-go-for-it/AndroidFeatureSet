@@ -6,15 +6,12 @@
 #include "jni.h"
 #include "android/log.h"
 #include "libyuv/libyuv.h"
+#include "LogUtil.h"
 #include <memory>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-static const char *TAG = "YUVUtils";
-#define LOGD(fmt, args...) __android_log_print(ANDROID_LOG_DEBUG, TAG, fmt, ##args)
-#define LOGE(fmt, args...) __android_log_print(ANDROID_LOG_ERROR, TAG, fmt, ##args)
 
 static uint8_t * NV21TOI420(uint8_t *nv21_data,jint size,jint width,jint height);
 
@@ -107,7 +104,8 @@ VUVU
     uint8_t *src_i420_u_data = src_i420_y_data + src_y_size;
     uint8_t *src_i420_v_data = src_i420_u_data + src_u_size;
 
-    auto *dst_i420_y_data = reinterpret_cast<uint8_t *>(jDst);
+    auto i420Dst_y = std::unique_ptr<uint8_t>(reinterpret_cast<uint8_t *>(malloc(sizeof(uint8_t) * srcLen)));
+    auto *dst_i420_y_data = i420Dst_y.get();
     uint8_t *dst_i420_u_data = dst_i420_y_data + src_y_size;
     uint8_t *dst_i420_v_data = dst_i420_u_data + src_u_size;
 
@@ -115,14 +113,14 @@ VUVU
                        dst_i420_y_data,s_h,dst_i420_u_data,s_h >> 1,dst_i420_v_data,s_h >> 1,
                        s_w,s_h,libyuv::RotationMode::kRotate270);
 
-    auto *dst_nv21_y_data = reinterpret_cast<uint8_t *>(jSrc);
-    uint8_t *dst_i420_vu_data = dst_nv21_y_data + src_y_size;
-    libyuv::I420ToNV21(dst_i420_y_data,s_w,dst_i420_u_data,s_w >> 1,dst_i420_v_data,s_w >> 1,dst_nv21_y_data,s_w,dst_i420_vu_data,s_w,s_w,s_h);
+    auto *dst_nv21_y_data = reinterpret_cast<uint8_t *>(jDst);
+    uint8_t *dst_nv21_vu_data = dst_nv21_y_data + src_y_size;
+    libyuv::I420ToNV21(dst_i420_y_data,s_w,dst_i420_u_data,s_w >> 1,dst_i420_v_data,s_w >> 1,dst_nv21_y_data,s_w,dst_nv21_vu_data,s_w,s_w,s_h);
 
     env->ReleaseByteArrayElements(src,jSrc,0);
     env->ReleaseByteArrayElements(dst,jDst,0);
 
-    return src;
+    return dst;
 }
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *unused) {

@@ -4,6 +4,7 @@
 #include "jni.h"
 #include "Api.h"
 #include "./recorder/MediaCoder.h"
+#include "./utils/LogUtil.h"
 
 extern "C" {
 #include "libavcodec/version.h"
@@ -22,9 +23,6 @@ extern "C" {
 extern "C" {
 #endif
 
-static const char *TAG="FFmpegApi";
-#define LOGD(fmt, args...) __android_log_print(ANDROID_LOG_DEBUG, TAG, fmt, ##args)
-#define LOGE(fmt, args...) __android_log_print(ANDROID_LOG_ERROR, TAG, fmt, ##args)
 
 JNIEXPORT jstring JNICALL  GetFFmpegVersion(JNIEnv *env,jclass cls)
 {

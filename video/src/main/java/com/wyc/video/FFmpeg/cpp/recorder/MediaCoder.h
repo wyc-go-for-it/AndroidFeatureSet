@@ -3,8 +3,14 @@
 #define ANDROIDFEATURESET_MEDIACODER_H
 
 #include <string>
-#include "libavcodec/avcodec.h"
-#include "libavformat/avformat.h"
+#include "../utils/ImageDef.h"
+extern "C" {
+    #include "libavcodec/avcodec.h"
+    #include "libavformat/avformat.h"
+    #include "libavutil/opt.h"
+    #include "libavutil/error.h"
+    #include "libavutil/timestamp.h"
+};
 
 #define DISABLE_COPY_ASSIGN(cls)  \
     cls(const cls &o) = delete; \
@@ -12,7 +18,7 @@
     cls(const cls &&o) = delete; \
     cls &operator =(const cls &&o) = delete; \
 
-class MediaCoder {
+class MediaCoder final{
 private:
     DISABLE_COPY_ASSIGN(MediaCoder);
     void release(){
@@ -54,7 +60,7 @@ public:
     MediaCoder(std::string file,int width,int height,int frameRatio);
     ~MediaCoder();
     void init();
-    bool encode(uint8_t *data,__int64_t presentationTime);
+    bool encode(const uint8_t *data,__int64_t presentationTime);
 private:
     bool hasInit = false;
     const std::string mFileName;

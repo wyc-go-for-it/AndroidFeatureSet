@@ -3,12 +3,8 @@
 //
 
 #include "MediaCoder.h"
-
 #include <utility>
 #include "android/log.h"
-#include "libavutil/opt.h"
-#include "libavutil/error.h"
-#include "libavutil/timestamp.h"
 
 static const char *TAG="MediaCoder";
 #define LOGD(fmt, args...) __android_log_print(ANDROID_LOG_DEBUG, TAG, fmt, ##args)
@@ -26,18 +22,22 @@ MediaCoder::~MediaCoder() {
 }
 
 void MediaCoder::init() {
+    if (hasInit)return;
+
     const char *fileName = mFileName.c_str();
+    const AVCodecID id = AVCodecID::AV_CODEC_ID_H264;
+    const AVCodec *codec;
+
     int code = avformat_alloc_output_context2(&mFormatContext, nullptr, "mp4", fileName);
     if (code < 0){
         LOGE("Could not alloc format:%s",av_err2str(code));
-        return;
+        goto end;
     }
 
     mStream = avformat_new_stream(mFormatContext, nullptr);
     if (mStream == nullptr) {
         LOGE("Could not allocate stream");
-        release();
-        return;
+        goto end;
     }
     mStream->time_base = {1,mFrameRatio};
 
@@ -45,21 +45,20 @@ void MediaCoder::init() {
         code = avio_open(&mFormatContext->pb,fileName, AVIO_FLAG_WRITE);
         if (code < 0) {
             LOGE("Could not open '%s': %s\n", fileName,av_err2str(code));
-            return ;
+            goto end;
         }
     }
 
-    const AVCodecID id = AVCodecID::AV_CODEC_ID_H264;
-    const AVCodec *codec = avcodec_find_encoder(id);
+    codec = avcodec_find_encoder(id);
     if (codec == nullptr){
         LOGE("find %d encoder error",id);
-        return;
+        goto end;
     }
 
     mCodecContext = avcodec_alloc_context3(codec);
     if (mCodecContext == nullptr){
         LOGE("alloc context error");
-        return;
+        goto end;
     }
 
     mCodecContext->bit_rate = mWidth * mHeight * 4;
@@ -77,22 +76,19 @@ void MediaCoder::init() {
     code = avcodec_open2(mCodecContext, codec, nullptr);
     if (code < 0) {
         LOGE("Could not open codec: %s", av_err2str(code));
-        release();
-        return;
+        goto end;
     }
 
     mPacket = av_packet_alloc();
     if (mPacket == nullptr){
         LOGE("alloc packet error");
-        release();
-        return;
+        goto end;
     }
 
     mFrame = av_frame_alloc();
     if (mFrame == nullptr){
         LOGE("alloc frame error");
-        release();
-        return;
+        goto end;
     }
 
     mFrame->format = mCodecContext->pix_fmt;
@@ -102,14 +98,17 @@ void MediaCoder::init() {
     code = av_frame_get_buffer(mFrame,0);
     if (code < 0){
         LOGE("frame get buffer error:%s",av_err2str(code));
-        release();
-        return;
+        goto end;
     }
-
     hasInit = true;
+
+    end:{
+        release();
+        hasInit = false;
+    }
 }
 
-bool MediaCoder::encode(uint8_t *data, __int64_t presentationTime) {
+bool MediaCoder::encode(const uint8_t *data, __int64_t presentationTime) {
     if (hasInit){
         int code = av_frame_make_writable(mFrame);
         if (code < 0){

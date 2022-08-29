@@ -4,11 +4,6 @@
 
 #include "MediaCoder.h"
 #include <utility>
-#include "android/log.h"
-
-static const char *TAG="MediaCoder";
-#define LOGD(fmt, args...) __android_log_print(ANDROID_LOG_DEBUG, TAG, fmt, ##args)
-#define LOGE(fmt, args...) __android_log_print(ANDROID_LOG_ERROR, TAG, fmt, ##args)
 
 MediaCoder::MediaCoder(std::string file,int width,int height,int frameRatio)
     :mFileName(std::move(file)),mWidth(width),mHeight(height),mFrameRatio(frameRatio){
@@ -19,6 +14,7 @@ MediaCoder::MediaCoder(std::string file,int width,int height,int frameRatio)
 MediaCoder::~MediaCoder() {
     LOGD("MediaCoder destruction");
     release();
+
 }
 
 void MediaCoder::init() {
@@ -108,7 +104,7 @@ void MediaCoder::init() {
     }
 }
 
-bool MediaCoder::encode(const uint8_t *data, __int64_t presentationTime) {
+bool MediaCoder::encode(const NativeImage data, __int64_t presentationTime) {
     if (hasInit){
         int code = av_frame_make_writable(mFrame);
         if (code < 0){
@@ -177,4 +173,20 @@ bool MediaCoder::writeFrame() {
            av_ts2str(pkt->dts), av_ts2timestr(pkt->dts, time_base),
            av_ts2str(pkt->duration), av_ts2timestr(pkt->duration, time_base),
            pkt->stream_index);
+}
+
+void MediaCoder::start() {
+    init();
+    if (hasInit){
+        thread([this]{
+            hasStarted = true;
+            while (hasStarted){
+                NativeImage image;
+                bool  code = m_queue.take(image);
+                if (code){
+                    encode(image,1000);
+                }
+            }
+        });
+    }
 }

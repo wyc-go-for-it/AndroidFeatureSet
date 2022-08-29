@@ -5,6 +5,8 @@
 #include "Api.h"
 #include "./recorder/MediaCoder.h"
 #include "./utils/LogUtil.h"
+#include "./thread/SyncQueue.h"
+#include <future>
 
 extern "C" {
 #include "libavcodec/version.h"
@@ -23,6 +25,44 @@ extern "C" {
 extern "C" {
 #endif
 
+void test(){
+    SyncQueue<NativeImage> syncQueue;
+
+    thread th([](SyncQueue<NativeImage> *c){
+        while (1) {
+                NativeImage a(IMAGE_FORMAT_I420,480,320);
+
+                //c->push(NativeImage(IMAGE_FORMAT_I420,480,320));
+                LOGE("syncQueue push:%d time %lld ms",0,GetSysCurrentTime());
+            }
+        },&syncQueue);
+
+/*    future<int> f = std::async(std::launch::async,[](SyncQueue<NativeImage> *c){
+        int sum = 0;
+        for (int i = 0; i < 5; ++i) {
+            this_thread::sleep_for(chrono::seconds (1));
+            NativeImage v;
+            c->take(v);
+            v.dumpInfo();
+        }
+        return sum;
+        },&syncQueue);
+
+    thread tha([](SyncQueue<NativeImage> *c){
+        for (int i = 0; i < 5; ++i) {
+            this_thread::sleep_for(chrono::seconds (1));
+            NativeImage v;
+            c->take(v);
+            v.dumpInfo();
+        }
+    },&syncQueue);
+    tha.join();
+    LOGE("syncQueue sum:%d",f.get());*/
+    th.join();
+
+
+    LOGE("syncQueue size:%d",syncQueue.size());
+}
 
 JNIEXPORT jstring JNICALL  GetFFmpegVersion(JNIEnv *env,jclass cls)
 {
@@ -63,6 +103,7 @@ JNIEXPORT jstring JNICALL GetCodecNames(JNIEnv *env,jclass cls){
     return env->NewStringUTF(strBuffer);
 }
 
+
 JNIEXPORT jstring JNICALL GetDemuxerNames(JNIEnv *env,jclass cls){
     char strBuffer[1024 * 4] = {0};
     void *i = nullptr;
@@ -84,6 +125,9 @@ JNIEXPORT jstring JNICALL GetMuxerNames(JNIEnv *env,jclass cls){
         strcat(strBuffer, first->long_name);
         strcat(strBuffer,"\n");
     }
+
+    test();
+
     return env->NewStringUTF(strBuffer);
 }
 

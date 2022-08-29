@@ -4,6 +4,8 @@
 
 #include <string>
 #include "../utils/ImageDef.h"
+#include "../utils/MacroUtil.h"
+#include "../thread/SyncQueue.h"
 extern "C" {
     #include "libavcodec/avcodec.h"
     #include "libavformat/avformat.h"
@@ -11,12 +13,6 @@ extern "C" {
     #include "libavutil/error.h"
     #include "libavutil/timestamp.h"
 };
-
-#define DISABLE_COPY_ASSIGN(cls)  \
-    cls(const cls &o) = delete; \
-    cls &operator =(const cls &o) = delete; \
-    cls(const cls &&o) = delete; \
-    cls &operator =(const cls &&o) = delete; \
 
 class MediaCoder final{
 private:
@@ -56,13 +52,23 @@ private:
     bool encode();
     bool writeFrame();
     static void log_packet(const AVFormatContext *fmt_ctx, const AVPacket *pkt);
+    void init();
+    bool encode(const NativeImage data,__int64_t presentationTime);
 public:
+    MediaCoder():MediaCoder("",0,0,0){
+
+    }
     MediaCoder(std::string file,int width,int height,int frameRatio);
     ~MediaCoder();
-    void init();
-    bool encode(const uint8_t *data,__int64_t presentationTime);
+    void start();
 private:
+    SyncQueue<NativeImage> m_queue;
     bool hasInit = false;
+
+    volatile bool hasStarted = false;
+    volatile bool hasPaused = false;
+    volatile bool hasStopped = true;
+
     const std::string mFileName;
     const int mWidth,mHeight,mFrameRatio;
     AVCodecContext *mCodecContext = nullptr;

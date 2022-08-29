@@ -5,8 +5,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 set(jnilibs ${CMAKE_SOURCE_DIR}/../jniLibs)
 
-set(libname FFmpegApi)
-
 include_directories(../include)
 include_directories(../include/libyuv)
 
@@ -14,7 +12,7 @@ link_directories(${jnilibs}/${CMAKE_ANDROID_ARCH_ABI})
 
 file(GLOB custom-files ${CMAKE_SOURCE_DIR}/recorder/*.cpp)
 aux_source_directory(./ src-files)
-
+set(libname FFmpegApi)
 add_library( # Sets the name of the library.
         ${libname}
 
@@ -59,7 +57,7 @@ target_link_libraries( # Specifies the target library.
         )
 
 
-aux_source_directory(./utils utils-files)
+file(GLOB yuv-files ./utils/YUVUtils.cpp)
 set(yuvlib YUVUtils)
 add_library( # Sets the name of the library.
         ${yuvlib}
@@ -68,7 +66,7 @@ add_library( # Sets the name of the library.
         SHARED
 
         # Provides a relative path to your source file(s).
-        ${utils-files}
+        ${yuv-files}
         )
 target_link_libraries(
         ${yuvlib}

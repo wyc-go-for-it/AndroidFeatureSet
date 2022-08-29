@@ -30,12 +30,6 @@ private:
     bool empty(){
         return m_queue.empty();
     }
-    void clear(){
-        std::lock_guard<mutex> lockGuard(m_mutex);
-        while (!m_queue.empty())m_queue.pop();
-        isClear = true;
-        m_cond_not_empty.notify_all();
-    }
 private:
     bool volatile isClear = false;
     mutex m_mutex;
@@ -49,14 +43,11 @@ private:
 
 template<typename T>
 SyncQueue<T>::SyncQueue() {
-    LOGD("SyncQueue construction");
 }
 
 template<typename T>
 SyncQueue<T>::~SyncQueue() {
-    LOGD("SyncQueue destruction");
-    clear();
-    LOGD("SyncQueue size:%d",m_queue.size());
+    m_cond_not_empty.notify_all();
 }
 
 template<typename T>
@@ -77,7 +68,7 @@ bool SyncQueue<T>::push(T &&o) {
 
     if (isClear)return false;
 
-    m_queue.push(o);
+    m_queue.push(std::move(o));
     m_cond_not_empty.notify_all();
 
     return true;

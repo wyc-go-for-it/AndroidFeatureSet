@@ -26,14 +26,14 @@ enum IMAGE_FORMAT{
 class NativeImage
 {
 private:
-    int width;
-    int height;
-    IMAGE_FORMAT format;
-    uint8_t *ppPlane[3];
-    int pLineSize[3];
+    int width = 0;
+    int height = 0;
+    IMAGE_FORMAT format = IMAGE_FORMAT_NULL;
+    uint8_t *ppPlane[3] = {nullptr};
+    int pLineSize[3] = {0};
 
 private:
-    static void AllocNativeImage(NativeImage *pImage)
+    static void AllocNativeImage(NativeImage * const pImage)
     {
         if (pImage->height == 0 || pImage->width == 0) return;
 
@@ -71,28 +71,27 @@ private:
                 LOGE("NativeImageUtil::AllocNativeImage do not support the format. Format = %d", pImage->format);
                 break;
         }
+        pImage->dumpInfo("AllocNativeImage");
     }
 
-    static void FreeNativeImage(NativeImage *pImage)
+    static void FreeNativeImage(NativeImage * const pImage)
     {
         if (pImage == nullptr || pImage->ppPlane[0] == nullptr) return;
-
-        LOGD("NativeImage FreeNativeImage:%p",pImage->ppPlane[0]);
-
         free(pImage->ppPlane[0]);
         pImage->ppPlane[0] = nullptr;
         pImage->ppPlane[1] = nullptr;
         pImage->ppPlane[2] = nullptr;
-
-        pImage->dumpInfo();
+        pImage->dumpInfo("FreeNativeImage");
     }
 
-    static void CopyNativeImage(const NativeImage *pSrcImg,const NativeImage *pDstImg)
+    static void CopyNativeImage(const NativeImage * const pSrcImg,NativeImage * const pDstImg)
     {
-        LOGI("NativeImage::CopyNativeImage src[w,h,format]=[%d, %d, %d], dst[w,h,format]=[%d, %d, %d]", pSrcImg->width, pSrcImg->height, pSrcImg->format, pDstImg->width, pDstImg->height, pDstImg->format);
-        LOGI("NativeImage::CopyNativeImage src[line0,line1,line2]=[%d, %d, %d], dst[line0,line1,line2]=[%d, %d, %d]", pSrcImg->pLineSize[0], pSrcImg->pLineSize[1], pSrcImg->pLineSize[2], pDstImg->pLineSize[0], pDstImg->pLineSize[1], pDstImg->pLineSize[2]);
+        LOGI("NativeImage::CopyNativeImage src[w,h,format,line0,line1,line2]=[%d, %d, %d,%d, %d, %d],"
+             " dst[w,h,format,line0,line1,line2]=[%d, %d, %d,%d, %d, %d]",
+             pSrcImg->width, pSrcImg->height, pSrcImg->format, pSrcImg->pLineSize[0], pSrcImg->pLineSize[1], pSrcImg->pLineSize[2],
+             pDstImg->width, pDstImg->height, pDstImg->format, pDstImg->pLineSize[0], pDstImg->pLineSize[1], pDstImg->pLineSize[2]);
 
-        if(pSrcImg == nullptr || pSrcImg->ppPlane[0] == nullptr) return;
+        if(pSrcImg->ppPlane[0] == nullptr) return;
 
         if(pSrcImg->format != pDstImg->format ||
            pSrcImg->width != pDstImg->width ||
@@ -102,7 +101,7 @@ private:
             return;
         }
 
-        if(pDstImg->ppPlane[0] == nullptr) AllocNativeImage(const_cast<NativeImage *>(pDstImg));
+        if(pDstImg->ppPlane[0] == nullptr) AllocNativeImage(pDstImg);
 
         switch (pSrcImg->format)
         {
@@ -281,61 +280,39 @@ private:
         pLineSize[2] = 0;
     }
 public:
-    NativeImage(){
-        width = 0;
-        height = 0;
-        format = IMAGE_FORMAT_NULL;
-        ppPlane[0] = nullptr;
-        ppPlane[1] = nullptr;
-        ppPlane[2] = nullptr;
-        pLineSize[0] = 0;
-        pLineSize[1] = 0;
-        pLineSize[2] = 0;
-
-        LOGD("NativeImage:%s","construction");
-    }
+    NativeImage()noexcept = default;
     NativeImage(IMAGE_FORMAT f,int w,int h){
         width = w;
         height = h;
         format = f;
-
-        LOGD("NativeImage:%s","---------AllocNativeImage---------");
         AllocNativeImage(this);
-        dumpInfo();
     }
 
     ~NativeImage(){
-        LOGD("NativeImage:%s","---------destruction---------");
         FreeNativeImage(this);
     }
     NativeImage(const NativeImage &o){
         if (*this != o){
-            LOGD("NativeImage:%s","---------copy construction---------");
             FreeNativeImage(this);
             format = o.format;
             width = o.width;
             height = o.height;
-            AllocNativeImage(this);
             CopyNativeImage(&o,this);
         }
     }
     NativeImage & operator=(const NativeImage &o){
         if (*this != o){
-            LOGD("NativeImage:%s","---------assignment construction---------");
             FreeNativeImage(this);
             format = o.format;
             width = o.width;
             height = o.height;
-            AllocNativeImage(this);
             CopyNativeImage(&o,this);
         }
         return *this;
     }
 
-    NativeImage(NativeImage &&o){
+    NativeImage(NativeImage &&o) noexcept{
         if (*this != o){
-            LOGD("NativeImage:%s","---------moving construction---------");
-
             format = o.format;
             width = o.width;
             height = o.height;
@@ -350,10 +327,8 @@ public:
         }
     }
 
-    NativeImage & operator=(NativeImage &&o){
+    NativeImage & operator=(NativeImage &&o) noexcept{
         if (*this != o){
-            LOGD("NativeImage:%s","---------moving assignment construction---------");
-
             format = o.format;
             width = o.width;
             height = o.height;
@@ -381,7 +356,7 @@ public:
                || pLineSize[1] == o.pLineSize[1] || pLineSize[2] == o.pLineSize[2];
     }
 
-    void dumpInfo(){
+    void dumpInfo(const char *extra = ""){
         const char *pExt = nullptr;
         switch (format)
         {
@@ -401,8 +376,8 @@ public:
                 pExt = IMAGE_FORMAT_NULL_EXT;
                 break;
         }
-        LOGI("NativeImage information -> format:%s,width:%d,height:%d,ppPlane[0]:%p,ppPlane[1]:%p,ppPlane[2]:%p,pLineSize[0]:%d,pLineSize[1]:%d,pLineSize[2]:%d",
-             pExt,width,height,ppPlane[0],ppPlane[1],ppPlane[2],pLineSize[0],pLineSize[1],pLineSize[2]);
+        LOGI("%s NativeImage=%p information -> format:%s,width:%d,height:%d,ppPlane[0]:%p,ppPlane[1]:%p,ppPlane[2]:%p,pLineSize[0]:%d,pLineSize[1]:%d,pLineSize[2]:%d",
+             extra, this,pExt,width,height,ppPlane[0],ppPlane[1],ppPlane[2],pLineSize[0],pLineSize[1],pLineSize[2]);
     }
 
     void setFormat(IMAGE_FORMAT f){

@@ -26,42 +26,10 @@ extern "C" {
 #endif
 
 void test(){
-    SyncQueue<NativeImage> syncQueue;
-
-    thread th([](SyncQueue<NativeImage> *c){
-        while (1) {
-                NativeImage a(IMAGE_FORMAT_I420,480,320);
-
-                //c->push(NativeImage(IMAGE_FORMAT_I420,480,320));
-                LOGE("syncQueue push:%d time %lld ms",0,GetSysCurrentTime());
-            }
-        },&syncQueue);
-
-/*    future<int> f = std::async(std::launch::async,[](SyncQueue<NativeImage> *c){
-        int sum = 0;
-        for (int i = 0; i < 5; ++i) {
-            this_thread::sleep_for(chrono::seconds (1));
-            NativeImage v;
-            c->take(v);
-            v.dumpInfo();
-        }
-        return sum;
-        },&syncQueue);
-
-    thread tha([](SyncQueue<NativeImage> *c){
-        for (int i = 0; i < 5; ++i) {
-            this_thread::sleep_for(chrono::seconds (1));
-            NativeImage v;
-            c->take(v);
-            v.dumpInfo();
-        }
-    },&syncQueue);
-    tha.join();
-    LOGE("syncQueue sum:%d",f.get());*/
-    th.join();
-
-
-    LOGE("syncQueue size:%d",syncQueue.size());
+    SyncQueue<std::unique_ptr<NativeImage>> syncQueue;
+    for (int i = 0;i < 200;i++) {
+        syncQueue.push(std::unique_ptr<NativeImage>(new NativeImage (IMAGE_FORMAT_I420,480,320)));
+    }
 }
 
 JNIEXPORT jstring JNICALL  GetFFmpegVersion(JNIEnv *env,jclass cls)
@@ -126,7 +94,9 @@ JNIEXPORT jstring JNICALL GetMuxerNames(JNIEnv *env,jclass cls){
         strcat(strBuffer,"\n");
     }
 
+    FUN_BEGIN_TIME(test)
     test();
+FUN_END_TIME(test);
 
     return env->NewStringUTF(strBuffer);
 }

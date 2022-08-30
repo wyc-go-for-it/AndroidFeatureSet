@@ -1,12 +1,8 @@
 #include <cstdio>
 #include <cstring>
-#include "android/log.h"
 #include "jni.h"
 #include "Api.h"
-#include "./recorder/MediaCoder.h"
 #include "./utils/LogUtil.h"
-#include "./thread/SyncQueue.h"
-#include <future>
 
 extern "C" {
 #include "libavcodec/version.h"
@@ -24,13 +20,6 @@ extern "C" {
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-void test(){
-    SyncQueue<std::unique_ptr<NativeImage>> syncQueue;
-    for (int i = 0;i < 200;i++) {
-        syncQueue.push(std::unique_ptr<NativeImage>(new NativeImage (IMAGE_FORMAT_I420,480,320)));
-    }
-}
 
 JNIEXPORT jstring JNICALL  GetFFmpegVersion(JNIEnv *env,jclass cls)
 {
@@ -54,7 +43,6 @@ JNIEXPORT jstring JNICALL  GetFFmpegVersion(JNIEnv *env,jclass cls)
     LOGD("GetFFmpegVersion\n%s", strBuffer);
     return env->NewStringUTF(strBuffer);
 }
-
 JNIEXPORT jstring JNICALL GetCodecNames(JNIEnv *env,jclass cls){
     char strBuffer[1024 * 4] = {0};
     void *i = nullptr;
@@ -70,8 +58,6 @@ JNIEXPORT jstring JNICALL GetCodecNames(JNIEnv *env,jclass cls){
     }
     return env->NewStringUTF(strBuffer);
 }
-
-
 JNIEXPORT jstring JNICALL GetDemuxerNames(JNIEnv *env,jclass cls){
     char strBuffer[1024 * 4] = {0};
     void *i = nullptr;
@@ -83,7 +69,6 @@ JNIEXPORT jstring JNICALL GetDemuxerNames(JNIEnv *env,jclass cls){
     }
     return env->NewStringUTF(strBuffer);
 }
-
 JNIEXPORT jstring JNICALL GetMuxerNames(JNIEnv *env,jclass cls){
     char strBuffer[1024 * 4] = {0};
     void *i = nullptr;
@@ -93,11 +78,6 @@ JNIEXPORT jstring JNICALL GetMuxerNames(JNIEnv *env,jclass cls){
         strcat(strBuffer, first->long_name);
         strcat(strBuffer,"\n");
     }
-
-    FUN_BEGIN_TIME(test)
-    test();
-FUN_END_TIME(test);
-
     return env->NewStringUTF(strBuffer);
 }
 

@@ -7,33 +7,31 @@
 
 MediaCoder::MediaCoder(std::string file,int width,int height,int frameRatio)
     :mFileName(std::move(file)),mWidth(width),mHeight(height),mFrameRatio(frameRatio){
-
     LOGD("MediaCoder construction");
 }
 
 MediaCoder::~MediaCoder() {
-    LOGD("MediaCoder destruction");
+    LOGD("MediaCoder destruction queue:%d",m_queue.size());
     release();
-
 }
 
 void MediaCoder::init() {
     if (hasInit)return;
 
     const char *fileName = mFileName.c_str();
-    const AVCodecID id = AVCodecID::AV_CODEC_ID_H264;
-    const AVCodec *codec;
 
     int code = avformat_alloc_output_context2(&mFormatContext, nullptr, "mp4", fileName);
     if (code < 0){
         LOGE("Could not alloc format:%s",av_err2str(code));
-        goto end;
+        release();
+        return;
     }
 
     mStream = avformat_new_stream(mFormatContext, nullptr);
     if (mStream == nullptr) {
         LOGE("Could not allocate stream");
-        goto end;
+        release();
+        return;
     }
     mStream->time_base = {1,mFrameRatio};
 
@@ -41,20 +39,23 @@ void MediaCoder::init() {
         code = avio_open(&mFormatContext->pb,fileName, AVIO_FLAG_WRITE);
         if (code < 0) {
             LOGE("Could not open '%s': %s\n", fileName,av_err2str(code));
-            goto end;
+            release();
+            return;
         }
     }
-
-    codec = avcodec_find_encoder(id);
+    const AVCodecID id = AVCodecID::AV_CODEC_ID_H264;
+    const AVCodec *codec = avcodec_find_encoder(id);
     if (codec == nullptr){
         LOGE("find %d encoder error",id);
-        goto end;
+        release();
+        return;
     }
 
     mCodecContext = avcodec_alloc_context3(codec);
     if (mCodecContext == nullptr){
         LOGE("alloc context error");
-        goto end;
+        release();
+        return;
     }
 
     mCodecContext->bit_rate = mWidth * mHeight * 4;
@@ -72,19 +73,22 @@ void MediaCoder::init() {
     code = avcodec_open2(mCodecContext, codec, nullptr);
     if (code < 0) {
         LOGE("Could not open codec: %s", av_err2str(code));
-        goto end;
+        release();
+        return;
     }
 
     mPacket = av_packet_alloc();
     if (mPacket == nullptr){
         LOGE("alloc packet error");
-        goto end;
+        release();
+        return;
     }
 
     mFrame = av_frame_alloc();
     if (mFrame == nullptr){
         LOGE("alloc frame error");
-        goto end;
+        release();
+        return;
     }
 
     mFrame->format = mCodecContext->pix_fmt;
@@ -94,19 +98,15 @@ void MediaCoder::init() {
     code = av_frame_get_buffer(mFrame,0);
     if (code < 0){
         LOGE("frame get buffer error:%s",av_err2str(code));
-        goto end;
+        release();
+        return;
     }
     hasInit = true;
-
-    end:{
-        release();
-        hasInit = false;
-    }
 }
 
-bool MediaCoder::encode(const NativeImage data, __int64_t presentationTime) {
+bool MediaCoder::encode(const NativeImage& data, __int64_t presentationTime) {
     if (hasInit){
-        int code = av_frame_make_writable(mFrame);
+/*        int code = av_frame_make_writable(mFrame);
         if (code < 0){
             LOGE("frame make writable error:%s",av_err2str(code));
             return false;
@@ -115,7 +115,7 @@ bool MediaCoder::encode(const NativeImage data, __int64_t presentationTime) {
 
 
         mFrame->pts = presentationTime;
-        return encode();
+        return encode();*/
     }
     return false;
 }
@@ -178,15 +178,36 @@ bool MediaCoder::writeFrame() {
 void MediaCoder::start() {
     init();
     if (hasInit){
-        thread([this]{
+        m_encodeThread = thread([this]{
             hasStarted = true;
+            NativeImage image;
             while (hasStarted){
-                NativeImage image;
                 bool  code = m_queue.take(image);
                 if (code){
                     encode(image,1000);
                 }
+                image.dumpInfo("start");
+            }
+            if (hasStopped){
+
             }
         });
     }
 }
+
+void MediaCoder::stop() {
+    if (hasInit){
+        hasStarted = false;
+        hasStopped = true;
+        if (m_encodeThread.joinable()){
+            m_encodeThread.join();
+        }
+    }
+    release();
+}
+
+void MediaCoder::addData(NativeImage& data) {
+    if (hasInit)
+        m_queue.push(data);
+}
+

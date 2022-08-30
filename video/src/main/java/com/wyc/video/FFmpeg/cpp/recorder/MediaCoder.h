@@ -18,6 +18,9 @@ class MediaCoder final{
 private:
     DISABLE_COPY_ASSIGN(MediaCoder);
     void release(){
+        hasStarted = false;
+        hasPaused = false;
+        hasStopped = false;
         hasInit = false;
 
         if (mPacket != nullptr){
@@ -53,23 +56,30 @@ private:
     bool writeFrame();
     static void log_packet(const AVFormatContext *fmt_ctx, const AVPacket *pkt);
     void init();
-    bool encode(const NativeImage data,__int64_t presentationTime);
+    bool encode(const NativeImage& data,__int64_t presentationTime);
 public:
-    MediaCoder():MediaCoder("",0,0,0){
-
-    }
     MediaCoder(std::string file,int width,int height,int frameRatio);
     ~MediaCoder();
+    int getWidth(){
+        return mWidth;
+    }
+    int getHeight(){
+        return mHeight;
+    }
     void start();
+    void stop();
+    void addData(NativeImage& data);
 private:
     SyncQueue<NativeImage> m_queue;
     bool hasInit = false;
 
     volatile bool hasStarted = false;
     volatile bool hasPaused = false;
-    volatile bool hasStopped = true;
+    volatile bool hasStopped = false;
+    thread m_encodeThread;
 
     const std::string mFileName;
+
     const int mWidth,mHeight,mFrameRatio;
     AVCodecContext *mCodecContext = nullptr;
     AVFrame *mFrame = nullptr;

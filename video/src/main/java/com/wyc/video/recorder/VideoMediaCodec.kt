@@ -16,10 +16,8 @@ import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.locks.LockSupport
 import kotlin.concurrent.thread
 import kotlin.math.max
-import kotlin.math.min
 
 
 /**
@@ -37,9 +35,9 @@ import kotlin.math.min
  */
 
 class VideoMediaCodec:AbstractRecorder() {
-    private val WIDTH = getInstance().vWidth
-    private val HEIGHT = getInstance().vHeight
-    private val FRAME_RATE = getInstance().mBestFPSRange.upper
+    val WIDTH = getInstance().vWidth
+    val HEIGHT = getInstance().vHeight
+    val FRAME_RATE = getInstance().mBestFPSRange.upper
 
     private var mImageReaderYUV : ImageReader? = null
     private var mImageReaderThread:HandlerThread? = null
@@ -300,7 +298,7 @@ class VideoMediaCodec:AbstractRecorder() {
 
                     Log.e("",String.format(
                         Locale.CHINA,"yuvWidth:%d,yuvHeight:%d,YpixelStride:%d,YrowStride:%d,VpixelStride:%d,VrowStride:%d,UpixelStride:%d,UrowStride:%d",
-                        it.width,it.height,yPlane.pixelStride,yPlane.rowStride,vPlane.pixelStride,vPlane.rowStride,uPlane.pixelStride,uPlane.rowStride))
+                        w,h,yPlane.pixelStride,yPlane.rowStride,vPlane.pixelStride,vPlane.rowStride,uPlane.pixelStride,uPlane.rowStride))
 
             }
             image.close()

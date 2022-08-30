@@ -71,7 +71,6 @@ private:
                 LOGE("NativeImageUtil::AllocNativeImage do not support the format. Format = %d", pImage->format);
                 break;
         }
-        pImage->dumpInfo("AllocNativeImage");
     }
 
     static void FreeNativeImage(NativeImage * const pImage)
@@ -81,15 +80,14 @@ private:
         pImage->ppPlane[0] = nullptr;
         pImage->ppPlane[1] = nullptr;
         pImage->ppPlane[2] = nullptr;
-        pImage->dumpInfo("FreeNativeImage");
     }
 
     static void CopyNativeImage(const NativeImage * const pSrcImg,NativeImage * const pDstImg)
     {
-        LOGI("NativeImage::CopyNativeImage src[w,h,format,line0,line1,line2]=[%d, %d, %d,%d, %d, %d],"
+/*        LOGI("NativeImage::CopyNativeImage src[w,h,format,line0,line1,line2]=[%d, %d, %d,%d, %d, %d],"
              " dst[w,h,format,line0,line1,line2]=[%d, %d, %d,%d, %d, %d]",
              pSrcImg->width, pSrcImg->height, pSrcImg->format, pSrcImg->pLineSize[0], pSrcImg->pLineSize[1], pSrcImg->pLineSize[2],
-             pDstImg->width, pDstImg->height, pDstImg->format, pDstImg->pLineSize[0], pDstImg->pLineSize[1], pDstImg->pLineSize[2]);
+             pDstImg->width, pDstImg->height, pDstImg->format, pDstImg->pLineSize[0], pDstImg->pLineSize[1], pDstImg->pLineSize[2]);*/
 
         if(pSrcImg->ppPlane[0] == nullptr) return;
 
@@ -391,6 +389,9 @@ public:
     }
     void setHeight(int h){
         height = h;
+    }
+    uint8_t *getPlanePtr(){
+        return ppPlane[0];
     }
 };
 

@@ -10,7 +10,6 @@ include_directories(../include/libyuv)
 
 link_directories(${jnilibs}/${CMAKE_ANDROID_ARCH_ABI})
 
-file(GLOB custom-files ${CMAKE_SOURCE_DIR}/recorder/*.cpp)
 aux_source_directory(./ src-files)
 set(libname FFmpegApi)
 add_library( # Sets the name of the library.
@@ -71,5 +70,19 @@ add_library( # Sets the name of the library.
 target_link_libraries(
         ${yuvlib}
         yuv
+        log
+)
+
+aux_source_directory(./recorder/ mediaApifiles)
+message(ERROR mediaApifiles)
+set(medialib mediaCoder)
+add_library(
+        ${medialib}
+          SHARED
+        ${mediaApifiles}
+)
+target_link_libraries(
+        ${medialib}
+        ${third-party-libs}
         log
 )

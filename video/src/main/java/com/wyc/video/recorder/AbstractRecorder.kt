@@ -3,6 +3,7 @@ package com.wyc.video.recorder
 import androidx.annotation.CallSuper
 import com.wyc.video.Utils
 import com.wyc.video.VideoApp
+import com.wyc.video.camera.VideoCameraManager
 import java.io.File
 import java.io.FileInputStream
 import java.text.SimpleDateFormat
@@ -32,7 +33,7 @@ abstract class AbstractRecorder:IRecorder {
         return mFile
     }
 
-    protected fun finalize(){
+    protected open fun finalize(){
         Utils.logInfo(javaClass.simpleName + " has finalized")
     }
     @CallSuper

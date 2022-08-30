@@ -17,6 +17,7 @@ import android.view.Surface
 import com.wyc.logger.Logger
 import com.wyc.video.Utils
 import com.wyc.video.VideoApp
+import com.wyc.video.recorder.FFMediaCoder
 import com.wyc.video.recorder.IRecorder
 import com.wyc.video.recorder.VideoMediaCodec
 import com.wyc.video.recorder.VideoMediaRecorder
@@ -312,7 +313,7 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO) {
         }
 
         if (mMediaRecorder == null){
-            mMediaRecorder = VideoMediaCodec()
+            mMediaRecorder = FFMediaCoder()
         }
 
         mMediaRecorder!!.configure()

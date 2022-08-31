@@ -49,7 +49,7 @@ private:
             avformat_free_context(mFormatContext);
             mFormatContext = nullptr;
         }
-
+        LOGD("released resource");
     }
 
     bool encode();
@@ -60,10 +60,10 @@ private:
 public:
     MediaCoder(std::string file,int width,int height,int frameRatio);
     ~MediaCoder();
-    int getWidth(){
+    int getWidth() const{
         return mWidth;
     }
-    int getHeight(){
+    int getHeight() const{
         return mHeight;
     }
     void start();

@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Range
+import android.util.Size
 import android.view.Surface
 import com.wyc.logger.Logger
 import com.wyc.video.Utils
@@ -27,13 +28,11 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.lang.reflect.InvocationTargetException
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.min
 
 
 /**
@@ -134,15 +133,23 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO) {
 
             val capabilities = characteristic.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES)
 
+            var  outputSizes = characteristic.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)?.getOutputSizes(ImageFormat.YUV_420_888)
             val  camcorderProfile =  CamcorderProfile.get(getValidCameraId().toInt(), CamcorderProfile.QUALITY_720P)
-            vWidth = camcorderProfile.videoFrameWidth
-            vHeight = camcorderProfile.videoFrameHeight
+            if (outputSizes != null && outputSizes.isNotEmpty()){
+                val s = outputSizes[0];
+                vWidth = min(camcorderProfile.videoFrameWidth,s.width)
+                vHeight = min(camcorderProfile.videoFrameHeight,s.height)
+            }else{
+                vWidth = camcorderProfile.videoFrameWidth
+                vHeight = camcorderProfile.videoFrameHeight
+                outputSizes = arrayOf(Size(0,0,))
+            }
 
             val sensorOrientation = characteristic.get(CameraCharacteristics.SENSOR_ORIENTATION)?:0
 
             Utils.logInfo("sensorOrientation:$sensorOrientation,physicalRect:$physicalRect,pixelRect:$pixelRect" +
-                    ",activeRect:$activeRect,afRegionCount:$afRegion,fpsRegion:" + Arrays.toString(fpsRegion)+
-                    ",capabilities:" + Arrays.toString(capabilities) + "vWidth:$vWidth" +",vHeight:$vHeight")
+                    ",activeRect:$activeRect,afRegionCount:$afRegion,\nfpsRegion:" + Arrays.toString(fpsRegion)+
+                    ",capabilities:" + Arrays.toString(capabilities) + "vWidth:$vWidth" +",vHeight:$vHeight" +",\noutputSizes:" + Arrays.toString(outputSizes))
 
             activeRect?.apply {
                 mAspectRatio = height() * 1f / width() * 1f

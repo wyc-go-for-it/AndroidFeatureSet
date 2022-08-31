@@ -123,6 +123,46 @@ VUVU
     return dst;
 }
 
+/**
+ * @param r==1 旋转角度270，否则90
+ * */
+JNIEXPORT jbyteArray JNICALL
+rotateYUV_I420_270_90(JNIEnv *env, jclass cls, jbyteArray src, jint s_w, jint s_h, jbyteArray dst,int r) {
+/*
+YYYY
+YYYY
+UUUU
+VVVV
+*/
+
+    jint srcLen = env->GetArrayLength(src);
+
+    if (dst == nullptr)dst = env->NewByteArray(srcLen);
+
+    jbyte  *jSrc = env->GetByteArrayElements(src, nullptr);
+    jbyte  *jDst = env->GetByteArrayElements(dst,nullptr);
+
+    jint src_y_size = s_w * s_h;
+    jint src_u_size = (s_w >> 1) * (s_h >> 1);
+    auto *src_i420_y_data = reinterpret_cast<uint8_t *>(jSrc);
+    uint8_t *src_i420_u_data = src_i420_y_data + src_y_size;
+    uint8_t *src_i420_v_data = src_i420_u_data + src_u_size;
+
+    auto *dst_i420_y_data = reinterpret_cast<uint8_t *>(jDst);
+    uint8_t *dst_i420_u_data = dst_i420_y_data + src_y_size;
+    uint8_t *dst_i420_v_data = dst_i420_u_data + src_u_size;
+
+    libyuv::I420Rotate(src_i420_y_data,s_w,src_i420_u_data,s_w >> 1,src_i420_v_data,s_w >> 1,
+                       dst_i420_y_data,s_h,dst_i420_u_data,s_h >> 1,dst_i420_v_data,s_h >> 1,
+                       s_w,s_h,r == 1 ? libyuv::RotationMode::kRotate270 :libyuv::RotationMode::kRotate90);
+
+
+    env->ReleaseByteArrayElements(src,jSrc,0);
+    env->ReleaseByteArrayElements(dst,jDst,0);
+
+    return dst;
+}
+
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *unused) {
     LOGD("onLoad");
     JNIEnv *env = nullptr;
@@ -133,7 +173,8 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *unused) {
 
     const JNINativeMethod nativeMethods[] = {
             {"nativeYuv420ToARGB", "([BII[I)[I", reinterpret_cast<void *>(yuvNV21ToARGB)},
-            {"nativeRotateYUV_420_270","([BII[B)[B",reinterpret_cast<void *>(rotateYUV_NV21_270)}
+            {"nativeRotateYUV_420_270","([BII[B)[B",reinterpret_cast<void *>(rotateYUV_NV21_270)},
+            {"nativeRotateYUV_I420_270_90","([BII[BI)[B",reinterpret_cast<void *>(rotateYUV_I420_270_90)}
     };
 
     jclass utils = env->FindClass("com/wyc/video/YUVUtils");

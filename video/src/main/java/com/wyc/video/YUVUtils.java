@@ -292,6 +292,14 @@ public class YUVUtils {
         return nativeRotateYUV_420_270(src,s_w,s_h,dst);
     }
 
+    /**
+     * @param r==1 旋转角度270，否则90
+     * */
+    public static byte[] fastRotateYUV_420_270_90(byte[] src, int s_w, int s_h,byte[] dst,int r){
+        return nativeRotateYUV_I420_270_90(src,s_w,s_h,dst,r);
+    }
+
     private static native int[] nativeYuv420ToARGB(byte[] src, int s_w, int s_h, int[] pixels);
     private static native byte[] nativeRotateYUV_420_270(@NonNull byte[] src, int s_w, int s_h,byte[] dst);
+    private static native byte[] nativeRotateYUV_I420_270_90(@NonNull byte[] src, int s_w, int s_h,byte[] dst,int r);
 }

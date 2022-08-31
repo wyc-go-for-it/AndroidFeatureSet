@@ -7,7 +7,7 @@
 
 MediaCoder::MediaCoder(std::string file,int width,int height,int frameRatio)
     :mFileName(std::move(file)),mWidth(width),mHeight(height),mFrameRatio(frameRatio){
-    LOGD("MediaCoder construction");
+    LOGD("MediaCoder construction file:%s,width:%d,height:%d,frameRatio:%d",mFileName.c_str(),width,height,frameRatio);
 }
 
 MediaCoder::~MediaCoder() {
@@ -27,6 +27,7 @@ void MediaCoder::init() {
         return;
     }
 
+
     mStream = avformat_new_stream(mFormatContext, nullptr);
     if (mStream == nullptr) {
         LOGE("Could not allocate stream");
@@ -36,7 +37,7 @@ void MediaCoder::init() {
     mStream->time_base = {1,mFrameRatio};
 
     if (!(mFormatContext->oformat->flags & AVFMT_NOFILE)) {
-        code = avio_open(&mFormatContext->pb,fileName, AVIO_FLAG_WRITE);
+        code = avio_open(&mFormatContext->pb,fileName, AVIO_FLAG_WRITE | AVIO_FLAG_READ);
         if (code < 0) {
             LOGE("Could not open '%s': %s\n", fileName,av_err2str(code));
             release();
@@ -63,16 +64,23 @@ void MediaCoder::init() {
     mCodecContext->height = mHeight;
     mCodecContext->framerate = {mFrameRatio, 1};
     mCodecContext->time_base = {1,mFrameRatio};
-    mCodecContext->gop_size = 10;
-    mCodecContext->max_b_frames = 1;
-    mCodecContext->pix_fmt = AV_PIX_FMT_NV21;
+    mCodecContext->gop_size = 5;
+    mCodecContext->max_b_frames = 10;
+    mCodecContext->pix_fmt = AV_PIX_FMT_YUV420P;
 
     if (codec->id == AV_CODEC_ID_H264)
-        av_opt_set(mCodecContext->priv_data, "preset", "slow", 0);
+        av_opt_set(mCodecContext->priv_data, "preset", "faster", 0);
 
     code = avcodec_open2(mCodecContext, codec, nullptr);
     if (code < 0) {
         LOGE("Could not open codec: %s", av_err2str(code));
+        release();
+        return;
+    }
+
+    code = avcodec_parameters_from_context(mStream->codecpar, mCodecContext);
+    if (code < 0) {
+        LOGE("avcodec_parameters_from_context error: %s", av_err2str(code));
         release();
         return;
     }
@@ -106,34 +114,43 @@ void MediaCoder::init() {
 
 bool MediaCoder::encode(const NativeImage& data, __int64_t presentationTime) {
     if (hasInit){
-/*        int code = av_frame_make_writable(mFrame);
+        int code = av_frame_make_writable(mFrame);
         if (code < 0){
             LOGE("frame make writable error:%s",av_err2str(code));
             return false;
         }
+        mFrame->data[0] = data.getPlanePtr0();
+        mFrame->data[1] = data.getPlanePtr1();
+        mFrame->data[2] = data.getPlanePtr2();
 
-
+        mFrame->linesize[0] = data.getPLineSize0();
+        mFrame->linesize[1] = data.getPLineSize1();
+        mFrame->linesize[2] = data.getPLineSize2();
 
         mFrame->pts = presentationTime;
-        return encode();*/
+
+        return encode();
     }
     return false;
 }
 
+
+
 bool MediaCoder::encode() {
-    LOGD("send frame %ld encoded",mFrame->pts);
+    LOGD("send frame %p pts %ld encoded",mFrame->data[0],mFrame->pts);
 
     int code = avcodec_send_frame(mCodecContext,mFrame);
     if (code < 0){
-        LOGE("send frame for encoding error");
+        LOGE("send frame for encoding error:%s",av_err2str(code));
         return false;
     }
 
     while (code >= 0){
         code = avcodec_receive_packet(mCodecContext, mPacket);
-        if (code == AVERROR(EAGAIN) || code == AVERROR_EOF)
+        if (code == AVERROR(EAGAIN) || code == AVERROR_EOF) {
+            LOGE("continue:%s",av_err2str(code));
             return true;
-        else if (code < 0) {
+        }else if (code < 0) {
             LOGE("Error during encoding:%s",av_err2str(code));
             return false;
         }
@@ -155,13 +172,14 @@ bool MediaCoder::writeFrame() {
     log_packet(mFormatContext, mPacket);
 
     int code = av_interleaved_write_frame(mFormatContext, mPacket);
-    /* pkt is now blank (av_interleaved_write_frame() takes ownership of
+     /*pkt is now blank (av_interleaved_write_frame() takes ownership of
      * its contents and resets pkt), so that no unreferencing is necessary.
-     * This would be different if one used av_write_frame(). */
+     * This would be different if one used av_write_frame().*/
     if (code < 0) {
         LOGE("Error while writing output packet: %s", av_err2str(code));
         return false;
     }
+
     return true;
 }
 
@@ -178,20 +196,30 @@ bool MediaCoder::writeFrame() {
 void MediaCoder::start() {
     init();
     if (hasInit){
-        m_encodeThread = thread([this]{
+        m_encodeThread = thread([this]()->void{
+            int ret = avformat_write_header(mFormatContext,nullptr);
+            if (ret < 0){
+                LOGE("avformat_write_header error:%s",av_err2str(ret));
+                return;
+            }
+            LOGD("MediaCoder start encode video");
+
             hasStarted = true;
             NativeImage image;
+            __int64_t time = 0;
+            __int64_t interval = 1;
+
             while (hasStarted){
-                bool  code = m_queue.take(image);
+                bool code = m_queue.take(image,100);
                 if (code){
-                    encode(image,1000);
+                    encode(image,time += interval);
                 }
-                image.dumpInfo("start");
             }
             if (hasStopped){
-
+                LOGD("MediaCoder stop encode video");
+                av_write_trailer(mFormatContext);
             }
-        });
+       });
     }
 }
 
@@ -199,8 +227,13 @@ void MediaCoder::stop() {
     if (hasInit){
         hasStarted = false;
         hasStopped = true;
+
+        m_queue.notify_all();
+
         if (m_encodeThread.joinable()){
+            LOGD("wait encode thread...");
             m_encodeThread.join();
+            LOGD("encode thread exit...");
         }
     }
     release();

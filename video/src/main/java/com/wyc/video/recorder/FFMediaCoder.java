@@ -43,8 +43,13 @@ public class FFMediaCoder extends AbstractRecorder {
     private final ByteBuffer mYuvBuffer = ByteBuffer.allocate(WIDTH * HEIGHT * ImageFormat.getBitsPerPixel(ImageFormat.YUV_420_888) / 8);
 
     public FFMediaCoder(){
-        mNativeObj = nativeInitCoder(getFile().getAbsolutePath(),FRAME_RATE,WIDTH,HEIGHT);
-        Log.e("FFMediaCoder mNativeObj:",String.valueOf(mNativeObj));
+        final int orientation = VideoCameraManager.getInstance().getOrientation();
+        if (orientation == 90 || orientation == 270){
+            mNativeObj = nativeInitCoder(getFile().getAbsolutePath(),FRAME_RATE,HEIGHT,WIDTH);
+        }else
+            mNativeObj = nativeInitCoder(getFile().getAbsolutePath(),FRAME_RATE,WIDTH,HEIGHT);
+
+        Log.e("FFMediaCoder mNativeObj:",String.format("0x%x",mNativeObj));
     }
 
     @Override
@@ -99,25 +104,28 @@ public class FFMediaCoder extends AbstractRecorder {
             int index = 0;
             int pos = vBuffer.limit();
             int pixelStride = vPlane.getPixelStride();
+            byte[] vByte = new byte[pos / 2];
+            int vIndex = 0;
             while (index < pos - 1){
                 mYuvBuffer.put(uBuffer.get(index));
-                mYuvBuffer.put(vBuffer.get(index));
+                vByte[vIndex++] = vBuffer.get(index);
                 index += pixelStride;
             }
+            mYuvBuffer.put(vByte);
 
             final byte[] bytes = new byte[w * h * ImageFormat.getBitsPerPixel(ImageFormat.YUV_420_888) / 8];
             if (VideoCameraManager.getInstance().isBack())
-                YUVUtils.rotateYUV_420_90(mYuvBuffer.array(),w,h,bytes);
+                YUVUtils.fastRotateYUV_420_270_90(mYuvBuffer.array(),w,h,bytes,0);
             else {
-                YUVUtils.rotateYUV_420_270(mYuvBuffer.array(),w,h,bytes);
+                YUVUtils.fastRotateYUV_420_270_90(mYuvBuffer.array(),w,h,bytes,1);
             }
 
-            addData(bytes,1);
+/*            addData(bytes,0);
 
             Log.e("",String.format(
                     Locale.CHINA,"yuvWidth:%d,yuvHeight:%d,YpixelStride:%d,YrowStride:%d,VpixelStride:%d,VrowStride:%d,UpixelStride:%d,UrowStride:%d",
                     w,h,yPlane.getPixelStride(),yPlane.getRowStride(),vPlane.getPixelStride(),
-                    vPlane.getRowStride(),uPlane.getPixelStride(),uPlane.getRowStride()));
+                    vPlane.getRowStride(),uPlane.getPixelStride(),uPlane.getRowStride()));*/
 
         }
         image.close();
@@ -135,7 +143,11 @@ public class FFMediaCoder extends AbstractRecorder {
         if (mNativeObj != 0){
             nativeStartCoder(mNativeObj);
         }else {
-            mNativeObj = nativeInitCoder(getFile().getAbsolutePath(),FRAME_RATE,WIDTH,HEIGHT);
+            final int orientation = VideoCameraManager.getInstance().getOrientation();
+            if (orientation == 90 || orientation == 270){
+                mNativeObj = nativeInitCoder(getFile().getAbsolutePath(),FRAME_RATE,HEIGHT,WIDTH);
+            }else
+                mNativeObj = nativeInitCoder(getFile().getAbsolutePath(),FRAME_RATE,WIDTH,HEIGHT);
             if (mNativeObj != 0){
                 nativeStartCoder(mNativeObj);
             }

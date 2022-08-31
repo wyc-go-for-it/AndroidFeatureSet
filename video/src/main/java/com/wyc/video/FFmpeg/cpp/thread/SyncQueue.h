@@ -26,6 +26,7 @@ public:
         std::lock_guard<mutex> lockGuard(m_mutex);
         return m_queue.size();
     }
+    void notify_all();
 private:
     bool empty(){
         return m_queue.empty();
@@ -101,6 +102,10 @@ bool SyncQueue<T>::take(T &o,long millisecond){
     o =  m_queue.front();
     m_queue.pop();
     return true;
+}
+template<typename T>
+void SyncQueue<T>::notify_all(){
+    m_cond_not_empty.notify_all();
 }
 
 #endif //ANDROIDFEATURESET_SYNCQUEUE_H

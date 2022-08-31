@@ -66,7 +66,7 @@ JNIEXPORT void JNICALL addData(JNIEnv *env,jobject obj,jlong nativeObj,jbyteArra
             return;
     }
     NativeImage image(imageFormat,c->getWidth(),c->getHeight());
-    env->GetByteArrayRegion(data, 0, len, reinterpret_cast<jbyte *>(image.getPlanePtr()));
+    env->GetByteArrayRegion(data, 0, len, reinterpret_cast<jbyte *>(image.getPlanePtr0()));
     c->addData(image);
 }
 

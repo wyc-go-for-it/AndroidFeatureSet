@@ -381,7 +381,7 @@ public:
     void setFormat(IMAGE_FORMAT f){
         format = f;
     }
-    IMAGE_FORMAT getFormat(){
+    IMAGE_FORMAT getFormat() const{
         return format;
     }
     void setWidth(int w){
@@ -390,8 +390,26 @@ public:
     void setHeight(int h){
         height = h;
     }
-    uint8_t *getPlanePtr(){
+    uint8_t *getPlanePtr0() const{
         return ppPlane[0];
+    }
+    uint8_t *getPlanePtr1() const{
+        return ppPlane[1];
+    }
+    uint8_t *getPlanePtr2() const{
+        return ppPlane[2];
+    }
+
+    int getPLineSize0() const {
+        return pLineSize[0];
+    }
+
+    int getPLineSize1() const {
+        return pLineSize[1];
+    }
+
+    int getPLineSize2() const {
+        return pLineSize[2];
     }
 };
 

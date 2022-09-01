@@ -428,14 +428,14 @@ class VideoMediaCodec:AbstractRecorder() {
                 bufferInfo.presentationTimeUs = calVideoPts()
             }
             Log.e("videoData:",String.format("VideoTrackIndex:%d,presentationTimeUs:%d,key_frame:%d,size:%d",mVideoTrackIndex,bufferInfo.presentationTimeUs,bufferInfo.flags,bufferInfo.size))
-            mMediaMuxer!!.writeSampleData(mVideoTrackIndex,byteBuf,bufferInfo)
+            mMediaMuxer?.writeSampleData(mVideoTrackIndex,byteBuf,bufferInfo)
         }
     }
 
     private fun writeDataAudio(byteBuf:ByteBuffer ,bufferInfo: MediaCodec.BufferInfo){
         if (readyMuxer()){
             Log.e("audioData:",String.format("AudioTrackIndex:%d,presentationTimeUs:%d,size:%d",mAudioTrackIndex,bufferInfo.presentationTimeUs,bufferInfo.size))
-            mMediaMuxer!!.writeSampleData(mAudioTrackIndex,byteBuf,bufferInfo)
+            mMediaMuxer?.writeSampleData(mAudioTrackIndex,byteBuf,bufferInfo)
         }
     }
     private fun readyMuxer():Boolean{

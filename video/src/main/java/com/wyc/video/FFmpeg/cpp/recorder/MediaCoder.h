@@ -6,6 +6,8 @@
 #include "../utils/ImageDef.h"
 #include "../utils/MacroUtil.h"
 #include "../thread/SyncQueue.h"
+#include "VideoHandle.h"
+
 extern "C" {
     #include "libavcodec/avcodec.h"
     #include "libavformat/avformat.h"
@@ -18,29 +20,11 @@ class MediaCoder final{
 private:
     DISABLE_COPY_ASSIGN(MediaCoder);
     void release(){
-        hasStarted = false;
-        hasPaused = false;
-        hasStopped = false;
+        encoding = false;
         hasInit = false;
 
-        if (mPacket != nullptr){
-            av_packet_free(&mPacket);
-            mPacket = nullptr;
-        }
-
-        if (mFrame != nullptr){
-            av_frame_free(&mFrame);
-            mFrame = nullptr;
-        }
-
-        if (mCodecContext != nullptr){
-            avcodec_free_context(&mCodecContext);
-            mCodecContext = nullptr;
-        }
-
-        if (mStream != nullptr){
-            mStream = nullptr;
-        }
+        delete m_videoHandle;
+        m_videoHandle = nullptr;
 
         if (mFormatContext != nullptr){
             if (!(mFormatContext->oformat->flags & AVFMT_NOFILE)){
@@ -49,44 +33,36 @@ private:
             avformat_free_context(mFormatContext);
             mFormatContext = nullptr;
         }
-        LOGD("released resource");
+        LOGD("MediaCoder has released resource");
     }
 
-    bool encode();
-    bool writeFrame();
-    static void log_packet(const AVFormatContext *fmt_ctx, const AVPacket *pkt);
     void init();
-    bool encode(const NativeImage& data,__int64_t presentationTime);
 public:
     MediaCoder(std::string file,int width,int height,int frameRatio);
     ~MediaCoder();
-    int getWidth() const{
-        return mWidth;
+    int getVideoWidth() const{
+        return m_videoHandle->mWidth;
     }
-    int getHeight() const{
-        return mHeight;
+    int getVideoHeight() const{
+        return m_videoHandle->mHeight;
     }
     void start();
     void stop();
     void addData(NativeImage& data);
+
 private:
     SyncQueue<NativeImage> m_queue;
     bool hasInit = false;
 
-    volatile bool hasStarted = false;
-    volatile bool hasPaused = false;
-    volatile bool hasStopped = false;
+    volatile bool encoding = false;
     thread m_encodeThread;
 
     const std::string mFileName;
 
-    const int mWidth,mHeight,mFrameRatio;
-    AVCodecContext *mCodecContext = nullptr;
-    AVFrame *mFrame = nullptr;
-    AVPacket *mPacket = nullptr;
     AVFormatContext *mFormatContext = nullptr;
-    AVStream *mStream = nullptr;
-};
 
+    VideoHandle * m_videoHandle;
+
+};
 
 #endif //ANDROIDFEATURESET_MEDIACODER_H

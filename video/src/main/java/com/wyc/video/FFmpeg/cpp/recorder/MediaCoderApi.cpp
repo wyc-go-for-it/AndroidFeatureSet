@@ -65,7 +65,7 @@ JNIEXPORT void JNICALL addData(JNIEnv *env,jobject obj,jlong nativeObj,jbyteArra
             LOGE("not support format %d",format);
             return;
     }
-    NativeImage image(imageFormat,c->getWidth(),c->getHeight());
+    NativeImage image(imageFormat, c->getVideoWidth(), c->getVideoHeight());
     env->GetByteArrayRegion(data, 0, len, reinterpret_cast<jbyte *>(image.getPlanePtr0()));
     c->addData(image);
 }

@@ -82,9 +82,27 @@ public class FFMediaCoder extends AbstractRecorder {
         }
     }
 
+    private long start = 0;
+    private long start1 = 0;
+    private int frame = 0;
+
     private final ImageReader.OnImageAvailableListener mImageReaderYUVCallback = reader -> {
+
         final Image image = reader.acquireLatestImage();
         if (image == null)return;
+
+        frame++;
+        if (start == 0){
+            start = System.currentTimeMillis();
+        }else {
+            start1 = System.currentTimeMillis() - start;
+        }
+        if (start1 >=1000){
+            Log.e("frame","frame:" + frame + " start1:" + start1);
+            start1 = 0;
+            frame = 0;
+            start = System.currentTimeMillis();
+        }
 
         if (image.getFormat() == ImageFormat.YUV_420_888){
             final int w = image.getWidth();
@@ -109,7 +127,7 @@ public class FFMediaCoder extends AbstractRecorder {
             while (index < pos - 1){
                 mYuvBuffer.put(uBuffer.get(index));
                 vByte[vIndex++] = vBuffer.get(index);
-                index += pixelStride;
+                index += pixelStride ;
             }
             mYuvBuffer.put(vByte);
 
@@ -120,12 +138,12 @@ public class FFMediaCoder extends AbstractRecorder {
                 YUVUtils.fastRotateYUV_420_270_90(mYuvBuffer.array(),w,h,bytes,1);
             }
 
-/*            addData(bytes,0);
+            addData(bytes,0);
 
             Log.e("",String.format(
                     Locale.CHINA,"yuvWidth:%d,yuvHeight:%d,YpixelStride:%d,YrowStride:%d,VpixelStride:%d,VrowStride:%d,UpixelStride:%d,UrowStride:%d",
                     w,h,yPlane.getPixelStride(),yPlane.getRowStride(),vPlane.getPixelStride(),
-                    vPlane.getRowStride(),uPlane.getPixelStride(),uPlane.getRowStride()));*/
+                    vPlane.getRowStride(),uPlane.getPixelStride(),uPlane.getRowStride()));
 
         }
         image.close();

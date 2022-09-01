@@ -128,15 +128,16 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO) {
             val physicalRect = characteristic.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE)
             val afRegion = characteristic.get(CameraCharacteristics.CONTROL_MAX_REGIONS_AF)
 
-            val fpsRegion = characteristic.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)
-            selectBaseFPS(fpsRegion)
+            val fpsAeRegion = characteristic.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)
+            selectBaseFPS(fpsAeRegion)
 
             val capabilities = characteristic.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES)
 
-            var  outputSizes = characteristic.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)?.getOutputSizes(ImageFormat.YUV_420_888)
+            val configMap = characteristic.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+            var  outputSizes = configMap?.getOutputSizes(ImageFormat.YUV_420_888)
             val  camcorderProfile =  CamcorderProfile.get(getValidCameraId().toInt(), CamcorderProfile.QUALITY_720P)
             if (outputSizes != null && outputSizes.isNotEmpty()){
-                val s = outputSizes[0];
+                val s = outputSizes[0]
                 vWidth = min(camcorderProfile.videoFrameWidth,s.width)
                 vHeight = min(camcorderProfile.videoFrameHeight,s.height)
             }else{
@@ -144,12 +145,17 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO) {
                 vHeight = camcorderProfile.videoFrameHeight
                 outputSizes = arrayOf(Size(0,0,))
             }
+            val fpsRegion = configMap?.highSpeedVideoFpsRanges
+
+            val code = CamcorderProfile.hasProfile(CamcorderProfile.QUALITY_720P)
+            Logger.d("code:%s",code)
 
             val sensorOrientation = characteristic.get(CameraCharacteristics.SENSOR_ORIENTATION)?:0
 
             Utils.logInfo("sensorOrientation:$sensorOrientation,physicalRect:$physicalRect,pixelRect:$pixelRect" +
-                    ",activeRect:$activeRect,afRegionCount:$afRegion,\nfpsRegion:" + Arrays.toString(fpsRegion)+
-                    ",capabilities:" + Arrays.toString(capabilities) + "vWidth:$vWidth" +",vHeight:$vHeight" +",\noutputSizes:" + Arrays.toString(outputSizes))
+                    ",activeRect:$activeRect,afRegionCount:$afRegion,\nfpsAeRegion:" + Arrays.toString(fpsAeRegion)+
+                    ",capabilities:" + Arrays.toString(capabilities) + "vWidth:$vWidth" +",vHeight:$vHeight" +"," +
+                    "\noutputSizes:" + Arrays.toString(outputSizes) + "\nfpsRegion:" + Arrays.toString(fpsRegion))
 
             activeRect?.apply {
                 mAspectRatio = height() * 1f / width() * 1f

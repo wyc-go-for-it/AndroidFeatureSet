@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/com_wyc_label_round_shape"
+    android:orientation="horizontal"
+    android:padding="@dimen/com_wyc_label_size_5">
+
+    <TextView
+        android:id="@+id/ip_label"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:padding="5dp"
+        android:text="@string/com_wyc_label_ip"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_18"
+        app:layout_constraintBottom_toBottomOf="@id/ip"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/ip" />
+
+    <EditText
+        android:id="@+id/ip"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/com_wyc_label_height_45"
+        android:layout_weight="2"
+        android:background="@drawable/com_wyc_label_edit_text_with_gray_border_style"
+        android:inputType="text"
+        android:paddingStart="@dimen/com_wyc_label_size_5"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
+        app:layout_constraintEnd_toStartOf="@+id/port_label"
+        app:layout_constraintStart_toEndOf="@id/ip_label"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/port_label"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_marginStart="@dimen/com_wyc_label_margin_5"
+        android:gravity="center_vertical"
+        android:text="@string/com_wyc_label_port"
+        android:textColor="@color/com_wyc_label_text_color"
+        android:textSize="@dimen/com_wyc_label_font_size_18"
+        app:layout_constraintBottom_toBottomOf="@id/port"
+        app:layout_constraintEnd_toStartOf="@+id/port"
+        app:layout_constraintStart_toEndOf="@id/ip"
+        app:layout_constraintTop_toTopOf="@id/port" />
+
+    <EditText
+        android:id="@+id/port"
+        android:layout_width="@dimen/com_wyc_label_height_68"
+        android:layout_height="@dimen/com_wyc_label_height_45"
+        android:background="@drawable/com_wyc_label_edit_text_with_gray_border_style"
+        android:inputType="numberDecimal"
+        android:paddingStart="@dimen/com_wyc_label_size_5"
+        android:text="9100"
+        android:textSize="@dimen/com_wyc_label_font_size_16"
+        app:layout_constraintBottom_toTopOf="@+id/cancel"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/ok"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/com_wyc_label_margin_12"
+        android:background="@drawable/com_wyc_label_edit_text_with_blue_border_style"
+        android:text="@string/com_wyc_label_OK"
+        android:textColor="@color/com_wyc_label_lightBlue"
+        android:textSize="@dimen/com_wyc_label_font_size_18"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/port" />
+</androidx.constraintlayout.widget.ConstraintLayout>

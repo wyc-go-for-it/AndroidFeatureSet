@@ -82,6 +82,7 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
+                android:drawableEnd="@drawable/com_wyc_label_small_fold"
                 android:gravity="center_vertical|end"
                 android:paddingStart="0dp"
                 android:paddingEnd="@dimen/com_wyc_label_margin_5"

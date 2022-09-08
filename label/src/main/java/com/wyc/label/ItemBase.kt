@@ -9,6 +9,7 @@ import android.view.View
 import android.view.WindowManager
 import androidx.annotation.CallSuper
 import androidx.core.graphics.transform
+import com.wyc.label.LabelPrintSetting.Companion.getSetting
 import java.io.Serializable
 import java.lang.reflect.Field
 import kotlin.math.asin
@@ -44,7 +45,17 @@ open class ItemBase:Cloneable,Serializable {
         set(value) {
             field = max(value, 1)
         }
+    /**
+     * 自身旋转角度
+     * */
     var radian = 0f
+        set(value) {
+            field = value % 360
+        }
+    /**
+     * 所在页面旋转角度
+     * */
+    var pageRotate = 0f
         set(value) {
             field = value % 360
         }
@@ -322,6 +333,7 @@ open class ItemBase:Cloneable,Serializable {
     }
 
     open fun createItemBitmap(bgColor:Int = Color.WHITE):Bitmap{
+        val hasRotate = pageRotate != 0f
         var bmp:Bitmap = Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888)
         if (radian != 0f){
             val rect = RectF(left.toFloat(), top.toFloat(), left + width.toFloat(), top + height.toFloat())
@@ -336,16 +348,34 @@ open class ItemBase:Cloneable,Serializable {
             bmp = Bitmap.createBitmap(rect.width().toInt(), rect.height().toInt(),Bitmap.Config.ARGB_8888)
             val c = Canvas(bmp)
             c.drawColor(bgColor)
+            if (hasRotate){
+                c.save()
+                c.rotate(pageRotate,bmp.width / 2f,bmp.height / 2f)
+            }
 
             c.translate((-left).toFloat(), (-top).toFloat())
             c.rotate(radian,  rect.centerX(), rect.centerY())
 
             drawItem((rect.width() - width) / 2f,(rect.height() - height) / 2f,c, Paint())
+
+            if (hasRotate){
+                c.restore()
+            }
         }else{
             val c = Canvas(bmp)
             c.drawColor(bgColor)
+
+            if (hasRotate){
+                c.save()
+                c.rotate(pageRotate,bmp.width / 2f,bmp.height / 2f)
+            }
+
             c.translate((-left).toFloat(), (-top).toFloat())
             drawItem(0f,0f,c, Paint())
+
+            if (hasRotate){
+                c.restore()
+            }
         }
         return bmp
     }

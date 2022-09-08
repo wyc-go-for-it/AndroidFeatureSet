@@ -1,6 +1,7 @@
 package com.wyc.label;
 
 import android.content.Context;
+import android.graphics.Matrix;
 import android.util.Log;
 import android.util.TypedValue;
 
@@ -183,6 +184,7 @@ public class LabelTemplate implements Serializable {
         list.add(new LabelSize(70,40));
         list.add(new LabelSize(50,40));
         list.add(new LabelSize(30,20));
+        list.add(new LabelSize(80,40));
         return list;
     }
 
@@ -205,11 +207,30 @@ public class LabelTemplate implements Serializable {
     }
 
     private List<ItemBase> generatePrintItem(){
-        float scaleX = (float)width2Dot(LabelPrintSetting.getSetting().getDpi()) / (float)realWidth;
-        float scaleY =(float) height2Dot(LabelPrintSetting.getSetting().getDpi()) / (float)realHeight;
+        float wDot = width2Dot(LabelPrintSetting.getSetting().getDpi());
+        float hDot = height2Dot(LabelPrintSetting.getSetting().getDpi());
+        float scaleX = wDot / (float)realWidth;
+        float scaleY = hDot / (float)realHeight;
         List<ItemBase> content = new ArrayList<>();
+        LabelPrintSetting.Rotate rotate = LabelPrintSetting.getSetting().getRotate();
+        boolean hasRotate = LabelPrintSetting.getSetting().getRotate() != LabelPrintSetting.Rotate.D_0;
+        Matrix matrix = null;
+        float[] points = null;
+        if (hasRotate){
+            matrix = new Matrix();
+            points = new float[2];
+        }
         for (ItemBase i:printItem) {
             final ItemBase item = i.clone();
+            if (hasRotate){
+                item.setPageRotate(rotate.getValue());
+                points[0] = item.getLeft();
+                points[1] = item.getTop();
+                matrix.setRotate(rotate.getValue(),wDot / 2f,hDot / 2f);
+                matrix.mapPoints(points);
+                item.setLeft((int) points[0]);
+                item.setTop((int) points[1]);
+            }
             item.transform(scaleX,scaleY);
             if (item instanceof DataItem){
                 ((DataItem) item).setHasMark(false);

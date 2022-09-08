@@ -26,7 +26,7 @@ internal class LabelPrintSetting:Serializable {
     @Transient private var change = false
 
     enum class Way(s: String)  {
-        BLUETOOTH_PRINT(LabelApp.getInstance().getString(R.string.com_wyc_label_bluetooth_way));
+        BLUETOOTH_PRINT(getInstance().getString(R.string.com_wyc_label_bluetooth_way)),WIFI_PRINT(getInstance().getString(R.string.com_wyc_label_wifi_way));
         val description:String = s
     }
     var way: Way  = Way.BLUETOOTH_PRINT

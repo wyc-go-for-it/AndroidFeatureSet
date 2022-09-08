@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -74,6 +75,7 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
     }
 
     private fun initView(){
+        findViewById<TextView>(R.id.way_tv).setOnClickListener(this)
         findViewById<TextView>(R.id.printer_tv).setOnClickListener(this)
         findViewById<TextView>(R.id.rotate_tv).setOnClickListener(this)
         findViewById<TextView>(R.id.plus).setOnClickListener(this)
@@ -96,8 +98,44 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
 
     override fun onClick(v: View) {
         when(v.id){
+            R.id.way_tv->{
+                val selectDialog = SelectDialog(this)
+                LabelPrintSetting.Way.values().forEach {
+                    val item = SelectDialog.Item(it.name,it.description)
+                    selectDialog.addContent(item)
+                }
+                selectDialog.setSelectListener(object : SelectDialog.OnSelect{
+                    override fun select(content: SelectDialog.Item) {
+                        DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.apply {
+                            setting?.way = LabelPrintSetting.Way.valueOf(content.id)
+                            invalidateAll()
+                            selectDialog.dismiss()
+                        }
+
+                    }
+                })
+                selectDialog.show()
+            }
             R.id.printer_tv->{
-                mPermission?.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                val setting = DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.setting
+                when(setting?.way){
+                    LabelPrintSetting.Way.BLUETOOTH_PRINT->{
+                        mPermission?.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    }
+                    LabelPrintSetting.Way.WIFI_PRINT ->{
+                        val ipInputDialog = IPInputDialog(this)
+                        ipInputDialog.setListener(object :IPInputDialog.OnContent{
+                            override fun content(ip: String, port: String) {
+                                setting.printer = LabelPrintSetting.combinationPrinter(port,ip)
+                                DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.invalidateAll()
+                            }
+                        })
+                        ipInputDialog.show()
+                    }
+                    else -> {
+                        Utils.showToast(R.string.com_wyc_label_not_support_way)
+                    }
+                }
             }
             R.id.rotate_tv->{
                 val selectDialog = SelectDialog(this)
@@ -195,7 +233,9 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
     private fun initParam(){
         val setting = LabelPrintSetting.getSetting()
         DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.setting = setting
-        BluetoothUtils.bondBlueTooth(setting.getPrinterAddress())
+
+        if (setting.way == LabelPrintSetting.Way.BLUETOOTH_PRINT)
+            BluetoothUtils.bondBlueTooth(setting.getPrinterAddress())
     }
 
 

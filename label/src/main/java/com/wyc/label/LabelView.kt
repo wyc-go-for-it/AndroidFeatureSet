@@ -306,17 +306,9 @@ class LabelView: View {
         super.onDraw(canvas)
         canvas.apply {
             mPaint.reset()
-            if (mRotate != 0){
-                save()
-                rotate(mRotate.toFloat(),width / 2f,height / 2f)
-            }
             drawRule(this)
             drawBackground(this)
             drawContent(this)
-
-            if (mRotate != 0){
-                restore()
-            }
         }
     }
 
@@ -772,6 +764,11 @@ class LabelView: View {
         val c = Canvas(bmp)
         c.drawColor(Color.WHITE)
 
+        if (mRotate != 0){
+            c.save()
+            c.rotate(mRotate.toFloat(),bmp.width / 2f,bmp.height / 2f)
+        }
+
         mBackground?.apply {
             val matrix = Matrix()
             matrix.setScale(bmp.width / width.toFloat(),bmp.height / height.toFloat())
@@ -808,6 +805,13 @@ class LabelView: View {
             //c.drawRect(0f,0f, it.width.toFloat(), it.height.toFloat(),p)
             c.restore()
         }
+
+
+
+        if (mRotate != 0){
+            c.restore()
+        }
+
         return bmp
     }
 

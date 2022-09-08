@@ -16,6 +16,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.Display
 import android.view.Gravity
 import android.view.View
@@ -27,8 +28,10 @@ import com.gprinter.bean.PrinterDevices
 import com.gprinter.utils.CallbackListener
 import com.wyc.label.Utils.Companion.showToast
 import com.wyc.label.printer.GPPrinter
+import com.wyc.label.printer.HTPrinter
 import com.wyc.label.printer.LabelPrintUtils
 import kotlinx.coroutines.*
+import tspl.HPRTPrinterHelper
 import java.io.File
 import java.io.IOException
 
@@ -135,8 +138,31 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
     }
 
     private fun connPrinter(){
-        GPPrinter.openBlueTooth(LabelPrintSetting.getSetting().getPrinterAddress(),callback)
+        val setting = LabelPrintSetting.getSetting()
+        when(setting.way){
+            LabelPrintSetting.Way.BLUETOOTH_PRINT->{
+                GPPrinter.openBlueTooth(LabelPrintSetting.getSetting().getPrinterAddress(),callback)
+            }
+            LabelPrintSetting.Way.WIFI_PRINT->{
+                val printer = setting.printer.split("@")
+                if (printer.size > 1){
+                    val open = String.format("WiFi,%s,%s",printer[0],printer[1])
+                    val code = HTPrinter.open(open)
+                    if (code == 0){
+                        printerNormal()
+                        showToast(R.string.com_wyc_label_conn_success)
+                    }else {
+                        printerError()
+                        showToast(R.string.com_wyc_label_conn_fail)
+                    }
+                    Log.e("connPrinter", "code:$code")
+                }else{
+                    showToast(R.string.com_wyc_label_no_printer_hint)
+                }
+            }
+        }
     }
+
 
     private fun initAddLabel(){
         val tv = findViewById<TextView>(R.id.right_title_tv)
@@ -450,35 +476,23 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
                     showImExportDialog()
                 }
                 R.id.printLabel->{
-                    if (hasSupportBluetooth()){
-                        if (mLabelView != null){
-                            val labelTemplate = mLabelView!!.getLabelTemplate()
-                            if((v as TopDrawableTextView).hasNormal()){
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    var n = LabelPrintSetting.getSetting().printNum
-                                    val goods = DataItem.testGoods()
+                    if (mLabelView != null){
+                        if((v as TopDrawableTextView).hasNormal()){
+                            CoroutineScope(Dispatchers.IO).launch {
+                                var n = LabelPrintSetting.getSetting().printNum
+                                val goods = DataItem.testGoods()
 
-                                    while (n-- > 0){
-                                        GPPrinter.sendDataToPrinter(GPPrinter.getGPTscCommand(labelTemplate,goods).command)
-                                    }
+                                while (n-- > 0){
+                                    LabelPrintUtils.print(goods)
                                 }
-                            }else{
-                                connPrinter()
                             }
+                        }else{
+                            connPrinter()
                         }
                     }
                 }
             }
         }
-    }
-
-    private fun hasSupportBluetooth(): Boolean {
-        val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        val code = bluetoothAdapter != null && bluetoothAdapter.isEnabled
-        if (!code) {
-            showToast("未开启蓝牙功能...")
-        }
-        return code
     }
 
     private fun printerError(){

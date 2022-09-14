@@ -12,9 +12,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.*
-import java.util.ArrayList
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.tan
 
 
 /**
@@ -134,7 +135,7 @@ class LabelView: View {
                         mLastX = event.x
                         mLastY = event.y
 
-                        it.moveCurItem(realWidth,realHeight,event.x,event.y,mOffsetX,mOffsetY,mMoveX,mMoveY)
+                        it.moveCurItem(realWidth,realHeight,event.x,event.y,mMoveX,mMoveY)
                         invalidate()
                     }
                 };
@@ -257,16 +258,18 @@ class LabelView: View {
      * 已宽度为参照进行缩放,如果宽度是具体尺寸，则需要先计算缩放后的高度。否则可能缩放后高度比实际高度要大
      * */
     private fun selectMeasureHeight(widthSpec:Int,widthSize:Int):Int{
-        var h = min(height2Pixel(mLabelTemplate,context), mLabelTemplate.realHeight)
+        var h = min(height2Pixel(mLabelTemplate), mLabelTemplate.realHeight)
         if (widthSpec == MeasureSpec.EXACTLY){
             val rightMargin = context.resources.getDimensionPixelOffset(R.dimen.com_wyc_label_size_5)
-            val hh = ((widthSize  - mOffsetX - rightMargin) / width2Pixel(mLabelTemplate,context).toFloat() * height2Pixel(mLabelTemplate,context)).toInt()
+            val hh = ((widthSize  - mOffsetX - rightMargin) / width2Pixel(mLabelTemplate).toFloat() * height2Pixel(
+                mLabelTemplate
+            )).toInt()
             h = max(hh,h)
         }
         return h + mOffsetY + 8
     }
     private fun selectMeasureWidth():Int{
-        return max(width2Pixel(mLabelTemplate,context), mLabelTemplate.realWidth) + mOffsetX
+        return max(width2Pixel(mLabelTemplate), mLabelTemplate.realWidth) + mOffsetX
     }
 
     private fun measureItem(){
@@ -278,7 +281,9 @@ class LabelView: View {
     private fun calculateContentSize(){
         val margin = context.resources.getDimensionPixelOffset(R.dimen.com_wyc_label_size_5)
         realWidth = measuredWidth  - mOffsetX - margin
-        realHeight = ((realWidth.toFloat() /  width2Pixel(mLabelTemplate,context).toFloat()) * height2Pixel(mLabelTemplate,context)).toInt()
+        realHeight = ((realWidth.toFloat() /  width2Pixel(mLabelTemplate).toFloat()) * height2Pixel(
+            mLabelTemplate
+        )).toInt()
         measureItem()
     }
 
@@ -760,19 +765,19 @@ class LabelView: View {
 
     internal  fun printSingleGoodsBitmap(barcodeId:String = "",labelGoods: LabelGoods):Bitmap{
         val dpi = getSetting().dpi
-        val bmp = Bitmap.createBitmap(mLabelTemplate.width2Dot(dpi),mLabelTemplate.height2Dot(dpi),Bitmap.Config.ARGB_8888)
+
+        val wDot = mLabelTemplate.width2Dot(dpi).toFloat()
+        val hDot = mLabelTemplate.height2Dot(dpi).toFloat()
+
+        val bmp = Bitmap.createBitmap(wDot.toInt(), hDot.toInt(),Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
         c.drawColor(Color.WHITE)
-
-        if (mRotate != 0){
-            c.save()
-            c.rotate(mRotate.toFloat(),bmp.width / 2f,bmp.height / 2f)
-        }
 
         mBackground?.apply {
             val matrix = Matrix()
             matrix.setScale(bmp.width / width.toFloat(),bmp.height / height.toFloat())
             c.save()
+            c.rotate(mRotate.toFloat(),bmp.width / 2f,bmp.height / 2f)
             c.drawBitmap(this,matrix,null)
             c.restore()
         }
@@ -780,15 +785,24 @@ class LabelView: View {
         val p = Paint()
         p.style = Paint.Style.STROKE
 
-        val scaleX = mLabelTemplate.width2Dot(getSetting().dpi).toFloat() / realWidth.toFloat()
-        val scaleY = mLabelTemplate.height2Dot(getSetting().dpi).toFloat() / realHeight.toFloat()
+
+        val scaleX = wDot / realWidth.toFloat()
+        val scaleY = hDot / realHeight.toFloat()
 
         val itemCopy: MutableList<ItemBase> = ArrayList()
+
+        c.drawCircle(wDot / 2f - 4,hDot / 2f - 4,8f,p)
 
         labelGoods.apply {
             contentList.forEach {
                 val item = it.clone()
+
                 item.transform(scaleX, scaleY)
+
+                if (mRotate != 0){
+                    item.rotateByPoint(mRotate.toFloat(),wDot  / 2f, hDot / 2f)
+                }
+
                 if (item is DataItem) {
                     item.hasMark = false
                 }
@@ -800,15 +814,11 @@ class LabelView: View {
         itemCopy.forEach {
             val b = it.createItemBitmap(Color.TRANSPARENT)
             c.save()
+
             c.translate(it.left.toFloat(), it.top.toFloat())
+
             c.drawBitmap(b,0f,0f,null)
-            //c.drawRect(0f,0f, it.width.toFloat(), it.height.toFloat(),p)
-            c.restore()
-        }
 
-
-
-        if (mRotate != 0){
             c.restore()
         }
 

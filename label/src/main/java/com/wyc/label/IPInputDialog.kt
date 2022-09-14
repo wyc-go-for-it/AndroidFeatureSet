@@ -57,9 +57,14 @@ class IPInputDialog(context: Context): Dialog(context,R.style.com_wyc_label_MyDi
     private fun initView(){
         findViewById<Button>(R.id.ok).setOnClickListener {
             if (mListener != null){
-                val ip = findViewById<EditText>(R.id.ip)
-                val port = findViewById<EditText>(R.id.port)
-                mListener!!.content(ip.text.toString(),port.text.toString())
+                val ip = findViewById<EditText>(R.id.ip)?.text.toString()
+                val port = findViewById<EditText>(R.id.port).text.toString()
+                if (ip.isEmpty()){
+                    Utils.showToast(R.string.com_wyc_label_ip_not_empty_hint)
+                    findViewById<EditText>(R.id.ip)?.requestFocus()
+                    return@setOnClickListener
+                }
+                mListener!!.content(ip,port)
             }
             dismiss()
         }

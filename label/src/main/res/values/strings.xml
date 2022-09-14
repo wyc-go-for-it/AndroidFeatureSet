@@ -63,6 +63,8 @@
     <string name="com_wyc_label_send_success">发送成功</string>
     <string name="com_wyc_label_not_connect">打印机未连接…</string>
     <string name="com_wyc_label_bluetooth_way">蓝牙打印</string>
+    <string name="com_wyc_label_gp_m322">佳博M-322</string>
+    <string name="com_wyc_label_wifi_hprt_ht300">汉印HT300</string>
     <string name="com_wyc_label_wifi_way">网口打印</string>
     <string name="com_wyc_label_not_support_way">不支持此打印方式</string>
     <string name="com_wyc_label_success">成功</string>
@@ -73,6 +75,8 @@
     <string name="com_wyc_label_dot_width">虚线宽</string>
     <string name="com_wyc_label_border_width">线宽</string>
     <string name="com_wyc_label_print_way">打印接口</string>
+    <string name="com_wyc_label_print_type">打印机型号</string>
+    <string name="com_wyc_label_print_type_not_empty">打印机型号不能为空!</string>
     <string name="com_wyc_label_printer">打印机</string>
     <string name="com_wyc_label_ip">IP:</string>
     <string name="com_wyc_label_port">端口:</string>
@@ -95,4 +99,6 @@
     <string name="not_enbel_bluetooth">未开启蓝牙功能…</string>
     <string name="com_wyc_label_export_error">导出标签错误,请检查文件格式或路径是否正确…</string>
     <string name="com_wyc_label_import_error">导入标签错误,请检查文件格式或路径是否正确…</string>
+    <string name="com_wyc_label_ip_not_empty_hint">打印机IP不能为空!</string>
+    <string name="com_wyc_label_not_support_printer">不支持%1$s打印机!</string>
 </resources>

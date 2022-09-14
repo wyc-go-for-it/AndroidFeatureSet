@@ -2,6 +2,8 @@ package com.wyc.label
 
 import com.wyc.label.LabelApp.Companion.getInstance
 import com.wyc.label.Utils.Companion.showToast
+import com.wyc.label.printer.GPPrinter
+import com.wyc.label.printer.HTPrinter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -30,6 +32,26 @@ internal class LabelPrintSetting:Serializable {
         val description:String = s
     }
     var way: Way  = Way.BLUETOOTH_PRINT
+
+    enum class Type(s: String,cls:String)  {
+        BT_GP_M322(getInstance().getString(R.string.com_wyc_label_gp_m322),GPPrinter::class.java.simpleName),
+        WIFI_HPRT_HT300(getInstance().getString(R.string.com_wyc_label_wifi_hprt_ht300),HTPrinter::class.java.simpleName),NULL("","");
+        val description:String = s
+        val cls:String = cls
+    }
+    var type: Type  = Type.BT_GP_M322
+    fun getValidPrinterType(): List<Type> {
+       return Type.values().filter {
+            when(way){
+                Way.BLUETOOTH_PRINT->{
+                    it.name.startsWith("BT")
+                }
+                Way.WIFI_PRINT ->{
+                    it.name.startsWith("WIFI")
+                }else -> false
+            }
+        }
+    }
 
     enum class Rotate(degree:Int){
         D_0(0),D_180(180);
@@ -101,6 +123,10 @@ internal class LabelPrintSetting:Serializable {
     }
 
     fun saveSetting(){
+        if (type == Type.NULL){
+            showToast(R.string.com_wyc_label_print_type_not_empty)
+            return
+        }
         CoroutineScope(Dispatchers.IO).launch {
             val file = getFile()
             file.delete()
@@ -123,6 +149,7 @@ internal class LabelPrintSetting:Serializable {
     }
 
     override fun toString(): String {
-        return "LabelPrintSetting(way=$way, rotate=$rotate, labelTemplateId=$labelTemplateId, labelTemplateName='$labelTemplateName', printNum=$printNum, printer='$printer')"
+        return "LabelPrintSetting(way=$way, type=$type, offsetX=$offsetX, offsetY=$offsetY, dpi=$dpi, rotate=$rotate, labelTemplateId=$labelTemplateId, labelTemplateName='$labelTemplateName', printNum=$printNum, printer='$printer', density=$density)"
     }
+
 }

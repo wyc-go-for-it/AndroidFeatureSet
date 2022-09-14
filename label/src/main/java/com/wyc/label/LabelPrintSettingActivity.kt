@@ -107,7 +107,31 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
                 selectDialog.setSelectListener(object : SelectDialog.OnSelect{
                     override fun select(content: SelectDialog.Item) {
                         DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.apply {
-                            setting?.way = LabelPrintSetting.Way.valueOf(content.id)
+                            setting?.let {
+                                if (it.way != LabelPrintSetting.Way.valueOf(content.id)){
+                                    it.way = LabelPrintSetting.Way.valueOf(content.id)
+                                    it.type = LabelPrintSetting.Type.NULL
+                                    it.printer = ""
+                                    invalidateAll()
+                                }
+                            }
+                            selectDialog.dismiss()
+                        }
+
+                    }
+                })
+                selectDialog.show()
+            }
+            R.id.type_tv->{
+                val selectDialog = SelectDialog(this)
+                DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.setting?.getValidPrinterType()?.forEach {
+                    val item = SelectDialog.Item(it.name,it.description)
+                    selectDialog.addContent(item)
+                }
+                selectDialog.setSelectListener(object : SelectDialog.OnSelect{
+                    override fun select(content: SelectDialog.Item) {
+                        DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.apply {
+                            setting?.type = LabelPrintSetting.Type.valueOf(content.id)
                             invalidateAll()
                             selectDialog.dismiss()
                         }

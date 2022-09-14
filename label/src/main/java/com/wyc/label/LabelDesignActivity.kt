@@ -27,13 +27,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.gprinter.bean.PrinterDevices
 import com.gprinter.utils.CallbackListener
 import com.wyc.label.Utils.Companion.showToast
-import com.wyc.label.printer.GPPrinter
-import com.wyc.label.printer.HTPrinter
-import com.wyc.label.printer.LabelPrintUtils
+import com.wyc.label.printer.*
 import kotlinx.coroutines.*
 import tspl.HPRTPrinterHelper
 import java.io.File
 import java.io.IOException
+import kotlin.concurrent.thread
 
 class LabelDesignActivity : BaseActivity(), View.OnClickListener{
     private var mLabelView: LabelView? = null
@@ -138,29 +137,7 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
     }
 
     private fun connPrinter(){
-        val setting = LabelPrintSetting.getSetting()
-        when(setting.way){
-            LabelPrintSetting.Way.BLUETOOTH_PRINT->{
-                GPPrinter.openBlueTooth(LabelPrintSetting.getSetting().getPrinterAddress(),callback)
-            }
-            LabelPrintSetting.Way.WIFI_PRINT->{
-                val printer = setting.printer.split("@")
-                if (printer.size > 1){
-                    val open = String.format("WiFi,%s,%s",printer[0],printer[1])
-                    val code = HTPrinter.open(open)
-                    if (code == 0){
-                        printerNormal()
-                        showToast(R.string.com_wyc_label_conn_success)
-                    }else {
-                        printerError()
-                        showToast(R.string.com_wyc_label_conn_fail)
-                    }
-                    Log.e("connPrinter", "code:$code")
-                }else{
-                    showToast(R.string.com_wyc_label_no_printer_hint)
-                }
-            }
-        }
+        LabelPrintUtils.openPrinter(callback)
     }
 
 
@@ -280,10 +257,6 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
                 }
             }
         }
-    }
-
-    override fun onBackPressed() {
-        super.onBackPressed()
     }
 
     override fun onDestroy() {
@@ -505,21 +478,17 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
             normal()
         }
     }
-    private val callback = object : CallbackListener{
+    private val callback = object : PrinterStateCallback{
         override fun onConnecting() {
             showToast(R.string.com_wyc_label_printer_connecting)
         }
 
-        override fun onCheckCommand() {
-
-        }
-
-        override fun onSuccess(p0: PrinterDevices?) {
+        override fun onSuccess(printer:IPrinter) {
             showToast(R.string.com_wyc_label_conn_success)
             printerNormal()
         }
 
-        override fun onReceive(p0: ByteArray?) {
+        override fun onReceive() {
 
         }
 

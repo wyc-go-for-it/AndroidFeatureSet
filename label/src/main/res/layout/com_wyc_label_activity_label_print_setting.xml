@@ -91,7 +91,39 @@
                 android:textColor="@color/com_wyc_label_text_color"
                 android:textSize="@dimen/com_wyc_label_font_size_16" />
         </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/com_wyc_label_height_45"
+            android:layout_marginStart="@dimen/com_wyc_label_margin_5"
+            android:layout_marginTop="@dimen/com_wyc_label_margin_5"
+            android:layout_marginEnd="@dimen/com_wyc_label_margin_5"
+            android:background="@drawable/com_wyc_label_round_style"
+            android:orientation="horizontal">
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:padding="5dp"
+                android:text="@string/com_wyc_label_print_type"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_16" />
+
+            <TextView
+                android:id="@+id/type_tv"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:drawableEnd="@drawable/com_wyc_label_small_fold"
+                android:gravity="center_vertical|end"
+                android:paddingStart="0dp"
+                android:paddingEnd="@dimen/com_wyc_label_margin_5"
+                android:tag="@{setting.type.ordinal()}"
+                android:text="@{setting.type.description}"
+                android:onClick="onClick"
+                android:textColor="@color/com_wyc_label_text_color"
+                android:textSize="@dimen/com_wyc_label_font_size_16" />
+        </LinearLayout>
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="@dimen/com_wyc_label_height_45"
@@ -119,7 +151,7 @@
                 android:gravity="center_vertical|end"
                 android:text="@{setting.printer}"
                 android:textColor="@color/com_wyc_label_text_color"
-                android:textSize="@dimen/com_wyc_label_font_size_16" />
+                android:textSize="@dimen/com_wyc_label_font_size_14" />
         </LinearLayout>
 
         <LinearLayout

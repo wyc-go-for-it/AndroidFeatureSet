@@ -44,8 +44,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        LabelPrintUtils.openPrinter();
-
+        LabelPrintUtils.openPrinter(null);
 
         serveTest();
         test();
@@ -69,7 +68,6 @@ public class MainActivity extends AppCompatActivity {
             }catch (IOException e){
                 e.printStackTrace();
             }
-
         }).start();
     }
 

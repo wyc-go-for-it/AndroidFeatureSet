@@ -9,7 +9,7 @@ import android.view.View
 import android.view.WindowManager
 import androidx.annotation.CallSuper
 import androidx.core.graphics.transform
-import com.wyc.label.LabelPrintSetting.Companion.getSetting
+import com.wyc.label.printer.LabelPrintUtils
 import java.io.Serializable
 import java.lang.reflect.Field
 import kotlin.math.asin
@@ -49,13 +49,6 @@ open class ItemBase:Cloneable,Serializable {
      * 自身旋转角度
      * */
     var radian = 0f
-        set(value) {
-            field = value % 360
-        }
-    /**
-     * 所在页面旋转角度
-     * */
-    var pageRotate = 0f
         set(value) {
             field = value % 360
         }
@@ -106,16 +99,14 @@ open class ItemBase:Cloneable,Serializable {
 
     private fun updateActionRect(l:Float,t:Float){
         val diameter = ACTION_RADIUS * 2
-        CUR_RECT.set(l - diameter,t - diameter,l + width + diameter,t + height + diameter)
-        DEL_RECT.set(CUR_RECT.left, CUR_RECT.top, CUR_RECT.left + diameter, CUR_RECT.top + diameter)
-        SCALE_RECT.set(CUR_RECT.right - diameter, CUR_RECT.bottom - diameter, CUR_RECT.right, CUR_RECT.bottom)
-
+        CUR_RECT.set(l,t,l + width ,t + height)
         if (radian != 0f){
             ROTATE_MATRIX.setRotate(radian,l + width / 2f,t + height / 2f)
-            DEL_RECT.transform(ROTATE_MATRIX)
-            SCALE_RECT.transform(ROTATE_MATRIX)
             CUR_RECT.transform(ROTATE_MATRIX)
         }
+        CUR_RECT.inset(-diameter,-diameter)
+        DEL_RECT.set(CUR_RECT.left, CUR_RECT.top, CUR_RECT.left + diameter, CUR_RECT.top + diameter)
+        SCALE_RECT.set(CUR_RECT.right - diameter, CUR_RECT.bottom - diameter, CUR_RECT.right, CUR_RECT.bottom)
     }
 
     private fun updateContentRect(l: Float,t: Float){
@@ -279,7 +270,7 @@ open class ItemBase:Cloneable,Serializable {
         labelView.addModifyAction(this,ActionObject.FieldObject(getFieldByName(this,attrName),oldValue,newValue))
     }
 
-    fun moveCurItem(rWidth:Int,rHeight:Int,clickX:Float, clickY:Float,offsetX:Int, offsetY:Int,moveX:Float,moveY:Float){
+    fun moveCurItem(rWidth:Int,rHeight:Int,clickX:Float, clickY:Float,moveX:Float,moveY:Float){
         val hScale = if(top + height + ACTION_RADIUS * 2 < rHeight && left + width + ACTION_RADIUS * 2 < rWidth){
             checkScaleClick(clickX,clickY,moveX,moveY)
         }else false
@@ -287,7 +278,8 @@ open class ItemBase:Cloneable,Serializable {
         if (!deleting && !hScale){
             left += moveX.toInt()
             top += moveY.toInt()
-            if (!(left >= 0 && left + width <= rWidth && top >= 0 && top + height <= height)){
+
+            if (!(left >= 0 && left + width <= rWidth && top >= 0 && top + height <= rHeight)){
                 if (left < 0f)left = 0
                 if (left + width > rWidth)left = rWidth - width
                 if (top < 0f)top = 0
@@ -333,7 +325,6 @@ open class ItemBase:Cloneable,Serializable {
     }
 
     open fun createItemBitmap(bgColor:Int = Color.WHITE):Bitmap{
-        val hasRotate = pageRotate != 0f
         var bmp:Bitmap = Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888)
         if (radian != 0f){
             val rect = RectF(left.toFloat(), top.toFloat(), left + width.toFloat(), top + height.toFloat())
@@ -346,38 +337,33 @@ open class ItemBase:Cloneable,Serializable {
 
             bmp.recycle()
             bmp = Bitmap.createBitmap(rect.width().toInt(), rect.height().toInt(),Bitmap.Config.ARGB_8888)
+
             val c = Canvas(bmp)
             c.drawColor(bgColor)
-            if (hasRotate){
-                c.save()
-                c.rotate(pageRotate,bmp.width / 2f,bmp.height / 2f)
-            }
-
             c.translate((-left).toFloat(), (-top).toFloat())
             c.rotate(radian,  rect.centerX(), rect.centerY())
-
             drawItem((rect.width() - width) / 2f,(rect.height() - height) / 2f,c, Paint())
-
-            if (hasRotate){
-                c.restore()
-            }
         }else{
             val c = Canvas(bmp)
             c.drawColor(bgColor)
-
-            if (hasRotate){
-                c.save()
-                c.rotate(pageRotate,bmp.width / 2f,bmp.height / 2f)
-            }
-
             c.translate((-left).toFloat(), (-top).toFloat())
             drawItem(0f,0f,c, Paint())
-
-            if (hasRotate){
-                c.restore()
-            }
         }
         return bmp
+    }
+
+    fun rotateByPoint(degrees:Float,x:Float,y: Float){
+        radian += degrees
+
+        ROTATE_MATRIX.reset()
+        ROTATE_MATRIX.setRotate(degrees, x, y)
+
+        cRECT.set(left.toFloat(), top.toFloat(), (left + width).toFloat(), (top + height).toFloat())
+
+        ROTATE_MATRIX.mapRect(cRECT)
+
+        left = cRECT.left.toInt()
+        top = cRECT.top.toInt()
     }
 
     override fun toString(): String {

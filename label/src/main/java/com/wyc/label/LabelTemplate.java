@@ -1,8 +1,6 @@
 package com.wyc.label;
 
-import android.content.Context;
-import android.graphics.Matrix;
-import android.util.Log;
+import android.graphics.RectF;
 import android.util.TypedValue;
 
 import androidx.annotation.NonNull;
@@ -53,9 +51,9 @@ public class LabelTemplate implements Serializable {
      * 用于重新计算item尺寸，同一个格式可能会加载到不同尺寸的界面
      * */
     @NonNull
-    private Integer realWidth = width2Pixel(this, LabelApp.Companion.getInstance());
+    private Integer realWidth = width2Pixel(this);
     @NonNull
-    private Integer realHeight = height2Pixel(this, LabelApp.Companion.getInstance());
+    private Integer realHeight = height2Pixel(this);
 
     transient private static final String mLabelDir = LabelApp.getDir();
 
@@ -184,16 +182,20 @@ public class LabelTemplate implements Serializable {
         list.add(new LabelSize(70,40));
         list.add(new LabelSize(50,40));
         list.add(new LabelSize(30,20));
-        list.add(new LabelSize(80,40));
+        list.add(new LabelSize(80,38));
+        list.add(new LabelSize(90,38));
         return list;
     }
 
-    public static int width2Pixel(LabelTemplate labelTemplate , Context context){
-        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_MM, labelTemplate.getWidth(),context.getResources().getDisplayMetrics());
+    public static int width2Pixel(LabelTemplate labelTemplate){
+        return mm2Pixel(labelTemplate.getWidth());
     }
 
-    public static int height2Pixel(LabelTemplate labelTemplate , Context context){
-        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_MM, labelTemplate.getHeight(),context.getResources().getDisplayMetrics());
+    public static int height2Pixel(LabelTemplate labelTemplate){
+        return mm2Pixel(labelTemplate.getHeight());
+    }
+    public static int mm2Pixel(float size){
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_MM,size,LabelApp.getInstance().getResources().getDisplayMetrics());
     }
 
     public List<ItemBase> printSingleGoods(LabelGoods goods){
@@ -207,31 +209,23 @@ public class LabelTemplate implements Serializable {
     }
 
     private List<ItemBase> generatePrintItem(){
-        float wDot = width2Dot(LabelPrintSetting.getSetting().getDpi());
-        float hDot = height2Dot(LabelPrintSetting.getSetting().getDpi());
+        LabelPrintSetting setting = LabelPrintSetting.getSetting();
+
+        float wDot = width2Dot(setting.getDpi());
+        float hDot = height2Dot(setting.getDpi());
         float scaleX = wDot / (float)realWidth;
         float scaleY = hDot / (float)realHeight;
         List<ItemBase> content = new ArrayList<>();
-        LabelPrintSetting.Rotate rotate = LabelPrintSetting.getSetting().getRotate();
+        LabelPrintSetting.Rotate rotate = setting.getRotate();
         boolean hasRotate = LabelPrintSetting.getSetting().getRotate() != LabelPrintSetting.Rotate.D_0;
-        Matrix matrix = null;
-        float[] points = null;
-        if (hasRotate){
-            matrix = new Matrix();
-            points = new float[2];
-        }
         for (ItemBase i:printItem) {
             final ItemBase item = i.clone();
-            if (hasRotate){
-                item.setPageRotate(rotate.getValue());
-                points[0] = item.getLeft();
-                points[1] = item.getTop();
-                matrix.setRotate(rotate.getValue(),wDot / 2f,hDot / 2f);
-                matrix.mapPoints(points);
-                item.setLeft((int) points[0]);
-                item.setTop((int) points[1]);
-            }
             item.transform(scaleX,scaleY);
+
+            if (hasRotate){
+                item.rotateByPoint(rotate.getValue(),wDot / 2f,hDot / 2f);
+            }
+
             if (item instanceof DataItem){
                 ((DataItem) item).setHasMark(false);
             }
@@ -244,7 +238,7 @@ public class LabelTemplate implements Serializable {
         return templateId;
     }
 
-    public void setTemplateId(Integer templateId) {
+    public void setTemplateId(@NonNull Integer templateId) {
         this.templateId = templateId;
     }
 

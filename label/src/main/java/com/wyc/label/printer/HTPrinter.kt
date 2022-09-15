@@ -2,7 +2,6 @@ package com.wyc.label.printer
 
 import android.graphics.Color
 import android.util.Log
-import com.google.zxing.BarcodeFormat
 import com.wyc.label.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -101,7 +100,7 @@ internal class HTPrinter: AbstractPrinter() {
             val left = it.left - offX
             val top = it.top - offY
             if (it is BarcodeItem){
-                val type = if (it.barcodeFormat == BarcodeFormat.EAN_13){
+                val type = if (it.getRealBarcodeFormat() == CodeItemBase.BAROMETER.EAN13){
                     "EAN13"
                 }else "128"
 

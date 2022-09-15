@@ -1,13 +1,9 @@
 package com.wyc.label
 
-import android.graphics.Paint
-import android.graphics.Rect
-import android.graphics.RectF
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
 import android.widget.*
-import com.google.zxing.BarcodeFormat
 import java.io.ObjectStreamException
 
 
@@ -29,18 +25,26 @@ internal class QRCodeItem: CodeItemBase()  {
     init {
         width = 231
         height = width
-        barcodeFormat = BarcodeFormat.QR_CODE
+        cBarcodeFormat = BAROMETER.QRCODE
 
         generateBitmap()
 
-        BarcodeFormat.values().forEach {
-            if (it.name == BarcodeFormat.QR_CODE.name){
-                supportFormatList.add(it)
+        BAROMETER.values().forEach {
+            if (it == BAROMETER.QRCODE){
+                cSupportFormatList.add(it)
             }
         }
     }
     @Throws(ObjectStreamException::class)
     private fun readResolve(): Any {
+        if (cSupportFormatList == null){
+            cSupportFormatList = mutableListOf()
+        }
+        BAROMETER.values().forEach {
+            if (it == BAROMETER.QRCODE){
+                cSupportFormatList.add(it)
+            }
+        }
         serializableInit()
         return this
     }
@@ -89,10 +93,10 @@ internal class QRCodeItem: CodeItemBase()  {
         view.findViewById<Spinner>(R.id.format)?.apply {
             val adapter = ArrayAdapter<String>(labelView.context, R.layout.com_wyc_label_drop_down_style)
             adapter.setDropDownViewResource(R.layout.com_wyc_label_drop_down_style)
-            adapter.add(barcodeFormat.name)
+            adapter.add(cBarcodeFormat.name)
 
-            supportFormatList.forEach {
-                if (it.name == barcodeFormat.name)return@forEach
+            cSupportFormatList.forEach {
+                if (it.name == cBarcodeFormat.name)return@forEach
                 adapter.add(it.name)
             }
             setAdapter(adapter)
@@ -104,9 +108,9 @@ internal class QRCodeItem: CodeItemBase()  {
                     position: Int,
                     id: Long
                 ) {
-                    supportFormatList.forEach {
+                    cSupportFormatList.forEach {
                         if (it.name == adapter.getItem(position)){
-                            barcodeFormat = it
+                            cBarcodeFormat = it
                             generateBitmap()
                             labelView.postInvalidate()
                             return

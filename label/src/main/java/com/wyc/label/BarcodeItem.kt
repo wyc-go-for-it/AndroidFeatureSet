@@ -41,9 +41,9 @@ internal class BarcodeItem: CodeItemBase() {
         width = 370
         height =  LabelApp.getInstance().resources.getDimensionPixelSize(R.dimen.com_wyc_label_size_28)
         generateBitmap()
-        BarcodeFormat.values().forEach {
-            if (it.name == BarcodeFormat.CODE_128.name || it.name == BarcodeFormat.EAN_13.name){
-                supportFormatList.add(it)
+        BAROMETER.values().forEach {
+            if (it != BAROMETER.QRCODE){
+                cSupportFormatList.add(it)
             }
         }
     }
@@ -59,8 +59,16 @@ internal class BarcodeItem: CodeItemBase() {
     }
 
     override fun serializableInit() {
-        super.serializableInit()
         mBottomMarge = Rect()
+        if (cSupportFormatList == null){
+            cSupportFormatList = mutableListOf()
+        }
+        BAROMETER.values().forEach {
+            if (it != BAROMETER.QRCODE){
+                cSupportFormatList.add(it)
+            }
+        }
+        super.serializableInit()
     }
 
     override fun drawItem(offsetX: Float, offsetY: Float, canvas: Canvas, paint: Paint) {
@@ -71,7 +79,7 @@ internal class BarcodeItem: CodeItemBase() {
     override fun transform(scaleX: Float, scaleY: Float) {
         super.transform(scaleX, scaleY)
         fontSize *= min(scaleX,scaleY)
-        if (barcodeFormat == BarcodeFormat.EAN_13){
+        if (getRealBarcodeFormat() == BAROMETER.EAN13){
             leftMargin = (leftMargin * min(scaleX,scaleY)).toInt()
             rightMargin = (rightMargin * min(scaleX,scaleY)).toInt()
         }
@@ -79,7 +87,7 @@ internal class BarcodeItem: CodeItemBase() {
 
     override fun scale(scaleX: Float, scaleY: Float) {
         super.scale(scaleX, scaleY)
-        if (barcodeFormat == BarcodeFormat.EAN_13){
+        if (getRealBarcodeFormat() == BAROMETER.EAN13){
             generateBitmap()
         }
     }
@@ -89,7 +97,7 @@ internal class BarcodeItem: CodeItemBase() {
         paint.style = Paint.Style.FILL
         paint.textSize = fontSize
 
-        if (barcodeFormat == BarcodeFormat.EAN_13){
+        if (getRealBarcodeFormat() == BAROMETER.EAN13){
             val start = leftMargin * 2
 
             val first = content.substring(0,1)
@@ -140,11 +148,24 @@ internal class BarcodeItem: CodeItemBase() {
         }
     }
 
+
+    fun getRealBarcodeFormat():BAROMETER{
+        return when(cBarcodeFormat){
+            BAROMETER.AUTO->{
+                if (content.length == 13 && checkStandardUPCEANChecksum(content)){
+                    BAROMETER.EAN13
+                }else BAROMETER.CODE128
+            }else->{
+                cBarcodeFormat
+            }
+        }
+    }
+
     override fun generateBitmap(){
         if (content.isNotEmpty()){
             val writer = MultiFormatWriter()
             try {
-                val result: BitMatrix = writer.encode(content,barcodeFormat, width,height,hashMapOf(Pair(
+                val result: BitMatrix = writer.encode(content,getDrawBarcodeFormat(), width,height,hashMapOf(Pair(
                     EncodeHintType.MARGIN,18)) )
 
                 var start = 0
@@ -163,7 +184,7 @@ internal class BarcodeItem: CodeItemBase() {
                     }
                 }
 
-                if (barcodeFormat == BarcodeFormat.EAN_13){
+                if (getRealBarcodeFormat() == BAROMETER.EAN13){
                     var count = 0
                     var code = true
                     for (i in start .. end){
@@ -228,7 +249,7 @@ internal class BarcodeItem: CodeItemBase() {
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                if (e is IllegalArgumentException && barcodeFormat == BarcodeFormat.EAN_13){
+                if (e is IllegalArgumentException && getRealBarcodeFormat() == BAROMETER.EAN13){
                     Utils.showToast(R.string.com_wyc_label_ean_13_error_hint)
                 }else
                     Utils.showToast(LabelApp.getInstance().getString(R.string.com_wyc_label_new_barcode_hint,e.message))
@@ -276,7 +297,7 @@ internal class BarcodeItem: CodeItemBase() {
         if (field.isNotEmpty()){
             et.isEnabled = false
         }
-        if (barcodeFormat == BarcodeFormat.EAN_13){
+        if (cBarcodeFormat == BAROMETER.EAN13){
             et.filters = arrayOf(InputFilter.LengthFilter(13))
         }
         et.addTextChangedListener(object : TextWatcher {
@@ -305,10 +326,10 @@ internal class BarcodeItem: CodeItemBase() {
         view.findViewById<Spinner>(R.id.format)?.apply {
             val adapter = ArrayAdapter<String>(labelView.context, R.layout.com_wyc_label_drop_down_style)
             adapter.setDropDownViewResource(R.layout.com_wyc_label_drop_down_style)
-            adapter.add(barcodeFormat.name)
+            adapter.add(cBarcodeFormat.name)
 
-            supportFormatList.forEach {
-                if (it.name == barcodeFormat.name)return@forEach
+            cSupportFormatList.forEach {
+                if (it == cBarcodeFormat)return@forEach
                 adapter.add(it.name)
             }
             setAdapter(adapter)
@@ -320,17 +341,17 @@ internal class BarcodeItem: CodeItemBase() {
                     position: Int,
                     id: Long
                 ) {
-                    supportFormatList.forEach {
+                    cSupportFormatList.forEach {
                         if (it.name == adapter.getItem(position)){
-                            if (it.name  == BarcodeFormat.EAN_13.name && content.length != 13){
+                            if (it  == BAROMETER.EAN13 && content.length != 13){
                                 Utils.showToast(R.string.com_wyc_label_not_ean_13)
-                                setSelection(supportFormatList.indexOf(barcodeFormat))
+                                setSelection(cSupportFormatList.indexOf(cBarcodeFormat))
                                 return
-                            }else if (it.name == BarcodeFormat.CODE_128.name){
+                            }else if (it == BAROMETER.CODE128){
                                 et.filters = arrayOf()
                             }
-                            addAttrChange(labelView,"barcodeFormat",barcodeFormat,it)
-                            barcodeFormat = it
+                            addAttrChange(labelView,"cBarcodeFormat",cBarcodeFormat,it)
+                            cBarcodeFormat = it
                             labelView.postInvalidate()
                             return
                         }

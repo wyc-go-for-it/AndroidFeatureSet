@@ -3,6 +3,7 @@ package com.wyc.label
 import android.graphics.*
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
+import com.google.zxing.FormatException
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.common.BitMatrix
 import java.io.ObjectStreamException
@@ -22,7 +23,7 @@ import java.io.ObjectStreamException
  */
 
 internal open class CodeItemBase: ItemBase(){
-    var barcodeFormat: BarcodeFormat = BarcodeFormat.CODE_128
+    var cBarcodeFormat: BAROMETER = BAROMETER.AUTO
         set(value) {
             field = value
             generateBitmap()
@@ -44,7 +45,7 @@ internal open class CodeItemBase: ItemBase(){
 
     @Transient protected var mBitmap:Bitmap? = null
     var hasMark = true
-    protected val supportFormatList = mutableListOf<BarcodeFormat>()
+    @Transient protected var cSupportFormatList = mutableListOf<BAROMETER>()
 
     @Throws(ObjectStreamException::class)
     private fun readResolve(): Any {
@@ -58,6 +59,9 @@ internal open class CodeItemBase: ItemBase(){
 
     override fun serializableInit() {
         super.serializableInit()
+        if (cBarcodeFormat == null){
+            cBarcodeFormat = BAROMETER.AUTO
+        }
         generateBitmap()
     }
 
@@ -94,8 +98,27 @@ internal open class CodeItemBase: ItemBase(){
     }
 
     override fun resetAttr(attrName: String) {
-        if (attrName == "content" || attrName == "barcodeFormat"){
+        if (attrName == "content" || attrName == "cBarcodeFormat"){
             generateBitmap()
+        }
+    }
+
+    protected fun getDrawBarcodeFormat():BarcodeFormat{
+        return when(cBarcodeFormat){
+            BAROMETER.AUTO->{
+                if (content.length == 13 && checkStandardUPCEANChecksum(content)){
+                    BarcodeFormat.EAN_13
+                }else BarcodeFormat.CODE_128
+            }
+            BAROMETER.EAN13->{
+                BarcodeFormat.EAN_13
+            }
+            BAROMETER.CODE128->{
+                BarcodeFormat.CODE_128
+            }
+            BAROMETER.QRCODE->{
+                BarcodeFormat.QR_CODE
+            }
         }
     }
 
@@ -103,7 +126,7 @@ internal open class CodeItemBase: ItemBase(){
         if (content.isNotEmpty()){
             val writer = MultiFormatWriter()
             try {
-                val result: BitMatrix = writer.encode(content,barcodeFormat, width,height,hashMapOf(Pair(EncodeHintType.MARGIN,0)) )
+                val result: BitMatrix = writer.encode(content,getDrawBarcodeFormat(), width,height,hashMapOf(Pair(EncodeHintType.MARGIN,0)) )
 
                 val codeWidth = result.width
                 val codeHeight = result.height
@@ -143,5 +166,40 @@ internal open class CodeItemBase: ItemBase(){
                 mBitmap!!.recycle()
                 mBitmap = null
             }
+    }
+
+    protected fun checkStandardUPCEANChecksum(s: CharSequence): Boolean {
+        val length = s.length
+        if (length == 0) {
+            return false
+        }
+        var sum = 0
+        run {
+            var i = length - 2
+            while (i >= 0) {
+                val digit = s[i] - '0'
+                if (digit < 0 || digit > 9) {
+                    return false
+                }
+                sum += digit
+                i -= 2
+            }
+        }
+        sum *= 3
+        var i = length - 1
+        while (i >= 0) {
+            val digit = s[i] - '0'
+            if (digit < 0 || digit > 9) {
+                return false
+            }
+            sum += digit
+            i -= 2
+        }
+        return sum % 10 == 0
+    }
+
+    enum class BAROMETER(s:String){
+        AUTO("自动设定"),CODE128("CODE_128"),EAN13("EAN_13"),QRCODE("QR_CODE");
+        val description = s
     }
 }

@@ -24,7 +24,7 @@ import tspl.HPRTPrinterHelper
  * @Version:        1.0
  */
 
-class HTPrinter: AbstractPrinter() {
+internal class HTPrinter: AbstractPrinter() {
     @Volatile
     private var state = PRINTER_STATE.CLOSE
     private var isExit = false

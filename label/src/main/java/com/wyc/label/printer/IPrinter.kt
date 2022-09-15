@@ -22,4 +22,5 @@ interface IPrinter {
     fun open(arg:String)
     fun print(labelTemplate: LabelTemplate, goods: LabelGoods)
     fun close()
+    fun setCallback(callback: PrinterStateCallback?)
 }

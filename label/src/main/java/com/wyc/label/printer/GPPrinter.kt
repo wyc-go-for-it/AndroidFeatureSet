@@ -32,7 +32,7 @@ import java.util.*
  * @Version:        1.0
  */
 
-class GPPrinter: PrinterStateCallback, AbstractPrinter() {
+internal class GPPrinter: PrinterStateCallback, AbstractPrinter() {
 
     private var portManager: PortManager? = null
 

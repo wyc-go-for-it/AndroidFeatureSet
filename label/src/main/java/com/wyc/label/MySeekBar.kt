@@ -23,7 +23,7 @@ import kotlin.math.abs
  * @Version:        1.0
  */
 
-class MySeekBar: AppCompatSeekBar {
+internal class MySeekBar: AppCompatSeekBar {
     private val rect = Rect()
     private val paint = Paint()
     var minValue = 0

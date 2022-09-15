@@ -24,10 +24,10 @@ import java.lang.reflect.InvocationTargetException
 class LabelPrintUtils {
     companion object{
         @JvmStatic
-        private var sPrinter: AbstractPrinter? = null
+        private var sPrinter: IPrinter? = null
 
         @JvmStatic
-        fun getInstance(): AbstractPrinter? {
+        fun getInstance(): IPrinter? {
             if (sPrinter == null){
                 val cls_id = getSetting().type.cls
                 try {
@@ -91,8 +91,6 @@ class LabelPrintUtils {
                         }else{
                             Utils.showToast(R.string.com_wyc_label_no_printer_hint)
                         }
-                    }else ->{
-                        Utils.showToast(R.string.com_wyc_label_not_support_way)
                     }
                 }
             }

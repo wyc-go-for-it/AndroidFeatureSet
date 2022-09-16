@@ -39,8 +39,4 @@ static long long GetSysCurrentTime()
     return curTime;
 }
 
-#define GO_CHECK_GL_ERROR(...)   LOGE("CHECK_GL_ERROR %s glGetError = %d, line = %d, ",  __FUNCTION__, glGetError(), __LINE__)
-
-#define LOG_DEBUG(...) LOGD("LOG_DEBUG %s line = %d ",  __FUNCTION__, __LINE__,__VA_ARGS__)
-
 #endif //ANDROIDFEATURESET_LOGUTIL_H

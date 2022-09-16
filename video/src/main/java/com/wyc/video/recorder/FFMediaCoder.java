@@ -43,12 +43,15 @@ public class FFMediaCoder extends AbstractRecorder {
     private final ByteBuffer mYuvBuffer = ByteBuffer.allocate(WIDTH * HEIGHT * ImageFormat.getBitsPerPixel(ImageFormat.YUV_420_888) / 8);
 
     public FFMediaCoder(){
+        initVideoCoder();
+    }
+
+    private void initVideoCoder(){
         final int orientation = VideoCameraManager.getInstance().getOrientation();
         if (orientation == 90 || orientation == 270){
-            mNativeObj = nativeInitCoder(getFile().getAbsolutePath(),FRAME_RATE,HEIGHT,WIDTH);
+            mNativeObj = nativeInitVideoCoder(getFile().getAbsolutePath(),FRAME_RATE,HEIGHT,WIDTH);
         }else
-            mNativeObj = nativeInitCoder(getFile().getAbsolutePath(),FRAME_RATE,WIDTH,HEIGHT);
-
+            mNativeObj = nativeInitVideoCoder(getFile().getAbsolutePath(),FRAME_RATE,WIDTH,HEIGHT);
         Log.e("FFMediaCoder mNativeObj:",String.format("0x%x",mNativeObj));
     }
 
@@ -140,10 +143,10 @@ public class FFMediaCoder extends AbstractRecorder {
 
             addData(bytes,0);
 
-            Log.e("",String.format(
+/*            Log.e("",String.format(
                     Locale.CHINA,"yuvWidth:%d,yuvHeight:%d,YpixelStride:%d,YrowStride:%d,VpixelStride:%d,VrowStride:%d,UpixelStride:%d,UrowStride:%d",
                     w,h,yPlane.getPixelStride(),yPlane.getRowStride(),vPlane.getPixelStride(),
-                    vPlane.getRowStride(),uPlane.getPixelStride(),uPlane.getRowStride()));
+                    vPlane.getRowStride(),uPlane.getPixelStride(),uPlane.getRowStride()));*/
 
         }
         image.close();
@@ -159,15 +162,12 @@ public class FFMediaCoder extends AbstractRecorder {
     @Override
     public void start() {
         if (mNativeObj != 0){
-            nativeStartCoder(mNativeObj);
+            nativeStartVideoCoder(mNativeObj);
         }else {
-            final int orientation = VideoCameraManager.getInstance().getOrientation();
-            if (orientation == 90 || orientation == 270){
-                mNativeObj = nativeInitCoder(getFile().getAbsolutePath(),FRAME_RATE,HEIGHT,WIDTH);
-            }else
-                mNativeObj = nativeInitCoder(getFile().getAbsolutePath(),FRAME_RATE,WIDTH,HEIGHT);
+            initVideoCoder();
+
             if (mNativeObj != 0){
-                nativeStartCoder(mNativeObj);
+                nativeStartVideoCoder(mNativeObj);
             }
         }
 
@@ -178,7 +178,7 @@ public class FFMediaCoder extends AbstractRecorder {
     @Override
     public void stop() {
         if (mNativeObj != 0){
-            nativeStopCoder(mNativeObj);
+            nativeStopVideoCoder(mNativeObj);
             mNativeObj = 0;
         }
         mImageReaderYUV.setOnImageAvailableListener(null,null);
@@ -196,7 +196,7 @@ public class FFMediaCoder extends AbstractRecorder {
     protected void finalize() {
         super.finalize();
         if (mNativeObj != 0){
-            nativeReleaseCoder(mNativeObj);
+            nativeReleaseVideoCoder(mNativeObj);
             mNativeObj = 0;
         }
     }
@@ -206,17 +206,17 @@ public class FFMediaCoder extends AbstractRecorder {
      * */
     private void addData(byte[] data,int format){
         if (mNativeObj != 0){
-            nativeAddData(mNativeObj,data,format);
+            nativeAddVideoData(mNativeObj,data,format);
         }
     }
 
-    private native long nativeInitCoder(String file, int frameRadio, int width, int height);
-    private native void nativeStartCoder(long nativeObj);
-    private native void nativeStopCoder(long nativeObj);
-    private native void nativeReleaseCoder(long nativeObj);
-    private native void nativeAddData(long nativeObj,byte[] data,int format);
+    private native long nativeInitVideoCoder(String file, int frameRadio, int width, int height);
+    private native void nativeStartVideoCoder(long nativeObj);
+    private native void nativeStopVideoCoder(long nativeObj);
+    private native void nativeReleaseVideoCoder(long nativeObj);
+    private native void nativeAddVideoData(long nativeObj,byte[] data,int format);
 
     static {
-        System.loadLibrary("mediaCoder");
+        System.loadLibrary("videoCoder");
     }
 }

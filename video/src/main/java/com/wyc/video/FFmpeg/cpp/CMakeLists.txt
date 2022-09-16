@@ -73,16 +73,30 @@ target_link_libraries(
         log
 )
 
-aux_source_directory(./recorder/ mediaApifiles)
-message(ERROR mediaApifiles)
-set(medialib mediaCoder)
+aux_source_directory(./recorder/ videoApifiles)
+message(ERROR videoApifiles)
+set(videolib videoCoder)
 add_library(
-        ${medialib}
+        ${videolib}
           SHARED
-        ${mediaApifiles}
+        ${videoApifiles}
 )
 target_link_libraries(
-        ${medialib}
+        ${videolib}
         ${third-party-libs}
+        log
+)
+
+aux_source_directory(./audio/ audioApifiles)
+message(ERROR audioApifiles)
+set(audiolib audioCoder)
+add_library(
+        ${audiolib}
+        SHARED
+        ${audioApifiles}
+)
+target_link_libraries(
+        ${audiolib}
+        aaudio
         log
 )

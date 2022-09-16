@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Locale;
 
 
-public class VideoRelatedActivity extends VideoBaseActivity implements View.OnClickListener {
+public class VideoRelatedActivity extends BaseActivity implements View.OnClickListener {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +28,12 @@ public class VideoRelatedActivity extends VideoBaseActivity implements View.OnCl
         showFFmpegInfo();
         showFFmpegCodec();
         showFFmpegMuxer();
+        showAuto();
+    }
+
+    private void showAuto(){
+        final TextView tv = findViewById(R.id.auto);
+        tv.setOnClickListener(v -> AudioActivity.start(this));
     }
 
     private void showFFmpegInfo(){

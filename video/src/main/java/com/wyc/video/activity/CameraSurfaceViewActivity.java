@@ -14,7 +14,6 @@ import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.provider.MediaStore;
 import android.util.Size;
-import android.view.View;
 import android.widget.Button;
 
 import androidx.annotation.NonNull;
@@ -32,11 +31,10 @@ import com.wyc.video.recorder.AbstractRecorder;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class CameraSurfaceViewActivity extends VideoBaseActivity {
+public class CameraSurfaceViewActivity extends BaseActivity {
     private RecordBtn mRecord;
     private CircleImage mThumbnails;
     @Override

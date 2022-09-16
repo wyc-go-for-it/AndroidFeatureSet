@@ -3,18 +3,21 @@
     package="com.wyc.video">
 
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application>
         <activity
+            android:name=".activity.AudioActivity"
+            android:exported="false" />
+        <activity
             android:name=".activity.CameraSurfaceViewActivity"
-            android:theme="@style/wyc_video_ActivityTheme"
-            android:exported="false" android:screenOrientation="portrait" />
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/wyc_video_ActivityTheme" />
         <activity
             android:name=".activity.VideoRelatedActivity"
             android:exported="true"
-            android:theme="@style/wyc_video_ActivityTheme">
-        </activity>
+            android:theme="@style/wyc_video_ActivityTheme"></activity>
     </application>
 
 </manifest>

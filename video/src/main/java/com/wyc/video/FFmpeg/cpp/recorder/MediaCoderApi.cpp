@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-JNIEXPORT jlong JNICALL initCoder(JNIEnv *env,jobject thiz,jstring file,int frameRadio,int width,int height){
+JNIEXPORT jlong JNICALL initVideoCoder(JNIEnv *env,jobject thiz,jstring file,int frameRadio,int width,int height){
 
 /*    jclass cls = env->GetObjectClass(thiz);
     if (cls == nullptr){
@@ -31,22 +31,22 @@ JNIEXPORT jlong JNICALL initCoder(JNIEnv *env,jobject thiz,jstring file,int fram
     return (jlong )m_coder;
 }
 
-JNIEXPORT void JNICALL startCoder(JNIEnv *env,jobject obj,jlong nativeObj){
+JNIEXPORT void JNICALL startVideoCoder(JNIEnv *env,jobject obj,jlong nativeObj){
     reinterpret_cast<MediaCoder *>(nativeObj)->start();
 }
 
-JNIEXPORT void JNICALL stopCoder(JNIEnv *env,jobject thiz,jlong nativeObj){
+JNIEXPORT void JNICALL stopVideoCoder(JNIEnv *env,jobject thiz,jlong nativeObj){
     auto *c = reinterpret_cast<MediaCoder *>(nativeObj);
     c->stop();
     delete c;
 }
-JNIEXPORT void JNICALL releaseCoder(JNIEnv *env,jobject obj,jlong nativeObj){
+JNIEXPORT void JNICALL releaseVideoCoder(JNIEnv *env,jobject obj,jlong nativeObj){
     delete reinterpret_cast<MediaCoder *>(nativeObj);
 }
 /**
  * @param format 0 I420 1 NV21 2 RGBA
  * */
-JNIEXPORT void JNICALL addData(JNIEnv *env,jobject obj,jlong nativeObj,jbyteArray data,int format){
+JNIEXPORT void JNICALL addVideoData(JNIEnv *env,jobject obj,jlong nativeObj,jbyteArray data,int format){
     auto *c = reinterpret_cast<MediaCoder *>(nativeObj);
     jint len = env->GetArrayLength(data);
 
@@ -79,11 +79,11 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm,void * r){
     return result;
     }
     JNINativeMethod methods [] = {
-            {"nativeInitCoder","(Ljava/lang/String;III)J",(void *)initCoder},
-            {"nativeStartCoder","(J)V", (void *)startCoder},
-            {"nativeStopCoder","(J)V", (void *) stopCoder},
-            {"nativeReleaseCoder","(J)V", (void *) releaseCoder},
-            {"nativeAddData","(J[BI)V", (void *) addData}
+            {"nativeInitVideoCoder","(Ljava/lang/String;III)J",(void *)initVideoCoder},
+            {"nativeStartVideoCoder","(J)V", (void *)startVideoCoder},
+            {"nativeStopVideoCoder","(J)V", (void *) stopVideoCoder},
+            {"nativeReleaseVideoCoder","(J)V", (void *) releaseVideoCoder},
+            {"nativeAddVideoData","(J[BI)V", (void *) addVideoData}
     };
     jclass coder = env->FindClass("com/wyc/video/recorder/FFMediaCoder");
     if (!coder){

@@ -52,7 +52,7 @@ public:
 
 private:
     SyncQueue<NativeImage> m_queue;
-    bool hasInit = false;
+    volatile bool hasInit = false;
 
     volatile bool encoding = false;
     thread m_encodeThread;

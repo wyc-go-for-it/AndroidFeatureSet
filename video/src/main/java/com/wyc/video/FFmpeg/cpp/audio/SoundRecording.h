@@ -22,26 +22,31 @@
 #include <atomic>
 
 #include "Definitions.h"
+#include "../utils/MacroUtil.h"
+#include "../thread/LoopQueue.h"
 
 constexpr int kMaxSamples = 480000; // 10s of audio data @ 48kHz
 
-class SoundRecording {
-
+class SoundRecording final {
+    DISABLE_COPY_ASSIGN(SoundRecording)
 public:
+    SoundRecording()=default;
+
     int32_t write(const float *sourceData, int32_t numSamples);
     int32_t read(float *targetData, int32_t numSamples);
-    bool isFull() const { return (mWriteIndex == kMaxSamples); };
-    void setReadPositionToStart() { mReadIndex = 0; };
-    void clear() { mWriteIndex = 0; };
+    void clear() { mData.clear(); };
     void setLooping(bool isLooping) { mIsLooping = isLooping; };
-    int32_t getLength() const { return mWriteIndex; };
+    int32_t getLength() const { return mData.size(); };
     static const int32_t getMaxSamples() { return kMaxSamples; };
-
+    int32_t writeIndex() const{
+        return mData.curWriteIndex();
+    }
+    int32_t readIndex() const{
+        return mData.curReadIndex();
+    }
 private:
-    std::atomic<int32_t> mWriteIndex { 0 };
-    std::atomic<int32_t> mReadIndex { 0 };
     std::atomic<bool> mIsLooping { false };
-    std::array<float,kMaxSamples> mData { 0 };
+    LoopQueue<float,kMaxSamples> mData;
 };
 
 #endif //WYC_SAMPLE_H

@@ -49,7 +49,7 @@ public:
     void start();
     void stop();
     void addData(NativeImage& data);
-
+    void addData(NativeImage&& data);
 private:
     SyncQueue<NativeImage> m_queue;
     volatile bool hasInit = false;

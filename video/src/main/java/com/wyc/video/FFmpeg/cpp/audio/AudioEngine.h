@@ -26,13 +26,16 @@
 #include "Definitions.h"
 #include <mutex>
 
-class AudioEngine {
+class AudioEngine final {
 
 public:
     DISABLE_COPY_ASSIGN(AudioEngine)
     AudioEngine()=default;
     ~AudioEngine();
+    int open();
     int start();
+    int pausePlayback();
+    int resumePlayback();
     int stop();
     void restart();
 
@@ -49,30 +52,22 @@ private:
     AAudioStream* mPlaybackStream = nullptr;
     AAudioStream* mRecordingStream = nullptr;
     SoundRecording mSoundRecording;
+    int32_t mSampleRate;
+    std::recursive_mutex m_Lock;
 
-    std::mutex m_Lock;
+    int openRecordingStream();
+    int startRecordingStream();
+    int stopRecordingStream();
 
-    int stopStream(AAudioStream *stream);
-    int closeStream(AAudioStream **stream);
+    int openPlayingStream();
+    int startPlayingStream();
+    int pausePlayingStream();
+    int stopPlayingStream();
 
-    int stopRecordingStream(){
-        int code = 0;
-        if(mRecordingStream != nullptr){
-            code = stopStream(mRecordingStream);
-            code += closeStream(&mRecordingStream);
-            mRecordingStream = nullptr;
-        }
-        return code;
-    }
-    int stopPlayingStream(){
-        int code = 0;
-        if (mPlaybackStream != nullptr){
-            code = stopStream(mPlaybackStream);
-            code += closeStream(&mPlaybackStream);
-            mPlaybackStream = nullptr;
-        }
-        return code;
-    }
+    int startStream(AAudioStream *stream,const char * s);
+    int stopStream(AAudioStream *stream,const char * s);
+    int closeStream(AAudioStream **stream,const char * s);
+
     static void convertArrayMonoToStereo(float *data, int32_t numFrames) {
         for (int i = numFrames - 1; i >= 0; i--) {
             data[i*2] = data[i];

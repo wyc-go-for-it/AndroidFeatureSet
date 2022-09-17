@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <thread>
 #include <queue>
+#include <type_traits>
 
 using namespace std;
 
@@ -26,6 +27,7 @@ public:
         std::lock_guard<mutex> lockGuard(m_mutex);
         return m_queue.size();
     }
+    void clear();
     void exit();
 private:
     bool empty(){
@@ -116,6 +118,12 @@ void SyncQueue<T>::exit(){
     std::lock_guard<mutex> lockGuard(m_mutex);
     exited = true;
     m_cond_not_empty.notify_all();
+}
+template<typename T>
+void SyncQueue<T>::clear(){
+    queue<T> e;
+    m_queue.swap(e);
+    LOGD("clear SyncQueue size:%d",size());
 }
 
 #endif //ANDROIDFEATURESET_SYNCQUEUE_H

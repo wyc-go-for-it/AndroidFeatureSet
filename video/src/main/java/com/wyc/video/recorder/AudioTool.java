@@ -22,15 +22,35 @@ public class AudioTool {
         Log.e("AudioTool mNativeObj:",String.format("0x%x",mNativeObj));
     }
 
+    public void open(){
+        if (mNativeObj != 0){
+            nativeOpenAudio(mNativeObj);
+        }
+    }
+
     public void start(){
         if (mNativeObj != 0){
             nativeStartAudio(mNativeObj);
         }
     }
 
+    public void pausePlay(){
+        if (mNativeObj != 0){
+            nativePausePlayAudio(mNativeObj);
+        }
+    }
+
     public void stop(){
         if (mNativeObj != 0){
             nativeStopAudio(mNativeObj);
+        }
+    }
+
+    public void release(){
+        if (mNativeObj != 0){
+            nativeStopAudio(mNativeObj);
+            nativeReleaseAudio(mNativeObj);
+            mNativeObj = 0;
         }
     }
 
@@ -43,7 +63,6 @@ public class AudioTool {
     public void playingAudio(boolean b){
         if (mNativeObj != 0){
             nativeSetPlayingAudio(mNativeObj,b?0:-1);
-            loopingAudio(b);
         }
     }
 
@@ -56,16 +75,14 @@ public class AudioTool {
     @Override
     protected void finalize() throws Throwable {
         super.finalize();
-        if (mNativeObj != 0){
-            nativeStopAudio(mNativeObj);
-            nativeReleaseAudio(mNativeObj);
-            mNativeObj = 0;
-        }
+        release();
     }
 
     private native long nativeInitAudio();
     private native void nativeReleaseAudio(long nativeObj);
+    private native int nativeOpenAudio(long nativeObj);
     private native int nativeStartAudio(long nativeObj);
+    private native int nativePausePlayAudio(long nativeObj);
     private native int nativeStopAudio(long nativeObj);
     private native void nativeSetRecordingAudio(long nativeObj,int b);
     private native void nativeSetPlayingAudio(long nativeObj,int b);

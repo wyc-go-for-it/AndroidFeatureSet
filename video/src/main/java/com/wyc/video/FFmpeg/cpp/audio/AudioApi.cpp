@@ -9,8 +9,14 @@
 JNIEXPORT jlong JNICALL initAudio(JNIEnv *env,jobject obj){
     return (jlong)new AudioEngine();
 }
+JNIEXPORT jint JNICALL openAudio(JNIEnv *env,jobject obj,jlong nativeObj) {
+    return reinterpret_cast<AudioEngine *>(nativeObj)->open();
+}
 JNIEXPORT jint JNICALL startAudio(JNIEnv *env,jobject obj,jlong nativeObj) {
    return reinterpret_cast<AudioEngine *>(nativeObj)->start();
+}
+JNIEXPORT jint JNICALL pauseAudioPlay(JNIEnv *env,jobject obj,jlong nativeObj) {
+    return reinterpret_cast<AudioEngine *>(nativeObj)->pausePlayback();
 }
 JNIEXPORT jint JNICALL stopAudio(JNIEnv *env,jobject obj,jlong nativeObj){
     return reinterpret_cast<AudioEngine *>(nativeObj)->stop();
@@ -40,7 +46,9 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm,void * r){
     JNINativeMethod methods [] = {
             {"nativeInitAudio","()J",(void *)initAudio},
             {"nativeReleaseAudio","(J)V",(void *)releaseAudio},
+            {"nativeOpenAudio", "(J)I",(void *)openAudio},
             {"nativeStartAudio", "(J)I",(void *)startAudio},
+            {"nativePausePlayAudio", "(J)I",(void *)pauseAudioPlay},
             {"nativeStopAudio","(J)I", (void *)stopAudio},
             {"nativeSetRecordingAudio","(JI)V", (void *)setRecordingAudio},
             {"nativeSetPlayingAudio","(JI)V", (void *)setPlayingAudio},

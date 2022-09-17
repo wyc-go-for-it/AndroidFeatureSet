@@ -61,11 +61,21 @@ StreamBuilder makeStreamBuilder(){
     return StreamBuilder(builder, &AAudioStreamBuilder_delete);
 }
 
-int AudioEngine::start() {
-    std::lock_guard<std::mutex> lockGuard(m_Lock);
+int AudioEngine::open(){
+    int32_t sampleRate = openPlayingStream();
+
+    LOGD("sampleRate:%d",sampleRate);
+
+    openRecordingStream();
+
+    return 0;
+}
+
+int AudioEngine::openPlayingStream(){
+    std::lock_guard<std::recursive_mutex> lockGuard(m_Lock);
 
     // Create the playback stream.
-    StreamBuilder playbackBuilder = makeStreamBuilder();
+    const StreamBuilder playbackBuilder = makeStreamBuilder();
     AAudioStreamBuilder_setFormat(playbackBuilder.get(), AAUDIO_FORMAT_PCM_FLOAT);
     AAudioStreamBuilder_setChannelCount(playbackBuilder.get(), kChannelCountStereo);
     AAudioStreamBuilder_setPerformanceMode(playbackBuilder.get(), AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
@@ -73,23 +83,19 @@ int AudioEngine::start() {
     AAudioStreamBuilder_setDataCallback(playbackBuilder.get(), ::playbackDataCallback, this);
     AAudioStreamBuilder_setErrorCallback(playbackBuilder.get(), ::errorCallback, this);
 
-    aaudio_result_t result = AAudioStreamBuilder_openStream(playbackBuilder.get(), &mPlaybackStream);
+   const aaudio_result_t result = AAudioStreamBuilder_openStream(playbackBuilder.get(), &mPlaybackStream);
 
     if (result != AAUDIO_OK){
         LOGE("Error opening playback stream %s",AAudio_convertResultToText(result));
+        closeStream(&mPlaybackStream,"PlaybackStream");
         return -1;
     }
 
-    int32_t sampleRate = AAudioStream_getSampleRate(mPlaybackStream);
+    return (mSampleRate = AAudioStream_getSampleRate(mPlaybackStream));
+}
 
-    result = AAudioStream_requestStart(mPlaybackStream);
-    if (result != AAUDIO_OK){
-        LOGE("Error starting playback stream %s",AAudio_convertResultToText(result));
-        closeStream(&mPlaybackStream);
-        return -1;
-    }
-
-    LOGD("sampleRate:%d",sampleRate);
+int AudioEngine::openRecordingStream(){
+    std::lock_guard<std::recursive_mutex> lockGuard(m_Lock);
 
     // Create the recording stream.
     StreamBuilder recordingBuilder = makeStreamBuilder();
@@ -97,26 +103,59 @@ int AudioEngine::start() {
     AAudioStreamBuilder_setPerformanceMode(recordingBuilder.get(), AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
     AAudioStreamBuilder_setSharingMode(recordingBuilder.get(), AAUDIO_SHARING_MODE_EXCLUSIVE);
     AAudioStreamBuilder_setFormat(recordingBuilder.get(), AAUDIO_FORMAT_PCM_FLOAT);
-    AAudioStreamBuilder_setSampleRate(recordingBuilder.get(), sampleRate);
+    AAudioStreamBuilder_setSampleRate(recordingBuilder.get(), mSampleRate);
     AAudioStreamBuilder_setChannelCount(recordingBuilder.get(), kChannelCountMono);
     AAudioStreamBuilder_setDataCallback(recordingBuilder.get(), ::recordingDataCallback, this);
     AAudioStreamBuilder_setErrorCallback(recordingBuilder.get(), ::errorCallback, this);
 
-    result = AAudioStreamBuilder_openStream(recordingBuilder.get(), &mRecordingStream);
+    const aaudio_result_t result = AAudioStreamBuilder_openStream(recordingBuilder.get(), &mRecordingStream);
 
     if (result != AAUDIO_OK){
         LOGE("Error opening recording stream %s",AAudio_convertResultToText(result));
-        closeStream(&mRecordingStream);
+        closeStream(&mRecordingStream,"RecordingStream");
         return -1;
     }
-
-    result = AAudioStream_requestStart(mRecordingStream);
-    if (result != AAUDIO_OK){
-        LOGE("Error starting recording stream %s",AAudio_convertResultToText(result));
-        return -1;
-    }
-
     return 0;
+}
+
+int AudioEngine::start() {
+    int code = startPlayingStream();
+    code += startRecordingStream();
+    return code;
+}
+int AudioEngine::startRecordingStream(){
+    if (nullptr != mRecordingStream ){
+        return startStream(mRecordingStream,"RecordingStream");
+    }
+    return  -1;
+}
+
+int AudioEngine::startPlayingStream() {
+    if (mPlaybackStream != nullptr){
+        return startStream(mPlaybackStream,"PlaybackStream");
+    }
+    return -1;
+}
+
+int AudioEngine::pausePlayback(){
+    return pausePlayingStream();
+}
+int AudioEngine::resumePlayback(){
+    return startPlayingStream();
+}
+
+int AudioEngine::pausePlayingStream(){
+    std::lock_guard<std::recursive_mutex> lockGuard(m_Lock);
+    if (mPlaybackStream != nullptr) {
+        aaudio_result_t result = AAudioStream_requestPause(mPlaybackStream);
+        if (result != AAUDIO_OK) {
+            LOGE("Error pause playback stream %s", AAudio_convertResultToText(result));
+            closeStream(&mPlaybackStream, "PlaybackStream");
+            return -1;
+        }
+        return 0;
+    }
+    return -1;
 }
 
 int AudioEngine::stop() {
@@ -125,63 +164,110 @@ int AudioEngine::stop() {
     return code;
 }
 
+int AudioEngine::stopRecordingStream(){
+    int code = 0;
+    if(mRecordingStream != nullptr){
+        code = stopStream(mRecordingStream,"RecordingStream");
+        code += closeStream(&mRecordingStream,"RecordingStream");
+        mRecordingStream = nullptr;
+    }
+    return code;
+}
+int AudioEngine::stopPlayingStream(){
+    int code = 0;
+    if (mPlaybackStream != nullptr){
+        code = stopStream(mPlaybackStream,"PlaybackStream");
+        code += closeStream(&mPlaybackStream,"PlaybackStream");
+        mPlaybackStream = nullptr;
+    }
+    return code;
+}
+
 void AudioEngine::restart(){
+    LOGE("AudioEngine restart...");
     int code = stop();
     if (code == 0)
-        code += start();
+        start();
     else
-        LOGE("restart error");
+        LOGE("restart error code:%d",code);
 }
 
 aaudio_data_callback_result_t AudioEngine::recordingCallback(const float *audioData,int32_t numFrames) {
     if (mIsRecording) {
         int32_t framesWritten = mSoundRecording.write(audioData, numFrames);
-        if (framesWritten == 0) mIsRecording = false;
-        if (numFrames == 0) mIsRecording = false;
+        if (framesWritten == 0 || numFrames == 0) mIsRecording = false;
+    } else {
+        std::thread(std::bind(&AudioEngine::stopStream, this,mRecordingStream,"")).detach();
     }
     return AAUDIO_CALLBACK_RESULT_CONTINUE;
 }
 
 aaudio_data_callback_result_t AudioEngine::playbackCallback(float *audioData, int32_t numFrames) {
-
     memset(audioData,0,numFrames * kChannelCountStereo);
-
     if (mIsPlaying) {
         int32_t framesRead = mSoundRecording.read(audioData, numFrames);
         convertArrayMonoToStereo(audioData, framesRead);
-        //if (framesRead < numFrames) mIsPlaying = false;
+        if (framesRead < numFrames){
+            mIsPlaying = false;
+        }
+    } else {
+        std::thread(std::bind(&AudioEngine::pausePlayingStream,this)).detach();
     }
-
     return AAUDIO_CALLBACK_RESULT_CONTINUE;
 }
 
+
 void AudioEngine::setRecording(bool isRecording) {
-    mIsRecording = isRecording;
+    if (!mIsRecording && isRecording){
+        mIsRecording = true;
+        startRecordingStream();
+    } else
+        mIsRecording = isRecording;
 }
 
 void AudioEngine::setPlaying(bool isPlaying) {
-    mIsPlaying = isPlaying;
+    if (!mIsPlaying && isPlaying){
+        mIsPlaying = true;
+        resumePlayback();
+    } else
+        mIsPlaying = isPlaying;
 }
 
-int AudioEngine::stopStream(AAudioStream *stream) {
-    std::lock_guard<std::mutex> lockGuard(m_Lock);
+int AudioEngine::startStream(AAudioStream *stream,const char * s) {
+    std::lock_guard<std::recursive_mutex> lockGuard(m_Lock);
     if (stream != nullptr) {
-        aaudio_result_t result = AAudioStream_requestStop(stream);
+        aaudio_result_t result = AAudioStream_requestStart(stream);
         if (result != AAUDIO_OK) {
-            LOGE("Error stop stream %s",AAudio_convertResultToText(result));
+            LOGE("Error start %s stream %s",s,AAudio_convertResultToText(result));
             return -1;
         }
     }
     return 0;
 }
 
-int AudioEngine::closeStream(AAudioStream **stream) {
-    std::lock_guard<std::mutex> lockGuard(m_Lock);
+int AudioEngine::stopStream(AAudioStream *stream,const char * s) {
+    std::lock_guard<std::recursive_mutex> lockGuard(m_Lock);
+    if (stream != nullptr) {
+        aaudio_stream_state_t state = AAudioStream_getState(stream);
+        LOGD("stream_state :%s",AAudio_convertStreamStateToText(state));
 
+        if (state != AAUDIO_STREAM_STATE_PAUSED && state != AAUDIO_STREAM_STATE_PAUSING){
+            aaudio_result_t result = AAudioStream_requestStop(stream);
+            if (result != AAUDIO_OK) {
+                LOGE("Error stop %s stream %s",s,AAudio_convertResultToText(result));
+                return -1;
+            }
+        }
+    }
+    return 0;
+}
+
+int AudioEngine::closeStream(AAudioStream **stream,const char * s) {
+    std::lock_guard<std::recursive_mutex> lockGuard(m_Lock);
     if (*stream != nullptr) {
         aaudio_result_t result = AAudioStream_close(*stream);
         if (result != AAUDIO_OK) {
-            LOGE("Error closing stream %s",AAudio_convertResultToText(result));
+            LOGE("Error closing %s stream %s",s,AAudio_convertResultToText(result));
             return -1;
         }
         *stream = nullptr;

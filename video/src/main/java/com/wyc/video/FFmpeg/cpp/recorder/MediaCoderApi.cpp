@@ -67,7 +67,7 @@ JNIEXPORT void JNICALL addVideoData(JNIEnv *env,jobject obj,jlong nativeObj,jbyt
     }
     NativeImage image(imageFormat, c->getVideoWidth(), c->getVideoHeight());
     env->GetByteArrayRegion(data, 0, len, reinterpret_cast<jbyte *>(image.getPlanePtr0()));
-    c->addData(image);
+    c->addData(std::move(image));
 }
 
 JNIEXPORT jint JNI_OnLoad(JavaVM* vm,void * r){

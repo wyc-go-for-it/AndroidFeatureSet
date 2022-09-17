@@ -23,12 +23,9 @@ int32_t SoundRecording::write(const float *sourceData, int32_t numSamples) {
     int i = 0;
     for (; i < numSamples; ++i) {
         float d = sourceData[i];
-        mData[mWriteIndex++] = d;
-        if (mWriteIndex > kMaxSamples) {
-            mWriteIndex = 0;
-        }
+        mData.push(d);
     }
-    LOGE("write data %d,numSamples:%d",i,numSamples);
+    LOGE("write data %d,numSamples:%d,writeIndex:%d",i,numSamples,writeIndex());
 
     return numSamples;
 }
@@ -36,11 +33,16 @@ int32_t SoundRecording::write(const float *sourceData, int32_t numSamples) {
 int32_t SoundRecording::read(float *targetData, int32_t numSamples){
 
     int32_t framesRead = 0;
-    while (framesRead < numSamples && mReadIndex < mWriteIndex){
-        targetData[framesRead++] = mData[mReadIndex++];
-        if (mIsLooping && mReadIndex >= mWriteIndex) mReadIndex = 0;
+    float data;
+    while (framesRead < numSamples){
+        if (!mIsLooping && mData.isTail()){
+            break;
+        }
+        if(mData.take(data)) {
+            targetData[framesRead++] = data;
+        }
     }
     LOGE("FUNCTION:%s,LINE:%d,numSamples:%d,readIndex:%d,writeIndex:%d,framesRead:%d,numSamples:%d",
-         __FUNCTION__,__LINE__,numSamples,mReadIndex.load(),mWriteIndex.load(),framesRead,numSamples);
+         __FUNCTION__,__LINE__,numSamples,readIndex(),writeIndex(),framesRead,numSamples);
     return framesRead;
 }

@@ -85,3 +85,8 @@ void MediaCoder::addData(NativeImage& data) {
         m_queue.push(data);
 }
 
+void MediaCoder::addData(NativeImage &&data) {
+    if (hasInit)
+        m_queue.push(std::move(data));
+}
+

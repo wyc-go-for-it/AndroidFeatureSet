@@ -98,5 +98,6 @@ add_library(
 target_link_libraries(
         ${audiolib}
         aaudio
+        OpenSLES
         log
 )

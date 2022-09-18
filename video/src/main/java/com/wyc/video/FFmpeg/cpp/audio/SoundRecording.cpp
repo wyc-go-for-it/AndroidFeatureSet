@@ -18,9 +18,9 @@
 #include "SoundRecording.h"
 #include "../utils/LogUtil.h"
 
-int32_t SoundRecording::write(const float *sourceData, int32_t numSamples) {
+u_int32_t SoundRecording::write(const float *sourceData, u_int32_t numSamples) {
 
-    int i = 0;
+    u_int32_t i = 0;
     for (; i < numSamples; ++i) {
         float d = sourceData[i];
         mData.push(d);
@@ -30,9 +30,9 @@ int32_t SoundRecording::write(const float *sourceData, int32_t numSamples) {
     return numSamples;
 }
 
-int32_t SoundRecording::read(float *targetData, int32_t numSamples){
+u_int32_t SoundRecording::read(float *targetData, u_int32_t numSamples){
 
-    int32_t framesRead = 0;
+    u_int32_t framesRead = 0;
     float data;
     while (framesRead < numSamples){
         if (!mIsLooping && mData.isTail()){

@@ -5,34 +5,35 @@
 #include "AudioApi.h"
 #include "../utils/LogUtil.h"
 #include "AudioEngine.h"
+#include "AudioOpenSL.h"
 
 JNIEXPORT jlong JNICALL initAudio(JNIEnv *env,jobject obj){
-    return (jlong)new AudioEngine();
+    return (jlong)new AudioOpenSL();
 }
 JNIEXPORT jint JNICALL openAudio(JNIEnv *env,jobject obj,jlong nativeObj) {
-    return reinterpret_cast<AudioEngine *>(nativeObj)->open();
+    return reinterpret_cast<IAudioEngine *>(nativeObj)->open();
 }
 JNIEXPORT jint JNICALL startAudio(JNIEnv *env,jobject obj,jlong nativeObj) {
-   return reinterpret_cast<AudioEngine *>(nativeObj)->start();
+   return reinterpret_cast<IAudioEngine *>(nativeObj)->start();
 }
 JNIEXPORT jint JNICALL pauseAudioPlay(JNIEnv *env,jobject obj,jlong nativeObj) {
-    return reinterpret_cast<AudioEngine *>(nativeObj)->pausePlayback();
+    return reinterpret_cast<IAudioEngine *>(nativeObj)->pausePlayback();
 }
 JNIEXPORT jint JNICALL stopAudio(JNIEnv *env,jobject obj,jlong nativeObj){
-    return reinterpret_cast<AudioEngine *>(nativeObj)->stop();
+    return reinterpret_cast<IAudioEngine *>(nativeObj)->stop();
 }
 
 JNIEXPORT void JNICALL setRecordingAudio(JNIEnv *env,jobject obj,jlong nativeObj,jint b){
-    reinterpret_cast<AudioEngine *>(nativeObj)->setRecording(b == 0);
+    reinterpret_cast<IAudioEngine *>(nativeObj)->setRecording(b == 0);
 }
 JNIEXPORT void JNICALL setPlayingAudio(JNIEnv *env,jobject obj,jlong nativeObj,jint b){
-    reinterpret_cast<AudioEngine *>(nativeObj)->setPlaying(b == 0);
+    reinterpret_cast<IAudioEngine *>(nativeObj)->setPlaying(b == 0);
 }
 JNIEXPORT void JNICALL setLoopingAudio(JNIEnv *env,jobject obj,jlong nativeObj,jint b){
-    reinterpret_cast<AudioEngine *>(nativeObj)->setLooping(b == 0);
+    reinterpret_cast<IAudioEngine *>(nativeObj)->setLooping(b == 0);
 }
 JNIEXPORT void JNICALL releaseAudio(JNIEnv *env,jobject obj,jlong nativeObj){
-    delete reinterpret_cast<AudioEngine *>(nativeObj);
+    delete reinterpret_cast<IAudioEngine *>(nativeObj);
 }
 
 JNIEXPORT jint JNI_OnLoad(JavaVM* vm,void * r){

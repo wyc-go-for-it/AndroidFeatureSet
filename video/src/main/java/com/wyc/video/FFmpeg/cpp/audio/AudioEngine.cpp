@@ -196,10 +196,8 @@ aaudio_data_callback_result_t AudioEngine::recordingCallback(const float *audioD
     if (mIsRecording) {
         int32_t framesWritten = mSoundRecording.write(audioData, numFrames);
         if (framesWritten == 0 || numFrames == 0) mIsRecording = false;
-    } else {
-        std::thread(std::bind(&AudioEngine::stopStream, this,mRecordingStream,"")).detach();
     }
-    return AAUDIO_CALLBACK_RESULT_CONTINUE;
+    return mIsRecording ? AAUDIO_CALLBACK_RESULT_CONTINUE : AAUDIO_CALLBACK_RESULT_STOP;
 }
 
 aaudio_data_callback_result_t AudioEngine::playbackCallback(float *audioData, int32_t numFrames) {
@@ -210,10 +208,8 @@ aaudio_data_callback_result_t AudioEngine::playbackCallback(float *audioData, in
         if (framesRead < numFrames){
             mIsPlaying = false;
         }
-    } else {
-        std::thread(std::bind(&AudioEngine::pausePlayingStream,this)).detach();
     }
-    return AAUDIO_CALLBACK_RESULT_CONTINUE;
+    return mIsPlaying ? AAUDIO_CALLBACK_RESULT_CONTINUE : AAUDIO_CALLBACK_RESULT_STOP;
 }
 
 
@@ -282,6 +278,6 @@ void AudioEngine::setLooping(bool isOn) {
 }
 
 AudioEngine::~AudioEngine() {
-    LOGD("AudioEngine has destroyed");
+    LOGD("%s has executed",__FUNCTION__);
     stop();
 }

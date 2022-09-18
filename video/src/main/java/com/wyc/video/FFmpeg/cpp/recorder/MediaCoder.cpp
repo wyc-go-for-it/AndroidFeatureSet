@@ -7,7 +7,7 @@ MediaCoder::MediaCoder(std::string file,int width,int height,int frameRatio)
 }
 
 MediaCoder::~MediaCoder() {
-    LOGD("MediaCoder has destroyed queue:%d",m_queue.size());
+    LOGD("%s has executed,queue:%d",__FUNCTION__,m_queue.size());
     release();
 }
 

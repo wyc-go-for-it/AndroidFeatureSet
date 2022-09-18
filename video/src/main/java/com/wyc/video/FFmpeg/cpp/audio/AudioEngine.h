@@ -25,30 +25,31 @@
 #include "SoundRecording.h"
 #include "Definitions.h"
 #include <mutex>
+#include "IAudioEngine.h"
 
-class AudioEngine final {
+class AudioEngine final :public IAudioEngine{
 
 public:
     DISABLE_COPY_ASSIGN(AudioEngine)
     AudioEngine()=default;
     ~AudioEngine();
-    int open();
-    int start();
-    int pausePlayback();
-    int resumePlayback();
-    int stop();
-    void restart();
 
-    void setRecording(bool isRecording);
-    void setPlaying(bool isPlaying);
-    void setLooping(bool isOn);
+    virtual int open();
+    virtual int start();
+    virtual int pausePlayback();
+    virtual int resumePlayback();
+    virtual int stop();
+
+    virtual void setRecording(bool isRecording);
+    virtual void setPlaying(bool isPlaying);
+    virtual void setLooping(bool isOn);
 
     aaudio_data_callback_result_t recordingCallback(const float *audioData, int32_t numFrames);
     aaudio_data_callback_result_t playbackCallback(float *audioData, int32_t numFrames);
 
+    void restart();
+
 private:
-    std::atomic<bool> mIsRecording = {false};
-    std::atomic<bool> mIsPlaying = {false};
     AAudioStream* mPlaybackStream = nullptr;
     AAudioStream* mRecordingStream = nullptr;
     SoundRecording mSoundRecording;

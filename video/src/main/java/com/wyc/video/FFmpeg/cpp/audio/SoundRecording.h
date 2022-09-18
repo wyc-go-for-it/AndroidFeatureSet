@@ -32,8 +32,8 @@ class SoundRecording final {
 public:
     SoundRecording()=default;
 
-    int32_t write(const float *sourceData, int32_t numSamples);
-    int32_t read(float *targetData, int32_t numSamples);
+    u_int32_t write(const float *sourceData, u_int32_t numSamples);
+    u_int32_t read(float *targetData, u_int32_t numSamples);
     void clear() { mData.clear(); };
     void setLooping(bool isLooping) { mIsLooping = isLooping; };
     int32_t getLength() const { return mData.size(); };

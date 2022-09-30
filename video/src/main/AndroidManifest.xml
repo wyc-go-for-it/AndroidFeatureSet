@@ -7,6 +7,9 @@
 
     <application>
         <activity
+            android:name=".activity.TreeViewActivity"
+            android:exported="false" />
+        <activity
             android:name=".activity.AudioActivity"
             android:exported="false" />
         <activity
@@ -17,7 +20,7 @@
         <activity
             android:name=".activity.VideoRelatedActivity"
             android:exported="true"
-            android:theme="@style/wyc_video_ActivityTheme"></activity>
+            android:theme="@style/wyc_video_ActivityTheme" />
     </application>
 
 </manifest>

@@ -6,4 +6,5 @@
     <string name="provider">内容提供者</string>
     <string name="label_design">标签设计</string>
     <string name="label_print">标签打印</string>
+    <string name="tree_menu">树形菜单</string>
 </resources>

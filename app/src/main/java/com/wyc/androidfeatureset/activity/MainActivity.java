@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
 
+import androidx.annotation.CallSuper;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -20,6 +21,7 @@ import com.wyc.androidfeatureset.provider.ProviderActivity;
 import com.wyc.label.LabelPrintSettingActivity;
 import com.wyc.label.printer.LabelPrintUtils;
 import com.wyc.logger.Logger;
+import com.wyc.video.activity.TreeViewActivity;
 import com.wyc.video.activity.VideoRelatedActivity;
 
 import java.io.IOException;
@@ -188,5 +190,10 @@ public class MainActivity extends AppCompatActivity {
     @OnClick(R.id.video)
     void video(){
         VideoRelatedActivity.start(this);
+    }
+
+    @OnClick(R.id.tree_menu)
+    void tree(){
+        TreeViewActivity.start(this);
     }
 }

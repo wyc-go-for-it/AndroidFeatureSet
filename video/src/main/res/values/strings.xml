@@ -9,4 +9,5 @@
     <string name="loop">循环回放</string>
     <string name="hello_video">hello_video</string>
     <string name="useSurfaceView">useSurfaceView</string>
+    <string name="tree_menu">树形菜单</string>
 </resources>

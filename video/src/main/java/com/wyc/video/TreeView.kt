@@ -7,8 +7,11 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import com.wyc.logger.Logger
 import kotlin.math.abs
+import kotlin.math.asin
+import kotlin.math.sqrt
 
 
 /**
@@ -43,11 +46,17 @@ class TreeView: View{
 
     private var mDashPathEffect:DashPathEffect? = null
 
+    private var downX = 0f
+    private var downY = 0f
+    private var hasMove = false
+    private val mTouchSlop:Int
+
     constructor(context: Context):this(context, null)
     constructor(context: Context, attrs: AttributeSet?):this(context, attrs, 0)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int):super(context, attrs, defStyleAttr){
         initPaint()
         initDefaultData()
+        mTouchSlop = ViewConfiguration.get(context).scaledTouchSlop
     }
 
     private fun initDefaultData(){
@@ -85,7 +94,7 @@ class TreeView: View{
                                     kk.code = (id * 10).toString()
                                     kk.name = "列表$pp$i$j"
                                     kk.parent = k
-
+                                    kk.children = mutableListOf()
                                     if (pp == 23){
                                         for (kkk in 30..35){
                                             val bbb = Item().apply {
@@ -94,20 +103,20 @@ class TreeView: View{
                                                 name = "列表$kkk$pp$i$j"
                                                 parent = kk
                                             }
-                                            kk.children.add(bbb)
+                                            kk.children!!.add(bbb)
                                         }
 
                                     }
 
                                 }
-                                k.children.add(kk)
+                                k.children!!.add(kk)
                             }
 
                         }
-                        item.children.add(k)
+                        item.children!!.add(k)
                     }
                 }
-                p.children.add(item)
+                p.children!!.add(item)
             }
         }
 
@@ -153,8 +162,9 @@ class TreeView: View{
             if (index == 0) {
                 item.sY = p.sY + p.sHeight + mVerGap
             }else{
-                val sibling = p.children[index - 1]
-                item.sY = sibling.sY + calItemHeight(sibling,bound)
+                p.children?.get(index - 1)?.also {sibling->
+                    item.sY = sibling.sY + calItemHeight(sibling,bound)
+                }
             }
         }
 
@@ -214,7 +224,6 @@ class TreeView: View{
         super.onMeasure(realWidthMeasureSpec, realHeightMeasureSpec)
     }
 
-
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
 
         mHeadItem?.apply {
@@ -222,6 +231,8 @@ class TreeView: View{
             sY = 0f
             layoutChild(this,left + paddingLeft,top + paddingTop)
         }
+
+        Logger.d("mHeight:%d,height:%d",mHeight,height)
         super.onLayout(changed, left, top, right, bottom)
     }
     private fun layoutChild(item:Item,l: Int, t: Int){
@@ -238,6 +249,9 @@ class TreeView: View{
 
     override fun onDraw(canvas: Canvas) {
         drawChild(canvas)
+        mPaint.style = Paint.Style.STROKE
+        canvas.drawRect(0f,0f, width.toFloat(), height.toFloat(),mPaint)
+        mPaint.style = Paint.Style.FILL
         super.onDraw(canvas)
     }
     private fun drawChild(canvas: Canvas){
@@ -306,22 +320,54 @@ class TreeView: View{
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        when(event.action){
+            MotionEvent.ACTION_DOWN->{
+                downX = event.x
+                downY = event.y
+                hasMove = false
+                return true
+            }
+            MotionEvent.ACTION_MOVE->{
+                val moveX = event.x
+                val moveY = event.y
 
-        mHeadItem?.apply {
-            clickItem(this,event.x,event.y)
+                val xDiff = abs(moveX - downX)
+                val yDiff = abs(moveY - downY)
+                val squareRoot = sqrt((xDiff * xDiff + yDiff * yDiff).toDouble())
+                val degreeX = asin(yDiff / squareRoot) * 180 / Math.PI
+                val degreeY = asin(xDiff / squareRoot) * 180 / Math.PI
+                if (degreeX < 45 && mMaxWidth > width){
+                    scrollBy((downX - moveX).toInt(), y.toInt())
+                    hasMove = true
+                }else if (degreeY < 45 && mHeight > height){
+                    Logger.d("mHeight:%d,height:%d",mHeight,height)
+                    scrollBy(x.toInt(), (downY - moveY).toInt())
+                    hasMove = true
+                }
+                downX = moveX
+                downY = moveY
+            }
+            MotionEvent.ACTION_UP->{
+                if (!hasMove)
+                    clickItem(mHeadItem,event.x,event.y)
+            }
         }
 
         return super.onTouchEvent(event)
     }
-    private fun clickItem(item: Item,x:Float,y:Float):Boolean{
-        var hasDraw = false
-        val bH = y>= item.sY && y<= item.sY + item.sHeight
-        if (x>= item.sX - mLogoGap * 2 && x<= item.sX && bH){
+    private fun clickItem(item: Item?,x:Float,y:Float):Boolean{
+        if (item == null)return false
+        val realSX = item.sX - scrollX
+        val realSY = item.sY - scrollY
+
+        val bH = y >= realSY && y <= realSY + item.sHeight
+        if (x>= realSX - mLogoGap * 2 && x<= realSX && bH){
             item.fold = !item.fold
-            hasDraw = true
-        }else if (x >= item.sX && x <= item.sX + item.sWidth && bH){
+            requestLayout()
+            invalidate()
+            return true
+        }else if (x >= realSX && x <= realSX + item.sWidth && bH){
             item.sel = !item.sel
-            hasDraw = true
             if (mSingleSelection){
                 if (mSelectedList.isNotEmpty()){
                     mSelectedList.removeAt(0).sel = false
@@ -334,6 +380,8 @@ class TreeView: View{
                     mSelectedList.add(item)
                 }else mSelectedList.remove(item)
             }
+            invalidate()
+            return true
         }else if (item.fold){
             val ch = item.children
             if (!ch.isNullOrEmpty()){
@@ -346,13 +394,7 @@ class TreeView: View{
                 }
             }
         }
-
-        if (hasDraw){
-            requestLayout()
-            invalidate()
-        }
-
-        return hasDraw
+        return false
     }
 
     class Item{
@@ -367,7 +409,7 @@ class TreeView: View{
         var code:String = ""
         var name:String = ""
         var parent:Item? = null
-        var children:MutableList<Item> = mutableListOf()
+        var children:MutableList<Item>? = null
         var data:Any? = null
         override fun toString(): String {
             return "Item(sX=$sX, sY=$sY, sWidth=$sWidth, sHeight=$sHeight, fold=$fold, name='$name')"

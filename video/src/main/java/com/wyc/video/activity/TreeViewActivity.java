@@ -11,7 +11,7 @@ public class TreeViewActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setMiddleText(getString(R.string.video_related));
+        setMiddleText(getString(R.string.tree_menu));
 
     }
 

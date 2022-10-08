@@ -15,7 +15,7 @@
 class AudioOpenSL: public IAudioEngine{
 public:
     DISABLE_COPY_ASSIGN(AudioOpenSL)
-    AudioOpenSL(): m_recordingBuffer(malloc(bufferSize * sizeof (float))), m_playBuffer(malloc(bufferSize * sizeof (float))){
+    AudioOpenSL(): m_recordingBuffer(malloc(bufferSize)), m_playBuffer(malloc(bufferSize)){
 
     };
     ~AudioOpenSL(){
@@ -41,7 +41,7 @@ public:
             if (bq == c->m_bqPlayerBufferQueue){
                 std::lock_guard<std::recursive_mutex> lock(c->m_audioEngineLock);
 
-                u_int32_t frames = c->mSoundRecording.read(static_cast<float *>(c->m_playBuffer),c->bufferSize);
+                u_int32_t frames = c->mSoundRecording.read(static_cast<float *>(c->m_playBuffer),c->bufferSize / 4);
 
                 SLresult result = (*c->m_bqPlayerBufferQueue)->Enqueue(c->m_bqPlayerBufferQueue, c->m_playBuffer , c->bufferSize);
                 LOGE("PlayerCallback Enqueue result:%d,frames:%d",result,frames);
@@ -56,9 +56,9 @@ public:
             if (bq == c->m_recorderBufferQueue){
                 std::lock_guard<std::recursive_mutex> lock(c->m_audioEngineLock);
 
-                c->mSoundRecording.write(static_cast<const float *>(c->m_recordingBuffer), c->bufferSize);
+                c->mSoundRecording.write(static_cast<const float *>(c->m_recordingBuffer), c->bufferSize / 4);
 
-                SLresult result = (*c->m_recorderBufferQueue)->Enqueue(c->m_recorderBufferQueue, c->m_recordingBuffer , c->bufferSize * 10);
+                SLresult result = (*c->m_recorderBufferQueue)->Enqueue(c->m_recorderBufferQueue, c->m_recordingBuffer , c->bufferSize);
                 LOGE("RecorderCallback Enqueue result:%d",result);
             }
         }
@@ -132,7 +132,7 @@ private:
 
 private:
     std::recursive_mutex m_audioEngineLock;
-    static constexpr int bufferSize = 1024;
+    static constexpr int bufferSize = 44100 * 1 * 4;
 
     // engine interfaces
     SLObjectItf m_engineObject = nullptr;

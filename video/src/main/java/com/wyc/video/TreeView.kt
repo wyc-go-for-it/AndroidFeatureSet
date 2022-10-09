@@ -9,9 +9,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import com.wyc.logger.Logger
-import kotlin.math.abs
-import kotlin.math.asin
-import kotlin.math.sqrt
+import kotlin.math.*
 
 
 /**
@@ -167,15 +165,14 @@ class TreeView: View{
                 }
             }
         }
-
-        val ch = item.children;
-        if (!ch.isNullOrEmpty()){
-            for (i in 0 until ch.size)
-                recursiveMeasure(ch[i],i)
+        mHeight = item.sY.toInt() + h
+        if (item.fold){
+            val ch = item.children;
+            if (!ch.isNullOrEmpty()){
+                for (i in 0 until ch.size)
+                    recursiveMeasure(ch[i],i)
+            }
         }
-
-        if (item.sY > mHeight)
-            mHeight = item.sY.toInt() + h
     }
 
     private fun calItemHeight(item:Item,bound:Rect):Int{
@@ -225,14 +222,11 @@ class TreeView: View{
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-
         mHeadItem?.apply {
             sX = mLogoGap + mPreGap
-            sY = 0f
+            sY = 5f
             layoutChild(this,left + paddingLeft,top + paddingTop)
         }
-
-        Logger.d("mHeight:%d,height:%d",mHeight,height)
         super.onLayout(changed, left, top, right, bottom)
     }
     private fun layoutChild(item:Item,l: Int, t: Int){
@@ -249,9 +243,6 @@ class TreeView: View{
 
     override fun onDraw(canvas: Canvas) {
         drawChild(canvas)
-        mPaint.style = Paint.Style.STROKE
-        canvas.drawRect(0f,0f, width.toFloat(), height.toFloat(),mPaint)
-        mPaint.style = Paint.Style.FILL
         super.onDraw(canvas)
     }
     private fun drawChild(canvas: Canvas){
@@ -336,12 +327,32 @@ class TreeView: View{
                 val squareRoot = sqrt((xDiff * xDiff + yDiff * yDiff).toDouble())
                 val degreeX = asin(yDiff / squareRoot) * 180 / Math.PI
                 val degreeY = asin(xDiff / squareRoot) * 180 / Math.PI
+
                 if (degreeX < 45 && mMaxWidth > width){
-                    scrollBy((downX - moveX).toInt(), y.toInt())
+                    if (moveX > downX){
+                        if (scrollX > 0)
+                            scrollBy((downX - moveX).toInt(), y.toInt())
+                        else
+                            scrollTo(0, y.toInt())
+                    }else{
+                        if (mMaxWidth - width > scrollX)
+                            scrollBy((downX - moveX).toInt(), y.toInt())
+                    }
                     hasMove = true
                 }else if (degreeY < 45 && mHeight > height){
-                    Logger.d("mHeight:%d,height:%d",mHeight,height)
-                    scrollBy(x.toInt(), (downY - moveY).toInt())
+                    if (moveY > downY){
+                        if (scrollY > 0) {
+                            var d = downY - moveY
+                            if (abs(d) > scrollY){
+                                d = sign(d) * scrollY
+                            }
+                            scrollBy(x.toInt(), d.toInt())
+                        }
+                    }else{
+                        if (mHeight - height > scrollY){
+                            scrollBy(x.toInt(), (downY - moveY).toInt())
+                        }
+                    }
                     hasMove = true
                 }
                 downX = moveX

@@ -9,8 +9,9 @@
 
     <com.wyc.video.TreeView
         android:id="@+id/treeView"
-        android:layout_width="wrap_content"
+        android:layout_width="120dp"
         android:layout_height="200dp"
+        android:background="@color/wyc_video_lightBlue"
         android:scrollbarAlwaysDrawVerticalTrack="false"
         android:scrollbarStyle="outsideInset"
         android:scrollbars="vertical" />

@@ -1,6 +1,8 @@
 package com.wyc.label;
 
+import android.content.res.AssetManager;
 import android.graphics.RectF;
+import android.util.Log;
 import android.util.TypedValue;
 
 import androidx.annotation.NonNull;
@@ -16,6 +18,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -84,6 +87,21 @@ public class LabelTemplate implements Serializable {
         return false;
     }
 
+    public boolean saveAs(){
+        this.templateId = UUID.randomUUID().toString().hashCode();
+
+        File file = getFile();
+        file.delete();
+        try{
+            write(new FileOutputStream(file),this);
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+            Utils.showToast(e.getMessage());
+        }
+        return false;
+    }
+
     public static List<LabelTemplate> getLabelList(){
         final List<LabelTemplate> list = new ArrayList<>();
         File dir = new File(mLabelDir);
@@ -100,6 +118,29 @@ public class LabelTemplate implements Serializable {
                     break;
                 }
             }
+        }
+        return list;
+    }
+
+    public static List<LabelTemplate> getAssetsLabelList(){
+        final List<LabelTemplate> list = new ArrayList<>();
+        try {
+            final String dirFile = "label";
+            final AssetManager assetManager = LabelApp.getInstance().getAssets();
+            final String[] dir = assetManager.list(dirFile);
+            Log.e("dir", Arrays.toString(dir));
+            for (String f : dir){
+                try (ObjectInputStream objectInputStream = new ObjectInputStream(assetManager.open(dirFile + File.separator + f))){
+                    final Object obj = objectInputStream.readObject();
+                    if (obj instanceof LabelTemplate)list.add((LabelTemplate)obj );
+                } catch (IOException | ClassNotFoundException e) {
+                    e.printStackTrace();
+                    Utils.showToast(e.getMessage());
+                    break;
+                }
+            }
+        }catch (IOException e){
+            Utils.showToast(e.getMessage());
         }
         return list;
     }

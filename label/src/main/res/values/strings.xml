@@ -92,7 +92,8 @@
     <string name="com_wyc_label_round">圆&#160;&#160;&#160;&#160;角</string>
     <string name="com_wyc_label_rotate_label_print_setting">标签打印设置</string>
     <string name="com_wyc_label_searching_bluetooth">正在搜索蓝牙打印机…</string>
-    <string name="com_wyc_label_local_label">本地标签</string>
+    <string name="com_wyc_label_local_label">本地模板</string>
+    <string name="com_wyc_label_inner_label">内置模板</string>
     <string name="com_wyc_label_modify">修改</string>
     <string name="com_wyc_label_label_empty_hints">标签内容为空,请检查标签是否已设置或当前默认模板已选择…</string>
     <string name="c_label_failure">解析格式错误:%1$s</string>

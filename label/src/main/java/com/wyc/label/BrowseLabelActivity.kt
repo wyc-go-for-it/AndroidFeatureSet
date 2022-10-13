@@ -20,16 +20,37 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
-class BrowseLabelActivity : BaseActivity() {
+internal class BrowseLabelActivity : BaseActivity() {
     private var mCurLabel:LabelTemplate? = null
     private var mAdapter:LabelAdapter? = null
 
     private val mCoroutineScope = CoroutineScope(Dispatchers.IO)
 
+    private var hasInner = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setMiddleText(getString(R.string.com_wyc_label_local_label))
+        hasInner = intent.getBooleanExtra("w",false)
+
         initAdapter()
+        initMenu()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadLabel()
+    }
+
+    private fun initMenu(){
+        if (hasInner){
+            setMiddleText(getString(R.string.com_wyc_label_inner_label))
+        }else{
+            setMiddleText(getString(R.string.com_wyc_label_local_label))
+            setRightText(getString(R.string.com_wyc_label_inner_label))
+            setRightListener{
+                startActivity(Intent(this,BrowseLabelActivity::class.java).putExtra("w",true))
+            }
+        }
     }
 
     override fun getContentLayoutId(): Int {
@@ -42,23 +63,31 @@ class BrowseLabelActivity : BaseActivity() {
         recyclerView.addItemDecoration(DividerItemDecoration(this,DividerItemDecoration.VERTICAL))
         mAdapter = LabelAdapter(this)
 
-        mCoroutineScope.launch {
-            val a = LabelTemplate.getLabelList()
-            withContext(Dispatchers.Main){
-                mAdapter!!.setDataForList(a)
-            }
-        }
-
         mAdapter!!.setSelectListener(object :LabelAdapter.OnSelectFinishListener{
             override fun onFinish(item: LabelTemplate) {
-                val intent = Intent()
-                intent.putExtra(LABEL_KEY,  item.templateId)
-                setResult(RESULT_OK, intent)
+                if (hasInner){
+                    mCoroutineScope.launch {
+                        item.saveAs()
+                    }
+                }else{
+                    val intent = Intent()
+                    intent.putExtra(LABEL_KEY,  item.templateId)
+                    setResult(RESULT_OK, intent)
+                }
                 finish()
             }
 
         })
         recyclerView.adapter = mAdapter
+    }
+
+    private fun loadLabel(){
+        mCoroutineScope.launch {
+            val a = if (hasInner) LabelTemplate.getAssetsLabelList() else LabelTemplate.getLabelList()
+            withContext(Dispatchers.Main){
+                mAdapter?.setDataForList(a)
+            }
+        }
     }
 
 
@@ -88,10 +117,6 @@ class BrowseLabelActivity : BaseActivity() {
 
     companion object{
         const val LABEL_KEY = "label"
-        @JvmStatic
-        fun start(context:Context){
-            context.startActivity(Intent(context,BrowseLabelActivity::class.java))
-        }
     }
 
     private class LabelAdapter(private val context: BrowseLabelActivity): RecyclerView.Adapter<LabelAdapter.MyViewHolder>(),View.OnClickListener {

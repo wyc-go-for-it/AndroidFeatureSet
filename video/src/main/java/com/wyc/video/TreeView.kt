@@ -9,6 +9,8 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.EdgeEffect
 import android.widget.OverScroller
+import com.wyc.logger.Logger
+import kotlinx.coroutines.*
 import kotlin.math.*
 
 
@@ -140,6 +142,9 @@ class TreeView: View{
             recursiveMeasure(this,0,bound)
             mLogoGap = bound.height() * 0.5f
         }
+        if ((mHeight < measuredHeight && scrollY != 0) || (mMaxWidth < measuredWidth && scrollX != 0)){
+            scrollTo(0,0)
+        }
     }
     private fun recursiveMeasure(item: Item, index: Int,bound: Rect){
 
@@ -172,6 +177,7 @@ class TreeView: View{
                     item.sY = sibling.sY + calItemHeight(sibling,bound)
                 }
             }
+            item.sAnimY = item.sY
         }
         mHeight = item.sY.toInt() + h
         if (item.fold){
@@ -236,11 +242,6 @@ class TreeView: View{
             sY = 5f
             layoutChild(this,left + paddingLeft - paddingRight,top + paddingTop - paddingBottom)
         }
-        if ((mHeight < measuredHeight && scrollY != 0) || (mMaxWidth < measuredWidth && scrollX != 0)){
-            scrollTo(0,0)
-        }
-        mEdgeEffect.setSize(max(measuredWidth,mMaxWidth), mHeight shr 2)
-
         super.onLayout(changed, left, top, right, bottom)
     }
     private fun layoutChild(item: Item, l: Int, t: Int){
@@ -255,6 +256,11 @@ class TreeView: View{
         }
     }
 
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        mEdgeEffect.setSize(max(measuredWidth,mMaxWidth), mHeight shr 2)
+    }
+
     override fun onDraw(canvas: Canvas) {
         drawChild(canvas)
         super.onDraw(canvas)
@@ -267,20 +273,18 @@ class TreeView: View{
 
     private fun recursiveDraw(item: Item, canvas: Canvas){
         val p = item.parent
-        if (p == null || p.fold){
+        if (p == null || item.sAnimY > p.sY + p.sHeight){
 
             val baseLineY = item.sHeight / 2 + (abs(mPaint.fontMetrics.ascent) - mPaint.fontMetrics.descent) / 2
-            if (p != null){
-                canvas.drawText(item.name,item.sX,item.sY + baseLineY,mPaint)
-            }else
-                canvas.drawText(item.name,item.sX,item.sY + baseLineY,mPaint)
+
+            canvas.drawText(item.name,item.sX,item.sAnimY + baseLineY,mPaint)
 
             if (item.sel){
                 val offset = mVerGap * 0.25f
                 mPaint.style = Paint.Style.STROKE
                 if (mDashPathEffect == null)mDashPathEffect = DashPathEffect(floatArrayOf(4f,4f),0f)
                 mPaint.pathEffect = mDashPathEffect
-                canvas.drawRoundRect(item.sX - offset,item.sY - offset,item.sX + item.sWidth + offset,item.sY + item.sHeight + offset,2f,2f,mPaint)
+                canvas.drawRoundRect(item.sX - offset,item.sAnimY - offset,item.sX + item.sWidth + offset,item.sAnimY + item.sHeight + offset,2f,2f,mPaint)
                 mPaint.style = Paint.Style.FILL
                 mPaint.pathEffect = null
             }
@@ -295,9 +299,6 @@ class TreeView: View{
             }
         }
     }
-    private fun foldAnimation(){
-
-    }
 
     private fun drawLogo(canvas: Canvas,item: Item){
         val c = !item.children.isNullOrEmpty()
@@ -308,7 +309,7 @@ class TreeView: View{
             mPaint.color = mFoldLogoColor
             mPaint.style = Paint.Style.STROKE
 
-            val y = item.sY + item.sHeight / 2
+            val y = item.sAnimY + item.sHeight / 2
             val startX = (item.sX - logoSize) - offsetX
             val stopX = item.sX - offsetX
 
@@ -331,7 +332,7 @@ class TreeView: View{
         }
     }
 
-    @SuppressLint("ClickableViewAccessibility")
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when(event.action){
             MotionEvent.ACTION_DOWN->{
@@ -392,6 +393,7 @@ class TreeView: View{
                     clickItem(mHeadItem,event.x,event.y)
                 }
                 edgeRelease()
+                return performClick()
             }
         }
 
@@ -457,6 +459,53 @@ class TreeView: View{
         }
     }
 
+    private fun fold(it: Item){
+        if (it.sAnimY < it.sY){
+            it.sAnimY += 15
+            postDelayed({
+                fold(it)
+            },5)
+            invalidate()
+        }
+    }
+
+    private fun unfold(it: Item){
+        if (it.sAnimY > it.parent!!.sY + it.parent!!.sHeight){
+
+
+            if (it.fold){
+                val ch = it.children
+                if (!ch.isNullOrEmpty()){
+                    ch.forEach {
+                        unfold(it)
+                    }
+                }
+            }
+
+            it.sAnimY -= 2
+            postDelayed({
+                unfold(it)
+            },5)
+
+            invalidate()
+        }
+    }
+    private fun foldAnimation(item: Item){
+        val ch = item.children
+        if (!ch.isNullOrEmpty()){
+            for (i in 0 until ch.size){
+                val it = ch[i]
+                if (item.fold){
+                    it.sAnimY = item.sY + item.sHeight
+                    fold(it)
+                    foldAnimation(it)
+                }else {
+                    unfold(it)
+                }
+            }
+        }
+    }
+
     private fun clickItem(item: Item?, x:Float, y:Float):Boolean{
         if (item == null)return false
         val realSX = item.sX - scrollX
@@ -464,10 +513,12 @@ class TreeView: View{
 
         val bH = y >= realSY && y <= realSY + item.sHeight
         if (x>= realSX - mLogoGap * 2 && x<= realSX && bH){
-            item.fold = !item.fold
-            requestLayout()
-            invalidate()
-            return true
+            if (!item.children.isNullOrEmpty()){
+                item.fold = !item.fold
+                measureChild()
+                foldAnimation(item)
+                return true
+            }
         }else if (x >= realSX && x <= realSX + item.sWidth && bH){
             item.sel = !item.sel
             if (mSingleSelection){
@@ -506,6 +557,8 @@ class TreeView: View{
         var sHeight = 0
         var fold:Boolean = false
         var sel:Boolean = false
+
+        var sAnimY = 0f
 
         var id:Int = 0
         var code:String = ""

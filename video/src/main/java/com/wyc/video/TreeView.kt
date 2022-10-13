@@ -7,8 +7,8 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewConfiguration
-import com.wyc.logger.Logger
+import android.widget.EdgeEffect
+import android.widget.OverScroller
 import kotlin.math.*
 
 
@@ -28,13 +28,13 @@ import kotlin.math.*
 
 class TreeView: View{
     private val mPaint = Paint()
-    private var mHeadItem:Item? = null
+    private var mHeadItem: Item? = null
     private val mSelectedList = mutableListOf<Item>()
     private var mSingleSelection = true
 
     private val mPreGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 18f, resources.displayMetrics)
     private val mVerGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics)
-    private val mLogoGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, resources.displayMetrics)
+    private var mLogoGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, resources.displayMetrics)
 
     private var mMaxWidth = 0
     private var mHeight = 0
@@ -47,25 +47,31 @@ class TreeView: View{
     private var downX = 0f
     private var downY = 0f
     private var hasMove = false
-    private val mTouchSlop:Int
+
+    private var mScroller: OverScroller = OverScroller(context)
+    private var mSlideDirection = SLIDE.DOWN
+
+    private val mEdgeEffect: EdgeEffect
 
     constructor(context: Context):this(context, null)
     constructor(context: Context, attrs: AttributeSet?):this(context, attrs, 0)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int):super(context, attrs, defStyleAttr){
         initPaint()
         initDefaultData()
-        mTouchSlop = ViewConfiguration.get(context).scaledTouchSlop
+
+        mEdgeEffect = EdgeEffect(context)
+        mEdgeEffect.color = Color.RED
     }
 
     private fun initDefaultData(){
-        mHeadItem = Item().also {p->
+        mHeadItem = Item().also { p->
             p.id = 88
             p.code = "880"
             p.name = "菜单880"
             p.fold = true
             p.children = mutableListOf()
             for (i in 0..3){
-                val item = Item().also {item->
+                val item = Item().also { item->
                     item.id = i
                     item.code = (id * 10).toString()
                     item.name = "列表$i"
@@ -76,7 +82,7 @@ class TreeView: View{
                     item.parent = p
                     item.children = mutableListOf()
                     for (j in 10..12){
-                        val k = Item().also {k->
+                        val k = Item().also { k->
                             k.id = j
                             k.code = (id * 10).toString()
                             k.name = "列表$i$j"
@@ -87,7 +93,7 @@ class TreeView: View{
 
                             if (j == 11 && i == 0)
                             for(pp in 20..25){
-                                val kk = Item().also {kk ->
+                                val kk = Item().also { kk ->
                                     kk.id = pp
                                     kk.code = (id * 10).toString()
                                     kk.name = "列表$pp$i$j"
@@ -123,18 +129,20 @@ class TreeView: View{
     private fun initPaint(){
         mPaint.color = mTextColor
         mPaint.isAntiAlias = true
-        mPaint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16f, resources.displayMetrics)
+        mPaint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 32f, resources.displayMetrics)
     }
     private fun measureChild(){
         mHeight = 0
         mMaxWidth = 0
 
         mHeadItem?.apply {
-            recursiveMeasure(this,0)
+            val bound = Rect()
+            recursiveMeasure(this,0,bound)
+            mLogoGap = bound.height() * 0.5f
         }
     }
-    private fun recursiveMeasure(item:Item,index: Int){
-        val bound = Rect()
+    private fun recursiveMeasure(item: Item, index: Int,bound: Rect){
+
         mPaint.getTextBounds(item.name,0,item.name.length,bound)
 
         val w = bound.width()
@@ -170,12 +178,12 @@ class TreeView: View{
             val ch = item.children;
             if (!ch.isNullOrEmpty()){
                 for (i in 0 until ch.size)
-                    recursiveMeasure(ch[i],i)
+                    recursiveMeasure(ch[i],i,bound)
             }
         }
     }
 
-    private fun calItemHeight(item:Item,bound:Rect):Int{
+    private fun calItemHeight(item: Item, bound:Rect):Int{
         mPaint.getTextBounds(item.name,0,item.name.length,bound)
         var h = bound.height() + mVerGap.toInt()
         if (item.fold){
@@ -205,7 +213,7 @@ class TreeView: View{
                     realWidthMeasureSpec = MeasureSpec.makeMeasureSpec(mMaxWidth + paddingLeft + paddingRight,MeasureSpec.EXACTLY)
                 }
                 MeasureSpec.EXACTLY ->{
-                    realWidthMeasureSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec) + paddingLeft + paddingRight,MeasureSpec.EXACTLY)
+                    realWidthMeasureSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec),MeasureSpec.EXACTLY)
                 }
             }
 
@@ -214,10 +222,11 @@ class TreeView: View{
                     realHeightMeasureSpec = MeasureSpec.makeMeasureSpec(mHeight + paddingTop + paddingBottom,MeasureSpec.EXACTLY)
                 }
                 MeasureSpec.EXACTLY->{
-                    realHeightMeasureSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(heightMeasureSpec) + paddingTop + paddingBottom,MeasureSpec.EXACTLY)
+                    realHeightMeasureSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(heightMeasureSpec),MeasureSpec.EXACTLY)
                 }
             }
         }
+
         super.onMeasure(realWidthMeasureSpec, realHeightMeasureSpec)
     }
 
@@ -225,11 +234,16 @@ class TreeView: View{
         mHeadItem?.apply {
             sX = mLogoGap + mPreGap
             sY = 5f
-            layoutChild(this,left + paddingLeft,top + paddingTop)
+            layoutChild(this,left + paddingLeft - paddingRight,top + paddingTop - paddingBottom)
         }
+        if ((mHeight < measuredHeight && scrollY != 0) || (mMaxWidth < measuredWidth && scrollX != 0)){
+            scrollTo(0,0)
+        }
+        mEdgeEffect.setSize(max(measuredWidth,mMaxWidth), mHeight shr 2)
+
         super.onLayout(changed, left, top, right, bottom)
     }
-    private fun layoutChild(item:Item,l: Int, t: Int){
+    private fun layoutChild(item: Item, l: Int, t: Int){
         item.sX += l.toFloat()
         item.sY += t.toFloat()
 
@@ -251,12 +265,16 @@ class TreeView: View{
         }
     }
 
-    private fun recursiveDraw(item:Item,canvas: Canvas){
+    private fun recursiveDraw(item: Item, canvas: Canvas){
         val p = item.parent
         if (p == null || p.fold){
 
             val baseLineY = item.sHeight / 2 + (abs(mPaint.fontMetrics.ascent) - mPaint.fontMetrics.descent) / 2
-            canvas.drawText(item.name,item.sX,item.sY + baseLineY,mPaint)
+            if (p != null){
+                canvas.drawText(item.name,item.sX,item.sY + baseLineY,mPaint)
+            }else
+                canvas.drawText(item.name,item.sX,item.sY + baseLineY,mPaint)
+
             if (item.sel){
                 val offset = mVerGap * 0.25f
                 mPaint.style = Paint.Style.STROKE
@@ -277,6 +295,10 @@ class TreeView: View{
             }
         }
     }
+    private fun foldAnimation(){
+
+    }
+
     private fun drawLogo(canvas: Canvas,item: Item){
         val c = !item.children.isNullOrEmpty()
         if (c){
@@ -316,6 +338,7 @@ class TreeView: View{
                 downX = event.x
                 downY = event.y
                 hasMove = false
+
                 return true
             }
             MotionEvent.ACTION_MOVE->{
@@ -328,30 +351,36 @@ class TreeView: View{
                 val degreeX = asin(yDiff / squareRoot) * 180 / Math.PI
                 val degreeY = asin(xDiff / squareRoot) * 180 / Math.PI
 
-                if (degreeX < 45 && mMaxWidth > width){
-                    if (moveX > downX){
-                        if (scrollX > 0)
-                            scrollBy((downX - moveX).toInt(), y.toInt())
-                        else
-                            scrollTo(0, y.toInt())
-                    }else{
-                        if (mMaxWidth - width > scrollX)
-                            scrollBy((downX - moveX).toInt(), y.toInt())
+                if (degreeX < 45){
+                    if (mMaxWidth > width){
+                        if (moveX > downX){
+                            if (scrollX > 0){
+                                mSlideDirection = SLIDE.RIGHT
+                                mScroller.startScroll(moveX.toInt(),0,(downX - moveX).toInt(),0)
+                                invalidate()
+                            }
+                        }else{
+                            mSlideDirection = SLIDE.LIFT
+                            if (mMaxWidth - width > scrollX){
+                                mScroller.startScroll(moveX.toInt(),0,(downX - moveX).toInt(),0)
+                                invalidate()
+                            }
+                        }
                     }
                     hasMove = true
                 }else if (degreeY < 45 && mHeight > height){
-                    if (moveY > downY){
-                        if (scrollY > 0) {
-                            var d = downY - moveY
-                            if (abs(d) > scrollY){
-                                d = sign(d) * scrollY
-                            }
-                            scrollBy(x.toInt(), d.toInt())
-                        }
+                     if (moveY > downY){
+                         if (scrollY > 0){
+                             mSlideDirection = SLIDE.DOWN
+                             mScroller.startScroll(0, moveY.toInt(),0,(downY - moveY).toInt())
+                             invalidate()
+                         }else edgeVerPull(event)
                     }else{
+                         mSlideDirection = SLIDE.UP
                         if (mHeight - height > scrollY){
-                            scrollBy(x.toInt(), (downY - moveY).toInt())
-                        }
+                            mScroller.startScroll(0, moveY.toInt(),0,(downY - moveY).toInt())
+                            invalidate()
+                        }else edgeVerPull(event)
                     }
                     hasMove = true
                 }
@@ -359,14 +388,76 @@ class TreeView: View{
                 downY = moveY
             }
             MotionEvent.ACTION_UP->{
-                if (!hasMove)
+                if (!hasMove){
                     clickItem(mHeadItem,event.x,event.y)
+                }
+                edgeRelease()
             }
         }
 
         return super.onTouchEvent(event)
     }
-    private fun clickItem(item: Item?,x:Float,y:Float):Boolean{
+
+    override fun computeScroll() {
+        super.computeScroll()
+        if (mScroller.computeScrollOffset()){
+            val offsetX = mScroller.finalX - mScroller.currX
+            val offsetY = mScroller.finalY - mScroller.currY
+            when(mSlideDirection){
+                SLIDE.DOWN ->{
+                    if (scrollY > 0){
+                        scrollBy(0,offsetY)
+                    }else scrollTo(scrollX,0)
+                }
+                SLIDE.UP ->{
+                    if (mHeight - height > scrollY){
+                        scrollBy(0,offsetY)
+                    }else scrollTo(scrollX,mHeight - height)
+                }
+                SLIDE.RIGHT ->{
+                    if (scrollX > 0){
+                        scrollBy(offsetX,0)
+                    }else scrollTo(0,scrollY)
+                }
+                SLIDE.LIFT ->{
+                    if (mMaxWidth - width > scrollX){
+                        scrollBy(offsetX,0)
+                    }else scrollTo(mMaxWidth - width,scrollY)
+                }
+            }
+
+        }
+    }
+
+    private fun edgeVerPull(event: MotionEvent){
+        mEdgeEffect.onPull(event.y / height,if (mHeight - height <= scrollY) 1 - event.x / mMaxWidth else event.x / width)
+        postInvalidateOnAnimation()
+    }
+    private fun edgeRelease(){
+        mEdgeEffect.onRelease()
+        postInvalidateOnAnimation()
+    }
+
+    override fun onDrawForeground(canvas: Canvas) {
+        super.onDrawForeground(canvas)
+        if (!mEdgeEffect.isFinished){
+            when {
+                mHeight - height <= scrollY -> {
+                    canvas.save()
+                    canvas.translate(-width.toFloat(), 0f)
+                    canvas.rotate(180f,width.toFloat(),0f)
+                    canvas.translate(0f, (-mHeight).toFloat())
+                    mEdgeEffect.draw(canvas)
+                    canvas.restore()
+                }
+                else -> mEdgeEffect.draw(canvas)
+            }
+
+            invalidate()
+        }
+    }
+
+    private fun clickItem(item: Item?, x:Float, y:Float):Boolean{
         if (item == null)return false
         val realSX = item.sX - scrollX
         val realSY = item.sY - scrollY
@@ -419,7 +510,7 @@ class TreeView: View{
         var id:Int = 0
         var code:String = ""
         var name:String = ""
-        var parent:Item? = null
+        var parent: Item? = null
         var children:MutableList<Item>? = null
         var data:Any? = null
         override fun toString(): String {
@@ -441,5 +532,9 @@ class TreeView: View{
             return id
         }
 
+    }
+
+    enum class SLIDE{
+        LIFT,RIGHT,UP,DOWN
     }
 }

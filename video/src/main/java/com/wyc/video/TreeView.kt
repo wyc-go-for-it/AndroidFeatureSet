@@ -93,7 +93,7 @@ class TreeView: View{
                             k.parent = item
                             k.children = mutableListOf()
 
-                            if (j == 11 && i == 0)
+                            if ((j == 12 || j == 11) && i == 0)
                             for(pp in 20..25){
                                 val kk = Item().also { kk ->
                                     kk.id = pp
@@ -102,12 +102,24 @@ class TreeView: View{
                                     kk.parent = k
                                     kk.children = mutableListOf()
                                     if (pp == 23){
-                                        for (kkk in 30..35){
-                                            val bbb = Item().apply {
-                                                id = pp
-                                                code = (id * 10).toString()
-                                                name = "列表$kkk$pp$i$j"
-                                                parent = kk
+                                        for (kkk in 30..32){
+                                            val bbb = Item().also {bbb->
+                                                bbb.id = kkk
+                                                bbb.code = (id * 10).toString()
+                                                bbb.name = "列表$kkk$pp$i$j"
+                                                bbb.parent = kk
+                                                bbb.children = mutableListOf()
+                                                for (kkkk in 40..43){
+                                                    val bbbb = Item().apply {
+                                                        id = kkkk
+                                                        code = (id * 10).toString()
+                                                        name = "列表$kkkk$kkk$pp$i$j"
+                                                        parent = bbb
+                                                    }
+
+                                                    bbb.children!!.add(bbbb)
+                                                }
+
                                             }
                                             kk.children!!.add(bbb)
                                         }
@@ -131,7 +143,7 @@ class TreeView: View{
     private fun initPaint(){
         mPaint.color = mTextColor
         mPaint.isAntiAlias = true
-        mPaint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 32f, resources.displayMetrics)
+        mPaint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16f, resources.displayMetrics)
     }
     private fun measureChild(){
         mHeight = 0
@@ -273,7 +285,7 @@ class TreeView: View{
 
     private fun recursiveDraw(item: Item, canvas: Canvas){
         val p = item.parent
-        if (p == null || item.sAnimY > p.sY + p.sHeight){
+        if (p == null || /*item.sAnimY > p.sY + p.sHeight*/p.fold){
 
             val baseLineY = item.sHeight / 2 + (abs(mPaint.fontMetrics.ascent) - mPaint.fontMetrics.descent) / 2
 
@@ -459,35 +471,95 @@ class TreeView: View{
         }
     }
 
-    private fun fold(it: Item){
-        if (it.sAnimY < it.sY){
-            it.sAnimY += 15
+    private fun fold(child: Item){
+        if (child.sAnimY < child.sY){
+            val step = 35
+            if (child.sAnimY + step > child.sY){
+                child.sAnimY = child.sY
+            }else
+                child.sAnimY += step
+
+            foldSibling(child)
+
             postDelayed({
-                fold(it)
+                fold(child)
             },5)
             invalidate()
+        }
+    }
+    private fun foldSibling(item: Item){
+        val parent = item.parent
+        if (parent != null){
+            if (parent.fold){
+                val grandpa = parent.parent
+                if (grandpa != null){
+                    val sibling = grandpa.children
+                    if (!sibling.isNullOrEmpty()){
+                        val index = sibling.indexOf(parent)
+                        if (index + 1 < sibling.size){
+
+                            adjustChildren(sibling[index + 1].apply {
+                                sAnimY = calLastChildAnimY(parent)
+                            })
+
+                            for (i in index + 2 until sibling.size){
+                                val o = sibling[i - 1]
+                                if (o.fold){
+                                    sibling[i].sAnimY = calLastChildAnimY(o)
+                                }else{
+                                    sibling[i].sAnimY = o.sAnimY + o.sHeight + mVerGap
+                                }
+                                adjustChildren(sibling[i])
+                            }
+                        }
+                    }
+                }
+                foldSibling(parent)
+            }
+        }
+    }
+
+    private fun calLastChildAnimY(item: Item):Float{
+        if (item.fold){
+            val ch = item.children
+            if (!ch.isNullOrEmpty()){
+                val c = ch[ch.size - 1]
+                return c.sAnimY + c.sHeight + mVerGap
+            }
+        }
+        return item.sAnimY + item.sHeight + mVerGap
+    }
+
+    private fun adjustChildren(parent:Item){
+        if (parent.fold){
+            val children = parent.children
+            if (!children.isNullOrEmpty()){
+                children[0].apply {
+                    sAnimY = parent.sAnimY + parent.sHeight + mVerGap
+                }
+                for (i in 1 until children.size){
+                    children[i].sAnimY = children[i - 1].sAnimY + children[i - 1].sHeight + mVerGap
+                }
+            }
         }
     }
 
     private fun unfold(it: Item){
         if (it.sAnimY > it.parent!!.sY + it.parent!!.sHeight){
+            it.sAnimY -= 2
+            invalidate()
 
-
-            if (it.fold){
-                val ch = it.children
-                if (!ch.isNullOrEmpty()){
-                    ch.forEach {
-                        unfold(it)
-                    }
+            val ch = it.children
+            if (!ch.isNullOrEmpty()){
+                ch.forEach {
+                    unfold(it)
                 }
             }
-
-            it.sAnimY -= 2
             postDelayed({
+                Logger.d(it)
                 unfold(it)
             },5)
 
-            invalidate()
         }
     }
     private fun foldAnimation(item: Item){
@@ -500,7 +572,7 @@ class TreeView: View{
                     fold(it)
                     foldAnimation(it)
                 }else {
-                    unfold(it)
+                    //unfold(it)
                 }
             }
         }
@@ -567,7 +639,7 @@ class TreeView: View{
         var children:MutableList<Item>? = null
         var data:Any? = null
         override fun toString(): String {
-            return "Item(sX=$sX, sY=$sY, sWidth=$sWidth, sHeight=$sHeight, fold=$fold, name='$name')"
+            return "Item(id=$id,sAnimY=$sAnimY,sX=$sX, sY=$sY, sWidth=$sWidth, sHeight=$sHeight, fold=$fold, name='$name')"
         }
 
         override fun equals(other: Any?): Boolean {

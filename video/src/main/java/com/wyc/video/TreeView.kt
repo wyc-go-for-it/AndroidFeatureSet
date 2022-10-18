@@ -1,6 +1,5 @@
 package com.wyc.video
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
@@ -9,8 +8,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.EdgeEffect
 import android.widget.OverScroller
-import com.wyc.logger.Logger
-import kotlinx.coroutines.*
 import kotlin.math.*
 
 
@@ -36,7 +33,8 @@ class TreeView: View{
 
     private val mPreGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 18f, resources.displayMetrics)
     private val mVerGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics)
-    private var mLogoGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, resources.displayMetrics)
+    private var mLogoSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, resources.displayMetrics)
+    private val mLogoGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4f, resources.displayMetrics)
 
     private var mMaxWidth = 0
     private var mHeight = 0
@@ -70,7 +68,7 @@ class TreeView: View{
             p.id = 88
             p.code = "880"
             p.name = "菜单880"
-            p.fold = true
+            p.unfold = true
             p.children = mutableListOf()
             for (i in 0..3){
                 val item = Item().also { item->
@@ -79,7 +77,7 @@ class TreeView: View{
                     item.name = "列表$i"
 
                     if (i != 1)
-                    item.fold = true
+                    item.unfold = true
 
                     item.parent = p
                     item.children = mutableListOf()
@@ -89,7 +87,7 @@ class TreeView: View{
                             k.code = (id * 10).toString()
                             k.name = "列表$i$j"
                             k.parent = item
-                            k.fold = true
+                            k.unfold = true
                             k.parent = item
                             k.children = mutableListOf()
 
@@ -158,7 +156,7 @@ class TreeView: View{
         mHeadItem?.apply {
             val bound = Rect()
             recursiveMeasure(this,0,bound)
-            mLogoGap = bound.height() * 0.5f
+            mLogoSize = bound.height() * 0.8f
         }
         if ((mHeight < measuredHeight && scrollY != 0) || (mMaxWidth < measuredWidth && scrollX != 0)){
             scrollTo(0,0)
@@ -179,15 +177,15 @@ class TreeView: View{
 
         if(p == null){
             mMaxWidth = w
-            item.sX = mLogoGap * 2f
-        }else if (p.fold){
-            item.sX = p.sX + mPreGap + mLogoGap
+            item.sX = mLogoSize + mLogoGap
+        }else if (p.unfold){
+            item.sX = p.sX + mPreGap + mLogoSize + mLogoGap
             if ((w + item.sX) > mMaxWidth){
                 mMaxWidth = (w + item.sX).toInt()
             }
         }
 
-        if (p?.fold == true){
+        if (p?.unfold == true){
             if (index == 0) {
                 item.sY = p.sY + p.sHeight + mVerGap
             }else{
@@ -198,7 +196,7 @@ class TreeView: View{
             item.sAnimY = item.sY
         }
         mHeight = item.sY.toInt() + h
-        if (item.fold){
+        if (item.unfold){
             val ch = item.children;
             if (!ch.isNullOrEmpty()){
                 for (i in 0 until ch.size)
@@ -210,7 +208,7 @@ class TreeView: View{
     private fun calItemHeight(item: Item, bound:Rect):Int{
         mPaint.getTextBounds(item.name,0,item.name.length,bound)
         var h = bound.height() + mVerGap.toInt()
-        if (item.fold){
+        if (item.unfold){
             val ch = item.children
             if (!ch.isNullOrEmpty()){
                 for (i in 0 until ch.size){
@@ -256,8 +254,6 @@ class TreeView: View{
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         mHeadItem?.apply {
-            sX = mLogoGap + mPreGap
-            sY = 5f
             layoutChild(this,left + paddingLeft - paddingRight,top + paddingTop - paddingBottom)
         }
         super.onLayout(changed, left, top, right, bottom)
@@ -285,13 +281,14 @@ class TreeView: View{
     }
     private fun drawChild(canvas: Canvas){
         mHeadItem?.apply {
+            drawLine(canvas,this)
             recursiveDraw(this,canvas)
         }
     }
 
     private fun recursiveDraw(item: Item, canvas: Canvas){
         val p = item.parent
-        if (p == null || /*item.sAnimY > p.sY + p.sHeight*/p.fold){
+        if (p == null || p.unfold){
 
             val baseLineY = item.sHeight / 2 + (abs(mPaint.fontMetrics.ascent) - mPaint.fontMetrics.descent) / 2
 
@@ -321,21 +318,21 @@ class TreeView: View{
     private fun drawLogo(canvas: Canvas,item: Item){
         val c = !item.children.isNullOrEmpty()
         if (c){
-            val offsetX = mLogoGap * 0.5f
-            val logoSize = mLogoGap * 0.95f
+            val offsetX = mLogoGap
+            val logoSize = mLogoSize
 
             mPaint.color = mFoldLogoColor
             mPaint.style = Paint.Style.STROKE
 
             val y = item.sAnimY + item.sHeight / 2
-            val startX = (item.sX - logoSize) - offsetX
-            val stopX = item.sX - offsetX
+            val startX = (item.sX - logoSize + 5) - offsetX
+            val stopX = item.sX - offsetX - 5
 
             val cX = (item.sX - logoSize /2f) - offsetX
 
-            canvas.drawCircle(cX, y, mLogoGap / 1.5f , mPaint)
+            canvas.drawCircle(cX, y, logoSize * 0.5f , mPaint)
 
-            if (item.fold){
+            if (item.unfold){
                 canvas.drawLine(startX,y,stopX,y,mPaint)
             }else{
                 canvas.drawLine(startX,y,stopX,y,mPaint)
@@ -348,6 +345,73 @@ class TreeView: View{
             mPaint.color = mTextColor
             mPaint.style = Paint.Style.FILL
         }
+    }
+
+    private fun drawLine(canvas: Canvas,item: Item){
+        if (mDashPathEffect == null)mDashPathEffect = DashPathEffect(floatArrayOf(4f,4f),0f)
+        mPaint.pathEffect = mDashPathEffect
+        drawConnectingLine(canvas,item)
+        mPaint.pathEffect = null
+    }
+
+    private fun drawConnectingLine(canvas: Canvas,item: Item){
+         if (item.unfold){
+             val offsetX = mLogoSize - mLogoGap
+             val offsetY = mLogoSize * 0.5f
+
+             var startX: Float
+             var startY: Float
+
+             var stopX: Float
+             var stopY: Float
+
+             val children = item.children
+             if (!children.isNullOrEmpty()){
+                 var child = children[0]
+                 var stopXOffset = if (!child.children.isNullOrEmpty()) mPreGap else mPreGap + mLogoSize
+
+                 startX = item.sX - offsetX
+                 startY = item.sAnimY + (item.sHeight shr 1) + offsetY
+
+                 stopX = startX
+                 stopY = child.sAnimY + (child.sHeight shr 1)
+
+                 canvas.drawLine(startX,startY,stopX,stopY,mPaint)
+
+                 startX = stopX
+                 startY = stopY
+
+                 stopX = startX + offsetX
+                 stopY = startY
+
+                 canvas.drawLine(startX,startY,stopX + stopXOffset ,stopY,mPaint)
+
+                 if (child.unfold)drawConnectingLine(canvas,child)
+
+                 for (i in 1 until children.size){
+                     child = children[i]
+                     stopXOffset = if (!child.children.isNullOrEmpty()) mPreGap else mPreGap + mLogoSize
+
+                     startX = stopX - offsetX
+                     startY = stopY
+
+                     stopX = startX
+                     stopY = child.sAnimY + (child.sHeight shr 1)
+
+                     canvas.drawLine(startX,startY,stopX,stopY,mPaint)
+
+                     startX = stopX
+                     startY = stopY
+
+                     stopX = startX + offsetX
+                     stopY = startY
+
+                     canvas.drawLine(startX,startY,stopX  + stopXOffset,stopY,mPaint)
+
+                     if (child.unfold)drawConnectingLine(canvas,child)
+                 }
+             }
+         }
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -476,7 +540,7 @@ class TreeView: View{
         }
     }
 
-    private fun fold(child: Item){
+    private fun unfold(child: Item){
         if (child.sAnimY < child.sY){
             val step = 10
             if (child.sAnimY + step > child.sY){
@@ -484,20 +548,20 @@ class TreeView: View{
             }else
                 child.sAnimY += step
 
-            foldParent(child)
+            unfoldParent(child)
 
             postDelayed({
-                fold(child)
+                unfold(child)
             },5)
 
             invalidate()
         }
     }
 
-    private fun foldParent(item: Item){
+    private fun unfoldParent(item: Item){
         val parent = item.parent
         if (parent != null){
-            if (parent.fold){
+            if (parent.unfold){
                 val grandpa = parent.parent
                 if (grandpa != null){
                     val sibling = grandpa.children!!
@@ -509,13 +573,13 @@ class TreeView: View{
                         }
                     }
                 }
-                foldParent(parent)
+                unfoldParent(parent)
             }
         }
     }
 
     private fun calLastChildAnimY(item: Item):Float{
-        if (item.fold){
+        if (item.unfold){
             val ch = item.children
             if (!ch.isNullOrEmpty()){
                 return calLastChildAnimY(ch[ch.size - 1])
@@ -525,7 +589,7 @@ class TreeView: View{
     }
 
     private fun adjustChildren(parent:Item){
-        if (parent.fold){
+        if (parent.unfold){
             val children = parent.children
             if (!children.isNullOrEmpty()){
                 children[0].apply {
@@ -540,38 +604,21 @@ class TreeView: View{
         }
     }
 
-    private fun unfold(it: Item){
-        if (it.sAnimY > it.parent!!.sY + it.parent!!.sHeight){
-            it.sAnimY -= 2
-            invalidate()
-
-            val ch = it.children
-            if (!ch.isNullOrEmpty()){
-                ch.forEach {
-                    unfold(it)
-                }
-            }
-            postDelayed({
-                Logger.d(it)
-                unfold(it)
-            },5)
-
-        }
-    }
-    private fun foldAnimation(item: Item){
+    private fun unfoldAnimation(item: Item){
         val ch = item.children
         if (!ch.isNullOrEmpty()){
-            if (item.fold){
-                for (i in 0 until ch.size){
-                    val it = ch[i]
-                    it.sAnimY = item.sY + item.sHeight
-                    fold(it)
-                    foldAnimation(it)
-                }
-            }else {
-                //unfold(it)
+            for (i in 0 until ch.size){
+                val it = ch[i]
+                it.sAnimY = item.sY + item.sHeight
+                unfold(it)
+                unfoldAnimation(it)
             }
+        }
+    }
 
+    private fun startAnimation(item: Item){
+        if (item.unfold){
+            unfoldAnimation(item)
         }
     }
 
@@ -581,11 +628,11 @@ class TreeView: View{
         val realSY = item.sY - scrollY
 
         val bH = y >= realSY && y <= realSY + item.sHeight
-        if (x>= realSX - mLogoGap * 2 && x<= realSX && bH){
+        if (x>= realSX - mLogoSize * 2 && x<= realSX && bH){
             if (!item.children.isNullOrEmpty()){
-                item.fold = !item.fold
+                item.unfold = !item.unfold
                 measureChild()
-                foldAnimation(item)
+                startAnimation(item)
                 return true
             }
         }else if (x >= realSX && x <= realSX + item.sWidth && bH){
@@ -604,7 +651,7 @@ class TreeView: View{
             }
             invalidate()
             return true
-        }else if (item.fold){
+        }else if (item.unfold){
             val ch = item.children
             if (!ch.isNullOrEmpty()){
                 run out@{
@@ -624,7 +671,7 @@ class TreeView: View{
         var sY = 0f
         var sWidth = 0
         var sHeight = 0
-        var fold:Boolean = false
+        var unfold:Boolean = false
         var sel:Boolean = false
 
         var sAnimY = 0f
@@ -636,7 +683,7 @@ class TreeView: View{
         var children:MutableList<Item>? = null
         var data:Any? = null
         override fun toString(): String {
-            return "Item(id=$id,sAnimY=$sAnimY,sX=$sX, sY=$sY, sWidth=$sWidth, sHeight=$sHeight, fold=$fold, name='$name')"
+            return "Item(id=$id,sAnimY=$sAnimY,sX=$sX, sY=$sY, sWidth=$sWidth, sHeight=$sHeight, fold=$unfold, name='$name')"
         }
 
         override fun equals(other: Any?): Boolean {

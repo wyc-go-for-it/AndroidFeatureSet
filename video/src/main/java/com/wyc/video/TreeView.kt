@@ -2,12 +2,15 @@ package com.wyc.video
 
 import android.content.Context
 import android.graphics.*
+import android.graphics.drawable.ColorDrawable
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
 import android.widget.EdgeEffect
 import android.widget.OverScroller
+import androidx.core.graphics.ColorUtils
+import com.wyc.logger.Logger
 import kotlin.math.*
 
 
@@ -27,13 +30,20 @@ import kotlin.math.*
 
 class TreeView: View{
     private val mPaint = Paint()
-    private var mHeadItem: Item? = null
+    private var mHeadItem: Item =  Item()
     private val mSelectedList = mutableListOf<Item>()
-    private var mSingleSelection = true
+    private var mSingleSelection = false
 
+    private var mBoxSize = 0f
     private val mPreGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 18f, resources.displayMetrics)
     private val mVerGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics)
+
     private var mLogoSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, resources.displayMetrics)
+    set(value) {
+        mBoxSize = value * 0.4f
+        field = value
+    }
+
     private val mLogoGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4f, resources.displayMetrics)
 
     private var mMaxWidth = 0
@@ -53,6 +63,10 @@ class TreeView: View{
 
     private val mEdgeEffect: EdgeEffect
 
+    private var hasSelect = true
+    private val mSelectBoxColor = Color.RED
+
+
     constructor(context: Context):this(context, null)
     constructor(context: Context, attrs: AttributeSet?):this(context, attrs, 0)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int):super(context, attrs, defStyleAttr){
@@ -64,7 +78,7 @@ class TreeView: View{
     }
 
     private fun initDefaultData(){
-        mHeadItem = Item().also { p->
+        mHeadItem.also { p->
             p.id = 88
             p.code = "880"
             p.name = "菜单880"
@@ -153,11 +167,10 @@ class TreeView: View{
         mHeight = 0
         mMaxWidth = 0
 
-        mHeadItem?.apply {
-            val bound = Rect()
-            recursiveMeasure(this,0,bound)
-            mLogoSize = bound.height() * 0.8f
-        }
+        val bound = Rect()
+        recursiveMeasure(mHeadItem,0,bound)
+        mLogoSize = bound.height() * 0.8f
+
         if ((mHeight < measuredHeight && scrollY != 0) || (mMaxWidth < measuredWidth && scrollX != 0)){
             scrollTo(0,0)
         }
@@ -226,26 +239,23 @@ class TreeView: View{
         var realWidthMeasureSpec = widthMeasureSpec
         var realHeightMeasureSpec = heightMeasureSpec
 
-        if (null != mHeadItem){
+        measureChild()
 
-            measureChild()
-
-            when(widthSpec){
-                MeasureSpec.AT_MOST,MeasureSpec.UNSPECIFIED ->{
-                    realWidthMeasureSpec = MeasureSpec.makeMeasureSpec(mMaxWidth + paddingLeft + paddingRight,MeasureSpec.EXACTLY)
-                }
-                MeasureSpec.EXACTLY ->{
-                    realWidthMeasureSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec),MeasureSpec.EXACTLY)
-                }
+        when(widthSpec){
+            MeasureSpec.AT_MOST,MeasureSpec.UNSPECIFIED ->{
+                realWidthMeasureSpec = MeasureSpec.makeMeasureSpec(mMaxWidth + paddingLeft + paddingRight,MeasureSpec.EXACTLY)
             }
+            MeasureSpec.EXACTLY ->{
+                realWidthMeasureSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec),MeasureSpec.EXACTLY)
+            }
+        }
 
-            when(heightSpec){
-                MeasureSpec.AT_MOST,MeasureSpec.UNSPECIFIED->{
-                    realHeightMeasureSpec = MeasureSpec.makeMeasureSpec(mHeight + paddingTop + paddingBottom,MeasureSpec.EXACTLY)
-                }
-                MeasureSpec.EXACTLY->{
-                    realHeightMeasureSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(heightMeasureSpec),MeasureSpec.EXACTLY)
-                }
+        when(heightSpec){
+            MeasureSpec.AT_MOST,MeasureSpec.UNSPECIFIED->{
+                realHeightMeasureSpec = MeasureSpec.makeMeasureSpec(mHeight + paddingTop + paddingBottom,MeasureSpec.EXACTLY)
+            }
+            MeasureSpec.EXACTLY->{
+                realHeightMeasureSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(heightMeasureSpec),MeasureSpec.EXACTLY)
             }
         }
 
@@ -253,9 +263,7 @@ class TreeView: View{
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        mHeadItem?.apply {
-            layoutChild(this,left + paddingLeft - paddingRight,top + paddingTop - paddingBottom)
-        }
+        layoutChild(mHeadItem,left + paddingLeft - paddingRight,top + paddingTop - paddingBottom)
         super.onLayout(changed, left, top, right, bottom)
     }
     private fun layoutChild(item: Item, l: Int, t: Int){
@@ -280,10 +288,8 @@ class TreeView: View{
         super.onDraw(canvas)
     }
     private fun drawChild(canvas: Canvas){
-        mHeadItem?.apply {
-            drawLine(canvas,this)
-            recursiveDraw(this,canvas)
-        }
+        drawLine(canvas)
+        recursiveDraw(mHeadItem,canvas)
     }
 
     private fun recursiveDraw(item: Item, canvas: Canvas){
@@ -305,6 +311,7 @@ class TreeView: View{
             }
 
             drawLogo(canvas,item)
+            if (hasSelect && p != null)drawSelectBox(canvas,item)
 
             val ch = item.children;
             if (!ch.isNullOrEmpty()){
@@ -316,21 +323,19 @@ class TreeView: View{
     }
 
     private fun drawLogo(canvas: Canvas,item: Item){
-        val c = !item.children.isNullOrEmpty()
-        if (c){
-            val offsetX = mLogoGap
-            val logoSize = mLogoSize
+        if (!item.children.isNullOrEmpty()){
+            val sX = item.parent?.sX?:item.sX
 
             mPaint.color = mFoldLogoColor
             mPaint.style = Paint.Style.STROKE
 
             val y = item.sAnimY + item.sHeight / 2
-            val startX = (item.sX - logoSize + 5) - offsetX
-            val stopX = item.sX - offsetX - 5
+            val startX = sX - mLogoSize + 5 - mLogoGap
+            val stopX = sX - mLogoGap - 5
 
-            val cX = (item.sX - logoSize /2f) - offsetX
+            val cX = sX - mLogoSize /2f - mLogoGap
 
-            canvas.drawCircle(cX, y, logoSize * 0.5f , mPaint)
+            canvas.drawCircle(cX, y, mLogoSize * 0.5f , mPaint)
 
             if (item.unfold){
                 canvas.drawLine(startX,y,stopX,y,mPaint)
@@ -347,71 +352,124 @@ class TreeView: View{
         }
     }
 
-    private fun drawLine(canvas: Canvas,item: Item){
-        if (mDashPathEffect == null)mDashPathEffect = DashPathEffect(floatArrayOf(4f,4f),0f)
-        mPaint.pathEffect = mDashPathEffect
-        drawConnectingLine(canvas,item)
-        mPaint.pathEffect = null
+    private fun drawLine(canvas: Canvas){
+        if (mHeadItem.unfold){
+            if (mDashPathEffect == null)mDashPathEffect = DashPathEffect(floatArrayOf(4f,4f),0f)
+            mPaint.pathEffect = mDashPathEffect
+            drawConnectingLine(canvas,mHeadItem)
+            mPaint.pathEffect = null
+        }
     }
 
     private fun drawConnectingLine(canvas: Canvas,item: Item){
-         if (item.unfold){
-             val offsetX = mLogoSize - mLogoGap
-             val offsetY = mLogoSize * 0.5f
+        val children = item.children
+        if (!children.isNullOrEmpty()){
+            val offset = mLogoSize * 0.5f
+            val offsetBox = if (hasSelect) mBoxSize * 2.3f else 0f
 
-             var startX: Float
-             var startY: Float
+            var child = children[0]
+            var gap = if (!child.children.isNullOrEmpty()) offset else 0f
+            var lastGap = if (item.parent == null) offset else 0f
 
-             var stopX: Float
-             var stopY: Float
+            var startX = item.sX - offset - mLogoGap
+            var startY = item.sAnimY + (item.sHeight shr 1)
 
-             val children = item.children
-             if (!children.isNullOrEmpty()){
-                 var child = children[0]
-                 var stopXOffset = if (!child.children.isNullOrEmpty()) mPreGap else mPreGap + mLogoSize
+            var stopX = startX
+            var stopY = child.sAnimY + (child.sHeight shr 1)
 
-                 startX = item.sX - offsetX
-                 startY = item.sAnimY + (item.sHeight shr 1) + offsetY
+            if (item.parent == null)
+                canvas.drawLine(startX,startY + lastGap ,stopX,stopY - gap,mPaint)
+            else
+                canvas.drawLine(startX,startY + lastGap + offsetBox * 0.5f,stopX,stopY - gap,mPaint)
 
-                 stopX = startX
-                 stopY = child.sAnimY + (child.sHeight shr 1)
+            startX = stopX
+            startY = stopY
 
-                 canvas.drawLine(startX,startY,stopX,stopY,mPaint)
+            stopX = child.sX - mLogoGap
 
-                 startX = stopX
-                 startY = stopY
 
-                 stopX = startX + offsetX
-                 stopY = startY
+            canvas.drawLine(startX + gap,startY,stopX - offsetBox,stopY,mPaint)
 
-                 canvas.drawLine(startX,startY,stopX + stopXOffset ,stopY,mPaint)
 
-                 if (child.unfold)drawConnectingLine(canvas,child)
+            if (child.unfold)drawConnectingLine(canvas,child)
 
-                 for (i in 1 until children.size){
-                     child = children[i]
-                     stopXOffset = if (!child.children.isNullOrEmpty()) mPreGap else mPreGap + mLogoSize
+            for (i in 1 until children.size){
+                child = children[i]
+                gap = if (!child.children.isNullOrEmpty()) offset else 0f
+                lastGap = if (!children[i - 1].children.isNullOrEmpty()) offset else 0f
 
-                     startX = stopX - offsetX
-                     startY = stopY
+                stopX = startX
+                stopY = child.sAnimY + (child.sHeight shr 1)
 
-                     stopX = startX
-                     stopY = child.sAnimY + (child.sHeight shr 1)
+                canvas.drawLine(startX,startY + lastGap,stopX,stopY - gap,mPaint)
 
-                     canvas.drawLine(startX,startY,stopX,stopY,mPaint)
+                startX = stopX
+                startY = stopY
 
-                     startX = stopX
-                     startY = stopY
+                stopX = child.sX - mLogoGap
 
-                     stopX = startX + offsetX
-                     stopY = startY
+                canvas.drawLine(startX + gap,startY,stopX - offsetBox,stopY,mPaint)
 
-                     canvas.drawLine(startX,startY,stopX  + stopXOffset,stopY,mPaint)
+                if (child.unfold)drawConnectingLine(canvas,child)
+            }
+        }
+    }
 
-                     if (child.unfold)drawConnectingLine(canvas,child)
-                 }
-             }
-         }
+    private fun drawSelectBox(canvas: Canvas,item:Item){
+
+        val centreX = item.sX - mLogoGap - mLogoSize * 0.5f
+        val centreY = item.sAnimY  + item.sHeight * 0.5f
+
+        mPaint.color = mSelectBoxColor
+
+        val l = centreX - mBoxSize
+        val t = centreY - mBoxSize
+        val r = centreX + mBoxSize
+        val b = centreY + mBoxSize
+
+        val old = mPaint.strokeWidth
+
+        if (item.sel){
+            canvas.drawRoundRect(l ,t ,r,b ,5f,5f,mPaint)
+
+            mPaint.style = Paint.Style.STROKE
+
+            canvas.save()
+            canvas.scale(0.8f,0.8f,centreX,centreY)
+
+            val path = Path()
+            path.moveTo(centreX - mBoxSize * 0.7f,centreY + mBoxSize * 0.1f)
+            path.lineTo(centreX - mBoxSize * 0.2f ,centreY + mBoxSize * 0.6f)
+
+            path.lineTo(centreX + mBoxSize * 0.7f,centreY - mBoxSize * 0.6f)
+
+
+            val oldCap = mPaint.strokeCap
+
+            mPaint.strokeWidth = 6f
+            mPaint.strokeCap = Paint.Cap.ROUND
+
+            val a = Color.alpha(mSelectBoxColor)
+            mPaint.color = Color.argb(a,255 - Color.red(mSelectBoxColor),255 - Color.green(mSelectBoxColor),255 - Color.blue(mSelectBoxColor))
+
+            canvas.drawPath(path,mPaint)
+
+            mPaint.strokeCap = oldCap
+
+            canvas.restore()
+        }else{
+            mPaint.style = Paint.Style.STROKE
+            mPaint.strokeWidth = 2f
+            canvas.drawRoundRect(l ,t ,r,b ,5f,5f,mPaint)
+            if (item.childSelected != 0){
+                mPaint.style = Paint.Style.FILL
+                canvas.drawRoundRect(l + 6f ,t + 6f ,r - 6f,b -6f ,5f,5f,mPaint)
+            }
+        }
+
+        mPaint.color = mTextColor
+        mPaint.style = Paint.Style.FILL
+        mPaint.strokeWidth = old
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -626,29 +684,18 @@ class TreeView: View{
         if (item == null)return false
         val realSX = item.sX - scrollX
         val realSY = item.sY - scrollY
-
         val bH = y >= realSY && y <= realSY + item.sHeight
-        if (x>= realSX - mLogoSize * 2 && x<= realSX && bH){
+
+        val checkX = (item.parent?.sX?:item.sX) - scrollX
+        if (x>= checkX - mLogoSize && x<= checkX && bH){
             if (!item.children.isNullOrEmpty()){
                 item.unfold = !item.unfold
                 measureChild()
                 startAnimation(item)
                 return true
             }
-        }else if (x >= realSX && x <= realSX + item.sWidth && bH){
-            item.sel = !item.sel
-            if (mSingleSelection){
-                if (mSelectedList.isNotEmpty()){
-                    mSelectedList.removeAt(0).sel = false
-                }
-                if (item.sel){
-                    mSelectedList.add(item)
-                }
-            }else{
-                if (item.sel){
-                    mSelectedList.add(item)
-                }else mSelectedList.remove(item)
-            }
+        }else if (x >= realSX - mBoxSize * 2f && x <= realSX + item.sWidth && bH){
+            selectItem(item)
             invalidate()
             return true
         }else if (item.unfold){
@@ -665,6 +712,47 @@ class TreeView: View{
         }
         return false
     }
+    private fun selectItem(item: Item){
+        item.sel = !item.sel
+
+        if (mSingleSelection){
+            if (mSelectedList.isNotEmpty()){
+                val c = mSelectedList.removeAt(0)
+                c.sel = false
+                c.parent?.apply {
+                    childSelected -= 1
+                    if (childSelected != children?.size){
+                        sel = false
+                    }
+                }
+            }
+            if (item.sel){
+                mSelectedList.add(item)
+                item.parent?.apply {
+                    childSelected += 1
+                    if (childSelected == children?.size){
+                        sel = true
+                    }
+                }
+            }
+        }else{
+            if (item.sel){
+                mSelectedList.add(item)
+            }else mSelectedList.remove(item)
+
+            item.parent?.apply {
+                if (item.sel){
+                    childSelected += 1
+                }else childSelected -= 1
+
+                sel = childSelected == children?.size
+            }
+        }
+
+        item.children?.forEach {
+            selectItem(it)
+        }
+    }
 
     class Item{
         var sX = 0f
@@ -675,6 +763,7 @@ class TreeView: View{
         var sel:Boolean = false
 
         var sAnimY = 0f
+        var childSelected = 0
 
         var id:Int = 0
         var code:String = ""

@@ -31,8 +31,9 @@ import kotlin.math.*
 class TreeView: View{
     private val mPaint = Paint()
     private var mHeadItem: Item =  Item()
+    private var mCurItem:Item? = null
     private val mSelectedList = mutableListOf<Item>()
-    private var mSingleSelection = false
+    private var mSingleSelection = true
 
     private var mBoxSize = 0f
     private val mPreGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 18f, resources.displayMetrics)
@@ -40,7 +41,7 @@ class TreeView: View{
 
     private var mLogoSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, resources.displayMetrics)
     set(value) {
-        mBoxSize = value * 0.4f
+        mBoxSize = value * if (mSingleSelection) 0.5f else 0.4f
         field = value
     }
 
@@ -297,21 +298,21 @@ class TreeView: View{
         if (p == null || p.unfold){
 
             val baseLineY = item.sHeight / 2 + (abs(mPaint.fontMetrics.ascent) - mPaint.fontMetrics.descent) / 2
+            val offsetH = if (p == null && hasSelect) mLogoSize + mLogoGap else 0f
+            canvas.drawText(item.name,item.sX + offsetH,item.sAnimY + baseLineY,mPaint)
 
-            canvas.drawText(item.name,item.sX,item.sAnimY + baseLineY,mPaint)
-
-            if (item.sel){
+            if (item.click){
                 val offset = mVerGap * 0.25f
                 mPaint.style = Paint.Style.STROKE
                 if (mDashPathEffect == null)mDashPathEffect = DashPathEffect(floatArrayOf(4f,4f),0f)
                 mPaint.pathEffect = mDashPathEffect
-                canvas.drawRoundRect(item.sX - offset,item.sAnimY - offset,item.sX + item.sWidth + offset,item.sAnimY + item.sHeight + offset,2f,2f,mPaint)
+                canvas.drawRoundRect(item.sX - offset + offsetH,item.sAnimY - offset,item.sX + item.sWidth + offset + offsetH,item.sAnimY + item.sHeight + offset,2f,2f,mPaint)
                 mPaint.style = Paint.Style.FILL
                 mPaint.pathEffect = null
             }
 
             drawLogo(canvas,item)
-            if (hasSelect && p != null)drawSelectBox(canvas,item)
+            if (hasSelect)drawSelectBox(canvas,item)
 
             val ch = item.children;
             if (!ch.isNullOrEmpty()){
@@ -417,7 +418,7 @@ class TreeView: View{
 
     private fun drawSelectBox(canvas: Canvas,item:Item){
 
-        val centreX = item.sX - mLogoGap - mLogoSize * 0.5f
+        val centreX = if (item.parent != null) item.sX - mLogoGap - mLogoSize * 0.5f else item.sX + mLogoSize * 0.5f
         val centreY = item.sAnimY  + item.sHeight * 0.5f
 
         mPaint.color = mSelectBoxColor
@@ -429,8 +430,11 @@ class TreeView: View{
 
         val old = mPaint.strokeWidth
 
-        if (item.sel){
-            canvas.drawRoundRect(l ,t ,r,b ,5f,5f,mPaint)
+        if (item.selectedState == SELECT_STATE.ALLSEL){
+            if (mSingleSelection){
+                canvas.drawCircle(centreX ,centreY ,mBoxSize,mPaint)
+            }else
+                canvas.drawRoundRect(l ,t ,r,b ,5f,5f,mPaint)
 
             mPaint.style = Paint.Style.STROKE
 
@@ -460,10 +464,16 @@ class TreeView: View{
         }else{
             mPaint.style = Paint.Style.STROKE
             mPaint.strokeWidth = 2f
-            canvas.drawRoundRect(l ,t ,r,b ,5f,5f,mPaint)
-            if (item.childSelected != 0){
+            if (mSingleSelection){
+                canvas.drawCircle(centreX,centreY,mBoxSize,mPaint)
+            }else
+                canvas.drawRoundRect(l ,t ,r,b ,5f,5f,mPaint)
+            if (item.selectedState == SELECT_STATE.HALFSEL){
                 mPaint.style = Paint.Style.FILL
-                canvas.drawRoundRect(l + 6f ,t + 6f ,r - 6f,b -6f ,5f,5f,mPaint)
+                if (mSingleSelection){
+                    canvas.drawCircle(centreX,centreY,mBoxSize - 6f,mPaint)
+                }else
+                    canvas.drawRoundRect(l + 6f ,t + 6f ,r - 6f,b -6f ,5f,5f,mPaint)
             }
         }
 
@@ -694,9 +704,14 @@ class TreeView: View{
                 startAnimation(item)
                 return true
             }
-        }else if (x >= realSX - mBoxSize * 2f && x <= realSX + item.sWidth && bH){
+        }else if(x >= realSX && x <= realSX + item.sWidth && bH){
+            if (mCurItem != item){
+                mCurItem?.click = false
+                mCurItem = item
+            }
+            item.click = true
+        }else if (x >= realSX - mBoxSize * 2f && x <= realSX + mBoxSize * 2f && bH){
             selectItem(item)
-            invalidate()
             return true
         }else if (item.unfold){
             val ch = item.children
@@ -712,45 +727,59 @@ class TreeView: View{
         }
         return false
     }
+
     private fun selectItem(item: Item){
-        item.sel = !item.sel
-
-        if (mSingleSelection){
-            if (mSelectedList.isNotEmpty()){
-                val c = mSelectedList.removeAt(0)
-                c.sel = false
-                c.parent?.apply {
-                    childSelected -= 1
-                    if (childSelected != children?.size){
-                        sel = false
-                    }
+        item.selectedState = if (item.selectedState == SELECT_STATE.ALLSEL) SELECT_STATE.UNSEL else SELECT_STATE.ALLSEL
+        if (hasSelect){
+            if (mSingleSelection){
+                if (mSelectedList.isNotEmpty()){
+                    val c = mSelectedList.removeAt(0)
+                    c.selectedState = SELECT_STATE.UNSEL
+                    selectParentItem(c)
                 }
-            }
-            if (item.sel){
-                mSelectedList.add(item)
-                item.parent?.apply {
-                    childSelected += 1
-                    if (childSelected == children?.size){
-                        sel = true
-                    }
+                if (item.selectedState == SELECT_STATE.ALLSEL){
+                    mSelectedList.add(item)
                 }
+            }else{
+                if (item.selectedState == SELECT_STATE.ALLSEL){
+                    mSelectedList.add(item)
+                }else {
+                    mSelectedList.remove(item)
+                }
+                selectChildItem(item)
             }
-        }else{
-            if (item.sel){
-                mSelectedList.add(item)
-            }else mSelectedList.remove(item)
+            selectParentItem(item)
 
-            item.parent?.apply {
-                if (item.sel){
-                    childSelected += 1
-                }else childSelected -= 1
-
-                sel = childSelected == children?.size
-            }
+            invalidate()
         }
-
+    }
+    private fun selectChildItem(item: Item){
         item.children?.forEach {
-            selectItem(it)
+            if (it.selectedState != item.selectedState){
+                it.selectedState = item.selectedState
+                if (it.selectedState == SELECT_STATE.ALLSEL){
+                    mSelectedList.add(it)
+                }else if (it.selectedState == SELECT_STATE.UNSEL){
+                    mSelectedList.remove(it)
+                }
+            }
+            selectChildItem(it)
+        }
+    }
+    private fun selectParentItem(item: Item){
+        var p = item.parent
+        while (p != null && !p.children.isNullOrEmpty()){
+            when(p.children!!.count { if (mSingleSelection) (it.selectedState != SELECT_STATE.UNSEL) else it.selectedState == SELECT_STATE.ALLSEL }){
+                0->{
+                    p.selectedState = SELECT_STATE.UNSEL
+                }
+                p.children!!.size ->{
+                    p.selectedState = SELECT_STATE.ALLSEL
+                }else ->{
+                p.selectedState = SELECT_STATE.HALFSEL
+                }
+            }
+            p = p.parent
         }
     }
 
@@ -760,10 +789,10 @@ class TreeView: View{
         var sWidth = 0
         var sHeight = 0
         var unfold:Boolean = false
-        var sel:Boolean = false
+        var click:Boolean = false
 
         var sAnimY = 0f
-        var childSelected = 0
+        var selectedState = SELECT_STATE.UNSEL
 
         var id:Int = 0
         var code:String = ""
@@ -792,7 +821,12 @@ class TreeView: View{
 
     }
 
-    enum class SLIDE{
+    private enum class SLIDE{
         LIFT,RIGHT,UP,DOWN
     }
+    enum class SELECT_STATE{
+        UNSEL,HALFSEL,ALLSEL
+    }
+
+
 }

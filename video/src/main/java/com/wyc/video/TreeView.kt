@@ -2,14 +2,12 @@ package com.wyc.video
 
 import android.content.Context
 import android.graphics.*
-import android.graphics.drawable.ColorDrawable
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
 import android.widget.EdgeEffect
 import android.widget.OverScroller
-import androidx.core.graphics.ColorUtils
 import com.wyc.logger.Logger
 import kotlin.math.*
 
@@ -30,10 +28,15 @@ import kotlin.math.*
 
 class TreeView: View{
     private val mPaint = Paint()
-    private var mHeadItem: Item =  Item()
+    private var mHeadItem: Item =  Item().also {
+        it.id = -99999
+        it.code = "-99999"
+        it.name = "菜单880"
+        it.children = mutableListOf()
+    }
     private var mCurItem:Item? = null
     private val mSelectedList = mutableListOf<Item>()
-    private var mSingleSelection = true
+    private var mSingleSelection = false
 
     private var mBoxSize = 0f
     private val mPreGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 18f, resources.displayMetrics)
@@ -47,7 +50,8 @@ class TreeView: View{
 
     private val mLogoGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4f, resources.displayMetrics)
 
-    private var mMaxWidth = 0
+    private var mMaxItemWidth = 0
+    private var mMaxItemHeight = 0
     private var mHeight = 0
 
     private val mTextColor = Color.BLACK
@@ -67,39 +71,40 @@ class TreeView: View{
     private var hasSelect = true
     private val mSelectBoxColor = Color.RED
 
+    private var mItemClickListener:OnItemClick? = null
 
     constructor(context: Context):this(context, null)
     constructor(context: Context, attrs: AttributeSet?):this(context, attrs, 0)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int):super(context, attrs, defStyleAttr){
         initPaint()
-        initDefaultData()
+        //initDefaultData()
 
         mEdgeEffect = EdgeEffect(context)
         mEdgeEffect.color = Color.RED
     }
 
-    private fun initDefaultData(){
+    public fun initDefaultData(){
         mHeadItem.also { p->
             p.id = 88
             p.code = "880"
             p.name = "菜单880"
             p.unfold = true
             p.children = mutableListOf()
-            for (i in 0..3){
+            for (i in 0..1){
                 val item = Item().also { item->
                     item.id = i
-                    item.code = (id * 10).toString()
-                    item.name = "列表$i"
+                    item.code = (item.id * 10).toString()
+                    item.name = "类表$i"
 
                     if (i != 1)
                     item.unfold = true
 
                     item.parent = p
                     item.children = mutableListOf()
-                    for (j in 10..12){
+                    /*for (j in 10..12){
                         val k = Item().also { k->
                             k.id = j
-                            k.code = (id * 10).toString()
+                            k.code = (k.id * 10).toString()
                             k.name = "列表$i$j"
                             k.parent = item
                             k.unfold = true
@@ -110,7 +115,7 @@ class TreeView: View{
                             for(pp in 20..25){
                                 val kk = Item().also { kk ->
                                     kk.id = pp
-                                    kk.code = (id * 10).toString()
+                                    kk.code = (kk.id * 10).toString()
                                     kk.name = "列表$pp$i$j"
                                     kk.parent = k
                                     kk.children = mutableListOf()
@@ -118,7 +123,7 @@ class TreeView: View{
                                         for (kkk in 30..33){
                                             val bbb = Item().also {bbb->
                                                 bbb.id = kkk
-                                                bbb.code = (id * 10).toString()
+                                                bbb.code = (bbb.id * 10).toString()
                                                 bbb.name = "列表$kkk$pp$i$j"
                                                 bbb.parent = kk
                                                 bbb.children = mutableListOf()
@@ -151,7 +156,7 @@ class TreeView: View{
 
                         }
                         item.children!!.add(k)
-                    }
+                    }*/
                 }
                 p.children!!.add(item)
             }
@@ -166,13 +171,14 @@ class TreeView: View{
     }
     private fun measureChild(){
         mHeight = 0
-        mMaxWidth = 0
+        mMaxItemWidth = 0
+        mMaxItemHeight = 0
 
         val bound = Rect()
         recursiveMeasure(mHeadItem,0,bound)
-        mLogoSize = bound.height() * 0.8f
+        mLogoSize = mMaxItemHeight * 0.8f
 
-        if ((mHeight < measuredHeight && scrollY != 0) || (mMaxWidth < measuredWidth && scrollX != 0)){
+        if ((mHeight < measuredHeight && scrollY != 0) || (mMaxItemWidth < measuredWidth && scrollX != 0)){
             scrollTo(0,0)
         }
     }
@@ -187,15 +193,19 @@ class TreeView: View{
 
         item.sHeight = h
 
+        if (mMaxItemHeight < h){
+            mMaxItemHeight = h
+        }
+
         val p = item.parent
 
         if(p == null){
-            mMaxWidth = w
+            mMaxItemWidth = w
             item.sX = mLogoSize + mLogoGap
         }else if (p.unfold){
             item.sX = p.sX + mPreGap + mLogoSize + mLogoGap
-            if ((w + item.sX) > mMaxWidth){
-                mMaxWidth = (w + item.sX).toInt()
+            if ((w + item.sX) > mMaxItemWidth){
+                mMaxItemWidth = (w + item.sX).toInt()
             }
         }
 
@@ -244,7 +254,7 @@ class TreeView: View{
 
         when(widthSpec){
             MeasureSpec.AT_MOST,MeasureSpec.UNSPECIFIED ->{
-                realWidthMeasureSpec = MeasureSpec.makeMeasureSpec(mMaxWidth + paddingLeft + paddingRight,MeasureSpec.EXACTLY)
+                realWidthMeasureSpec = MeasureSpec.makeMeasureSpec(mMaxItemWidth + paddingLeft + paddingRight,MeasureSpec.EXACTLY)
             }
             MeasureSpec.EXACTLY ->{
                 realWidthMeasureSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec),MeasureSpec.EXACTLY)
@@ -281,7 +291,7 @@ class TreeView: View{
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        mEdgeEffect.setSize(max(measuredWidth,mMaxWidth), mHeight shr 2)
+        mEdgeEffect.setSize(max(measuredWidth,mMaxItemWidth), mHeight shr 2)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -502,7 +512,7 @@ class TreeView: View{
                 val degreeY = asin(xDiff / squareRoot) * 180 / Math.PI
 
                 if (degreeX < 45){
-                    if (mMaxWidth > width){
+                    if (mMaxItemWidth > width){
                         if (moveX > downX){
                             if (scrollX > 0){
                                 mSlideDirection = SLIDE.RIGHT
@@ -511,7 +521,7 @@ class TreeView: View{
                             }
                         }else{
                             mSlideDirection = SLIDE.LIFT
-                            if (mMaxWidth - width > scrollX){
+                            if (mMaxItemWidth - width > scrollX){
                                 mScroller.startScroll(moveX.toInt(),0,(downX - moveX).toInt(),0)
                                 invalidate()
                             }
@@ -571,9 +581,9 @@ class TreeView: View{
                     }else scrollTo(0,scrollY)
                 }
                 SLIDE.LIFT ->{
-                    if (mMaxWidth - width > scrollX){
+                    if (mMaxItemWidth - width > scrollX){
                         scrollBy(offsetX,0)
-                    }else scrollTo(mMaxWidth - width,scrollY)
+                    }else scrollTo(mMaxItemWidth - width,scrollY)
                 }
             }
 
@@ -581,7 +591,7 @@ class TreeView: View{
     }
 
     private fun edgeVerPull(event: MotionEvent){
-        mEdgeEffect.onPull(event.y / height,if (mHeight - height <= scrollY) 1 - event.x / mMaxWidth else event.x / width)
+        mEdgeEffect.onPull(event.y / height,if (mHeight - height <= scrollY) 1 - event.x / mMaxItemWidth else event.x / width)
         postInvalidateOnAnimation()
     }
     private fun edgeRelease(){
@@ -692,7 +702,7 @@ class TreeView: View{
 
     private fun clickItem(item: Item?, x:Float, y:Float):Boolean{
         if (item == null)return false
-        val realSX = item.sX - scrollX
+        val realSX = (if (item.parent == null && hasSelect) item.sX + mLogoSize + mLogoGap else item.sX) - scrollX
         val realSY = item.sY - scrollY
         val bH = y >= realSY && y <= realSY + item.sHeight
 
@@ -710,6 +720,8 @@ class TreeView: View{
                 mCurItem = item
             }
             item.click = true
+            mItemClickListener?.onClick(item.toData())
+            return true
         }else if (x >= realSX - mBoxSize * 2f && x <= realSX + mBoxSize * 2f && bH){
             selectItem(item)
             return true
@@ -759,46 +771,47 @@ class TreeView: View{
                 it.selectedState = item.selectedState
                 if (it.selectedState == SELECT_STATE.ALLSEL){
                     mSelectedList.add(it)
-                }else if (it.selectedState == SELECT_STATE.UNSEL){
-                    mSelectedList.remove(it)
-                }
+                }else mSelectedList.remove(it)
             }
             selectChildItem(it)
         }
     }
     private fun selectParentItem(item: Item){
         var p = item.parent
-        while (p != null && !p.children.isNullOrEmpty()){
+        while (p != null){
             when(p.children!!.count { if (mSingleSelection) (it.selectedState != SELECT_STATE.UNSEL) else it.selectedState == SELECT_STATE.ALLSEL }){
                 0->{
                     p.selectedState = SELECT_STATE.UNSEL
+                    mSelectedList.remove(p)
                 }
                 p.children!!.size ->{
                     p.selectedState = SELECT_STATE.ALLSEL
+                    mSelectedList.add(p)
                 }else ->{
-                p.selectedState = SELECT_STATE.HALFSEL
+                    p.selectedState = SELECT_STATE.HALFSEL
+                    mSelectedList.remove(p)
                 }
             }
             p = p.parent
         }
     }
 
-    class Item{
-        var sX = 0f
-        var sY = 0f
-        var sWidth = 0
-        var sHeight = 0
-        var unfold:Boolean = false
-        var click:Boolean = false
+   class Item{
+       internal var sX = 0f
+       internal var sY = 0f
+       internal var sWidth = 0
+       internal var sHeight = 0
+       internal var unfold:Boolean = false
+       internal var click:Boolean = false
 
-        var sAnimY = 0f
-        var selectedState = SELECT_STATE.UNSEL
+       internal var sAnimY = 0f
+       internal var selectedState = SELECT_STATE.UNSEL
 
         var id:Int = 0
         var code:String = ""
         var name:String = ""
-        var parent: Item? = null
-        var children:MutableList<Item>? = null
+       internal var parent: Item? = null
+       internal var children:MutableList<Item>? = null
         var data:Any? = null
         override fun toString(): String {
             return "Item(id=$id,sAnimY=$sAnimY,sX=$sX, sY=$sY, sWidth=$sWidth, sHeight=$sHeight, fold=$unfold, name='$name')"
@@ -819,6 +832,15 @@ class TreeView: View{
             return id
         }
 
+       fun toData():ItemData{
+           return ItemData(id,code,name,data)
+       }
+
+    }
+    class ItemData(val id:Int,val code:String,val name:String,val data:Any?){
+        override fun toString(): String {
+            return "ItemData(id=$id, code='$code', name='$name', data=$data)"
+        }
     }
 
     private enum class SLIDE{
@@ -828,5 +850,39 @@ class TreeView: View{
         UNSEL,HALFSEL,ALLSEL
     }
 
+    interface OnItemClick{
+        fun onClick(item: ItemData)
+    }
+
+    fun getSelectedItem():List<ItemData>{
+        return mSelectedList.map { it.toData() }
+    }
+
+    fun setOnItemClickListener(l:OnItemClick){
+        mItemClickListener = l
+    }
+
+    fun newItem(itemData: ItemData):Item{
+        return Item().also { it.id = itemData.id
+            it.code = itemData.code
+            it.name = itemData.name
+            it.data = itemData.data
+            it.parent = mHeadItem
+
+            mHeadItem.children!!.add(it)
+        }
+    }
+
+    fun addChildItem(parent: Item,itemData: ItemData){
+        Item().also { it.id = itemData.id
+            it.code = itemData.code
+            it.name = itemData.name
+            it.data = itemData.data
+            it.parent = parent
+
+            if (parent.children == null)parent.children = mutableListOf()
+            parent.children!!.add(it)
+        }
+    }
 
 }

@@ -8,7 +8,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.EdgeEffect
 import android.widget.OverScroller
-import com.wyc.logger.Logger
 import kotlin.math.*
 
 
@@ -31,16 +30,19 @@ class TreeView: View{
     private var mHeadItem: Item =  Item().also {
         it.id = -99999
         it.code = "-99999"
-        it.name = "菜单880"
+        it.name = "菜单g880"
+        it.unfold = true
         it.children = mutableListOf()
     }
     private var mCurItem:Item? = null
     private val mSelectedList = mutableListOf<Item>()
     private var mSingleSelection = false
+    private var hasSelect = true
+    private val mSelectBoxColor = Color.RED
 
     private var mBoxSize = 0f
     private val mPreGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 18f, resources.displayMetrics)
-    private val mVerGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics)
+    private val mVerGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 3f, resources.displayMetrics)
 
     private var mLogoSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, resources.displayMetrics)
     set(value) {
@@ -48,10 +50,9 @@ class TreeView: View{
         field = value
     }
 
-    private val mLogoGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4f, resources.displayMetrics)
+    private val mLogoGap = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2f, resources.displayMetrics)
 
     private var mMaxItemWidth = 0
-    private var mMaxItemHeight = 0
     private var mHeight = 0
 
     private val mTextColor = Color.BLACK
@@ -68,100 +69,14 @@ class TreeView: View{
 
     private val mEdgeEffect: EdgeEffect
 
-    private var hasSelect = true
-    private val mSelectBoxColor = Color.RED
-
     private var mItemClickListener:OnItemClick? = null
 
     constructor(context: Context):this(context, null)
     constructor(context: Context, attrs: AttributeSet?):this(context, attrs, 0)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int):super(context, attrs, defStyleAttr){
         initPaint()
-        //initDefaultData()
-
         mEdgeEffect = EdgeEffect(context)
         mEdgeEffect.color = Color.RED
-    }
-
-    public fun initDefaultData(){
-        mHeadItem.also { p->
-            p.id = 88
-            p.code = "880"
-            p.name = "菜单880"
-            p.unfold = true
-            p.children = mutableListOf()
-            for (i in 0..1){
-                val item = Item().also { item->
-                    item.id = i
-                    item.code = (item.id * 10).toString()
-                    item.name = "类表$i"
-
-                    if (i != 1)
-                    item.unfold = true
-
-                    item.parent = p
-                    item.children = mutableListOf()
-                    /*for (j in 10..12){
-                        val k = Item().also { k->
-                            k.id = j
-                            k.code = (k.id * 10).toString()
-                            k.name = "列表$i$j"
-                            k.parent = item
-                            k.unfold = true
-                            k.parent = item
-                            k.children = mutableListOf()
-
-                            if ((j == 12 || j == 11) && i == 0)
-                            for(pp in 20..25){
-                                val kk = Item().also { kk ->
-                                    kk.id = pp
-                                    kk.code = (kk.id * 10).toString()
-                                    kk.name = "列表$pp$i$j"
-                                    kk.parent = k
-                                    kk.children = mutableListOf()
-                                    if (pp == 23){
-                                        for (kkk in 30..33){
-                                            val bbb = Item().also {bbb->
-                                                bbb.id = kkk
-                                                bbb.code = (bbb.id * 10).toString()
-                                                bbb.name = "列表$kkk$pp$i$j"
-                                                bbb.parent = kk
-                                                bbb.children = mutableListOf()
-                                                var end = 43
-                                                if (kkk == 30){
-                                                    end = 42
-                                                }else if (kkk == 31){
-                                                    end = 41
-                                                }
-                                                for (kkkk in 40..end){
-                                                    val bbbb = Item().apply {
-                                                        id = kkkk
-                                                        code = (id * 10).toString()
-                                                        name = "列表$kkkk$kkk$pp$i$j"
-                                                        parent = bbb
-                                                    }
-
-                                                    bbb.children!!.add(bbbb)
-                                                }
-
-                                            }
-                                            kk.children!!.add(bbb)
-                                        }
-
-                                    }
-
-                                }
-                                k.children!!.add(kk)
-                            }
-
-                        }
-                        item.children!!.add(k)
-                    }*/
-                }
-                p.children!!.add(item)
-            }
-        }
-
     }
 
     private fun initPaint(){
@@ -172,30 +87,22 @@ class TreeView: View{
     private fun measureChild(){
         mHeight = 0
         mMaxItemWidth = 0
-        mMaxItemHeight = 0
 
-        val bound = Rect()
-        recursiveMeasure(mHeadItem,0,bound)
-        mLogoSize = mMaxItemHeight * 0.8f
+        recursiveMeasure(mHeadItem,0)
+        mLogoSize = getTextHeight() * 0.7f
 
         if ((mHeight < measuredHeight && scrollY != 0) || (mMaxItemWidth < measuredWidth && scrollX != 0)){
             scrollTo(0,0)
         }
     }
-    private fun recursiveMeasure(item: Item, index: Int,bound: Rect){
+    private fun recursiveMeasure(item: Item, index: Int){
 
-        mPaint.getTextBounds(item.name,0,item.name.length,bound)
-
-        val w = bound.width()
-        val h = bound.height()
+        val w = getTextWidth(item.name).toInt()
+        val h = getTextHeight().toInt()
 
         item.sWidth = w
 
         item.sHeight = h
-
-        if (mMaxItemHeight < h){
-            mMaxItemHeight = h
-        }
 
         val p = item.parent
 
@@ -214,7 +121,7 @@ class TreeView: View{
                 item.sY = p.sY + p.sHeight + mVerGap
             }else{
                 p.children?.get(index - 1)?.also {sibling->
-                    item.sY = sibling.sY + calItemHeight(sibling,bound)
+                    item.sY = sibling.sY + calItemHeight(sibling)
                 }
             }
             item.sAnimY = item.sY
@@ -224,24 +131,32 @@ class TreeView: View{
             val ch = item.children;
             if (!ch.isNullOrEmpty()){
                 for (i in 0 until ch.size)
-                    recursiveMeasure(ch[i],i,bound)
+                    recursiveMeasure(ch[i],i)
             }
         }
     }
 
-    private fun calItemHeight(item: Item, bound:Rect):Int{
-        mPaint.getTextBounds(item.name,0,item.name.length,bound)
-        var h = bound.height() + mVerGap.toInt()
+    private fun calItemHeight(item: Item):Int{
+        var h = getTextHeight() + mVerGap
         if (item.unfold){
             val ch = item.children
             if (!ch.isNullOrEmpty()){
                 for (i in 0 until ch.size){
-                    h += calItemHeight(ch[i],bound)
+                    h += calItemHeight(ch[i])
                 }
             }
         }
-        return h
+        return h.toInt()
     }
+
+    private fun getTextHeight():Float{
+        return mPaint.fontMetrics.descent - mPaint.fontMetrics.ascent
+    }
+
+    private fun getTextWidth(text:String):Float{
+        return mPaint.measureText(text)
+    }
+
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val widthSpec = MeasureSpec.getMode(widthMeasureSpec)
@@ -307,7 +222,7 @@ class TreeView: View{
         val p = item.parent
         if (p == null || p.unfold){
 
-            val baseLineY = item.sHeight / 2 + (abs(mPaint.fontMetrics.ascent) - mPaint.fontMetrics.descent) / 2
+            val baseLineY = item.sHeight / 2f + (abs(mPaint.fontMetrics.ascent) - mPaint.fontMetrics.descent) / 2f
             val offsetH = if (p == null && hasSelect) mLogoSize + mLogoGap else 0f
             canvas.drawText(item.name,item.sX + offsetH,item.sAnimY + baseLineY,mPaint)
 
@@ -316,7 +231,7 @@ class TreeView: View{
                 mPaint.style = Paint.Style.STROKE
                 if (mDashPathEffect == null)mDashPathEffect = DashPathEffect(floatArrayOf(4f,4f),0f)
                 mPaint.pathEffect = mDashPathEffect
-                canvas.drawRoundRect(item.sX - offset + offsetH,item.sAnimY - offset,item.sX + item.sWidth + offset + offsetH,item.sAnimY + item.sHeight + offset,2f,2f,mPaint)
+                canvas.drawRoundRect(item.sX - offset + offsetH,item.sAnimY - offset,item.sX + item.sWidth + offset + offsetH,item.sAnimY + item.sHeight ,2f,2f,mPaint)
                 mPaint.style = Paint.Style.FILL
                 mPaint.pathEffect = null
             }
@@ -324,10 +239,12 @@ class TreeView: View{
             drawLogo(canvas,item)
             if (hasSelect)drawSelectBox(canvas,item)
 
-            val ch = item.children;
-            if (!ch.isNullOrEmpty()){
-                ch.forEach {
-                    recursiveDraw(it,canvas)
+            if (item.unfold){
+                val ch = item.children;
+                if (!ch.isNullOrEmpty()){
+                    ch.forEach {
+                        recursiveDraw(it,canvas)
+                    }
                 }
             }
         }
@@ -620,7 +537,7 @@ class TreeView: View{
 
     private fun unfold(child: Item){
         if (child.sAnimY < child.sY){
-            val step = 10
+            val step = 30
             if (child.sAnimY + step > child.sY){
                 child.sAnimY = child.sY
             }else
@@ -873,8 +790,8 @@ class TreeView: View{
         }
     }
 
-    fun addChildItem(parent: Item,itemData: ItemData){
-        Item().also { it.id = itemData.id
+    fun addChildItem(parent: Item,itemData: ItemData):Item{
+        return Item().also { it.id = itemData.id
             it.code = itemData.code
             it.name = itemData.name
             it.data = itemData.data

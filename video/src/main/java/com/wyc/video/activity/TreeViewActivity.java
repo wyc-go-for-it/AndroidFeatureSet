@@ -27,10 +27,17 @@ public class TreeViewActivity extends BaseActivity {
     private void initTree(){
         mTreeView = findViewById(R.id.treeView);
         mTreeView.setOnItemClickListener(Logger::d);
-        final TreeView.Item item = mTreeView.newItem(new TreeView.ItemData(1,"000","wyc",null));
-        mTreeView.addChildItem(item,new TreeView.ItemData(2,"000","wyc1",null));
-        mTreeView.newItem(new TreeView.ItemData(20,"000","wyc20",null));
-        //mTreeView.initDefaultData();
+
+
+        for (int i = 0;i < 5;i ++){
+            final TreeView.Item item = mTreeView.newItem(new TreeView.ItemData(i,"000","列表" + i,null));
+            for (int k = 5;k < 10;k++){
+                final TreeView.Item item_k = mTreeView.addChildItem(item,new TreeView.ItemData(k * 10,"000","列表" + k,null));
+                for (int j = 1;j < k;j ++){
+                    mTreeView.addChildItem(item_k,new TreeView.ItemData(j * 100,"000","列表" + j,null));
+                }
+            }
+        }
     }
 
     @Override

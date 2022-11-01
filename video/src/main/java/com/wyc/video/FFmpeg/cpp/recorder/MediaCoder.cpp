@@ -2,7 +2,8 @@
 #include <utility>
 
 MediaCoder::MediaCoder(std::string file,int width,int height,int frameRatio)
-    :mFileName(std::move(file)),m_videoHandle(new VideoHandle(width,height,frameRatio)){
+    :mFileName(std::move(file)),m_videoHandle(new VideoHandle(width,height,frameRatio)),
+    m_audioHandle(new AudioHandle()){
     LOGD("MediaCoder construction file:%s,width:%d,height:%d,frameRatio:%d",mFileName.c_str(),width,height,frameRatio);
 }
 
@@ -24,6 +25,9 @@ void MediaCoder::init() {
     }
 
     if (!m_videoHandle->initVideo(mFormatContext,fileName)){
+        return;
+    }
+    if (!m_audioHandle->initAudio(mFormatContext,fileName)){
         return;
     }
 

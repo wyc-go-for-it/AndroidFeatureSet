@@ -6,6 +6,7 @@
 #define WYC_AUDIOENGINEBASE_H
 #include "../utils/MacroUtil.h"
 #include "../utils/LogUtil.h"
+#include <functional>
 #include <atomic>
 
 class IAudioEngine{
@@ -25,8 +26,20 @@ public:
     virtual void setPlaying(bool isPlaying) = 0;
     virtual void setLooping(bool isOn) = 0;
 
+public:
+    void setDataCallback(std::function<void(const void *,int32_t numFrames)> fun){
+        mDataCallback = fun;
+    }
+
+private:
+    std::function<void(const void *,int32_t numFrames)> mDataCallback = nullptr;
+
 protected:
     std::atomic<bool> mIsRecording = {false};
     std::atomic<bool> mIsPlaying = {false};
+    void invokeCallback(const void * data,int32_t numFrames){
+        if (mDataCallback != nullptr)
+            mDataCallback(data,numFrames);
+    }
 };
 #endif //WYC_AUDIOENGINEBASE_H

@@ -56,6 +56,8 @@ public:
             if (bq == c->m_recorderBufferQueue){
                 std::lock_guard<std::recursive_mutex> lock(c->m_audioEngineLock);
 
+                c->dataCallback(c->m_recordingBuffer,c->bufferSize / 4);
+
                 c->mSoundRecording.write(static_cast<const float *>(c->m_recordingBuffer), c->bufferSize / 4);
 
                 SLresult result = (*c->m_recorderBufferQueue)->Enqueue(c->m_recorderBufferQueue, c->m_recordingBuffer , c->bufferSize);
@@ -128,6 +130,10 @@ private:
             }
         }
         return 0;
+    }
+
+    void dataCallback(const void * data,int32_t numFrames){
+        invokeCallback(data,numFrames);
     }
 
 private:

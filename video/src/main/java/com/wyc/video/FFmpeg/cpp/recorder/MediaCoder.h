@@ -7,6 +7,7 @@
 #include "../utils/MacroUtil.h"
 #include "../thread/SyncQueue.h"
 #include "VideoHandle.h"
+#include "AudioHandle.h"
 
 extern "C" {
     #include "libavcodec/avcodec.h"
@@ -25,6 +26,9 @@ private:
 
         delete m_videoHandle;
         m_videoHandle = nullptr;
+
+        delete m_audioHandle;
+        m_audioHandle = nullptr;
 
         if (mFormatContext != nullptr){
             if (!(mFormatContext->oformat->flags & AVFMT_NOFILE)){
@@ -62,7 +66,7 @@ private:
     AVFormatContext *mFormatContext = nullptr;
 
     VideoHandle * m_videoHandle;
-
+    AudioHandle * m_audioHandle;
 };
 
 #endif //ANDROIDFEATURESET_MEDIACODER_H

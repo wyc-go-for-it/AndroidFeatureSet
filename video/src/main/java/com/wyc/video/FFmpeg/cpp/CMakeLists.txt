@@ -73,6 +73,8 @@ target_link_libraries(
         log
 )
 
+
+file(GLOB audio-files ./audio/AudioEngine.cpp ./audio/IAudioEngine.h ./audio/SoundRecording.cpp / ./audio/AudioOpenSL.cpp)
 aux_source_directory(./recorder/ videoApifiles)
 message(ERROR videoApifiles)
 set(videolib videoCoder)
@@ -80,10 +82,13 @@ add_library(
         ${videolib}
           SHARED
         ${videoApifiles}
+        ${audio-files}
 )
 target_link_libraries(
         ${videolib}
         ${third-party-libs}
+        aaudio
+        OpenSLES
         log
 )
 

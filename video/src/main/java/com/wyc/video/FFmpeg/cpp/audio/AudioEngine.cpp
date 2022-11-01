@@ -25,7 +25,6 @@ aaudio_data_callback_result_t recordingDataCallback(
         void *userData,
         void *audioData,
         int32_t numFrames) {
-
     return ((AudioEngine *) userData)->recordingCallback(static_cast<float *>(audioData), numFrames);
 }
 
@@ -194,6 +193,7 @@ void AudioEngine::restart(){
 
 aaudio_data_callback_result_t AudioEngine::recordingCallback(const float *audioData,int32_t numFrames) {
     if (mIsRecording) {
+        invokeCallback(audioData,numFrames);
         int32_t framesWritten = mSoundRecording.write(audioData, numFrames);
         if (framesWritten == 0 || numFrames == 0) mIsRecording = false;
     }

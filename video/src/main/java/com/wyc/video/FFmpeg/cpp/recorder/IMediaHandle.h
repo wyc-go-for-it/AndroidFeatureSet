@@ -101,7 +101,6 @@ protected:
                 return false;
             }
 
-            //av_packet_unref(mPacket);
         }
 
         return true;

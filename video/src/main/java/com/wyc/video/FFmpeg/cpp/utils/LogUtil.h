@@ -7,6 +7,7 @@
 
 #include<android/log.h>
 #include <sys/time.h>
+#include <typeinfo>
 
 #define  LOG_TAG "WYC"
 
@@ -37,6 +38,10 @@ static long long GetSysCurrentTime()
     gettimeofday(&time, NULL);
     long long curTime = ((long long)(time.tv_sec))*1000+time.tv_usec/1000;
     return curTime;
+}
+template<typename T>
+static void printClassName(T *t){
+    LOGD("%s has released",typeid(*t).name());
 }
 
 #endif //ANDROIDFEATURESET_LOGUTIL_H

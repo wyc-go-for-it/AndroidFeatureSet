@@ -56,12 +56,11 @@ public:
             if (bq == c->m_recorderBufferQueue){
                 std::lock_guard<std::recursive_mutex> lock(c->m_audioEngineLock);
 
-                c->dataCallback(c->m_recordingBuffer,c->bufferSize / 4);
-
-                c->mSoundRecording.write(static_cast<const float *>(c->m_recordingBuffer), c->bufferSize / 4);
-
-                SLresult result = (*c->m_recorderBufferQueue)->Enqueue(c->m_recorderBufferQueue, c->m_recordingBuffer , c->bufferSize);
-                LOGE("RecorderCallback Enqueue result:%d",result);
+                if (!c->dataCallback(static_cast<const float *>(c->m_recordingBuffer), c->bufferSize / 4)){
+                    c->mSoundRecording.write(static_cast<const float *>(c->m_recordingBuffer), c->bufferSize / 4);
+                    SLresult result = (*c->m_recorderBufferQueue)->Enqueue(c->m_recorderBufferQueue, c->m_recordingBuffer , c->bufferSize);
+                    LOGE("RecorderCallback Enqueue result:%d",result);
+                }
             }
         }
     }
@@ -132,13 +131,13 @@ private:
         return 0;
     }
 
-    void dataCallback(const void * data,int32_t numFrames){
-        invokeCallback(data,numFrames);
+    bool dataCallback(const float * data,int32_t numFrames){
+        return invokeCallback(data,numFrames);
     }
 
 private:
     std::recursive_mutex m_audioEngineLock;
-    static constexpr int bufferSize = 44100 * 1 * 4;
+    static constexpr int bufferSize = 48000 * 1 * 4;
 
     // engine interfaces
     SLObjectItf m_engineObject = nullptr;

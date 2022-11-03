@@ -193,9 +193,10 @@ void AudioEngine::restart(){
 
 aaudio_data_callback_result_t AudioEngine::recordingCallback(const float *audioData,int32_t numFrames) {
     if (mIsRecording) {
-        invokeCallback(audioData,numFrames);
-        int32_t framesWritten = mSoundRecording.write(audioData, numFrames);
-        if (framesWritten == 0 || numFrames == 0) mIsRecording = false;
+        if (!invokeCallback(audioData,numFrames)){
+            int32_t framesWritten = mSoundRecording.write(audioData, numFrames);
+            if (framesWritten == 0 || numFrames == 0) mIsRecording = false;
+        }
     }
     return mIsRecording ? AAUDIO_CALLBACK_RESULT_CONTINUE : AAUDIO_CALLBACK_RESULT_STOP;
 }

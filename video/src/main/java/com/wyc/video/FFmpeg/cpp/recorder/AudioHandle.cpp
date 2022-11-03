@@ -41,8 +41,9 @@ bool AudioHandle::initAudio(AVFormatContext *s, const char *fileName) {
     mCodecContext->codec_type = AVMEDIA_TYPE_AUDIO;
 
     mCodecContext->sample_fmt = AV_SAMPLE_FMT_FLTP;
+    mCodecContext->bit_rate = 64000;
     mCodecContext->sample_rate = 48000;
-    auto ch = (AVChannelLayout)AV_CHANNEL_LAYOUT_STEREO;
+    auto ch = (AVChannelLayout)AV_CHANNEL_LAYOUT_MONO;
     av_channel_layout_copy(&mCodecContext->ch_layout,&ch);
 
     mStream->time_base = (AVRational){ 1, mCodecContext->sample_rate };
@@ -77,7 +78,7 @@ bool AudioHandle::initAudio(AVFormatContext *s, const char *fileName) {
     }
 
     mFrame->format = mCodecContext->sample_fmt;
-    av_channel_layout_copy(&mFrame->ch_layout, &ch);
+    av_channel_layout_copy(&mFrame->ch_layout, &mCodecContext->ch_layout);
     mFrame->sample_rate = mCodecContext->sample_rate;
     mFrame->nb_samples = mCodecContext->frame_size;
 
@@ -88,6 +89,7 @@ bool AudioHandle::initAudio(AVFormatContext *s, const char *fileName) {
         return false;
     }
 
+
     swr_ctx = swr_alloc();
     if (!swr_ctx) {
         LOGE("Could not allocate resampler context");
@@ -97,7 +99,7 @@ bool AudioHandle::initAudio(AVFormatContext *s, const char *fileName) {
 
     av_opt_set_chlayout  (swr_ctx, "in_chlayout",       &mCodecContext->ch_layout,      0);
     av_opt_set_int       (swr_ctx, "in_sample_rate",     mCodecContext->sample_rate,    0);
-    av_opt_set_sample_fmt(swr_ctx, "in_sample_fmt",      AV_SAMPLE_FMT_S16, 0);
+    av_opt_set_sample_fmt(swr_ctx, "in_sample_fmt",      AV_SAMPLE_FMT_FLTP, 0);
     av_opt_set_chlayout  (swr_ctx, "out_chlayout",      &mCodecContext->ch_layout,      0);
     av_opt_set_int       (swr_ctx, "out_sample_rate",    mCodecContext->sample_rate,    0);
     av_opt_set_sample_fmt(swr_ctx, "out_sample_fmt",     mCodecContext->sample_fmt,     0);

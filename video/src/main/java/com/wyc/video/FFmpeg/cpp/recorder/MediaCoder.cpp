@@ -38,7 +38,12 @@ void MediaCoder::init() {
 void MediaCoder::start() {
     init();
     if (hasInit){
-        m_encodeThread = thread([this]()->void{
+
+        m_audioHandle->setDataCallback([this](const float *data,int numSamples)->bool {
+            return m_audioHandle->encode(mFormatContext, (uint8_t *) data, numSamples * sizeof(float ));
+        });
+
+        /*m_encodeThread = thread([this]()->void{
             int ret = avformat_write_header(mFormatContext,nullptr);
             if (ret < 0){
                 LOGE("avformat_write_header error:%s",av_err2str(ret));
@@ -63,12 +68,14 @@ void MediaCoder::start() {
             } else{
                 remove(mFileName.c_str());
             }
-       });
+       });*/
     }
 }
 
 void MediaCoder::stop() {
     if (hasInit){
+        m_audioHandle->stop();
+
         if (!encoding){
             remove(mFileName.c_str());
         }else

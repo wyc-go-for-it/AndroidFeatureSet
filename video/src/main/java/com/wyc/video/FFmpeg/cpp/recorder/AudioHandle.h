@@ -10,24 +10,18 @@
 #include "IMediaHandle.h"
 #include "../audio/IAudioEngine.h"
 #include "../audio/AudioEngine.h"
+#include "../audio/AudioOpenSL.h"
+
+
 
 class  AudioHandle final :IMediaHandle{
     friend class MediaCoder;
 private:
     DISABLE_COPY_ASSIGN(AudioHandle)
-    AudioHandle():m_audioEngine(new AudioEngine()){
-        m_audioEngine->setDataCallback([](const void *data,int  numSamples)->void {
-            const float * d = reinterpret_cast<const float *>(data);
-            int i = 0;
-            for (; i < numSamples; ++i) {
-                float f = d[i];
-                LOGE("audio data %f",f);
-            }
-
-        });
+    AudioHandle():m_audioEngine(new AudioOpenSL()){
         m_audioEngine->open();
-        m_audioEngine->setRecording(true);
         m_audioEngine->start();
+        m_audioEngine->setRecording(true);
     };
     ~AudioHandle(){
         if (m_audioEngine != nullptr){
@@ -36,25 +30,65 @@ private:
             delete m_audioEngine;
             m_audioEngine = nullptr;
         }
-        LOGD("%s has released",typeid(*this).name());
+
+        printClassName<AudioHandle>(this);
     }
 
-    bool encode(AVFormatContext *s,uint8_t * data, __int64_t presentationTime) {
+    void stop(){
+        if (m_audioEngine != nullptr){
+            m_audioEngine->stop();
+        }
+    }
+
+    void setDataCallback(std::function<bool(const float *,int32_t numFrames)> fun ){
+        m_audioEngine->setDataCallback(fun);
+    }
+
+    bool encode(AVFormatContext *s,uint8_t * data,int  numSamples) {
+
         int code = av_frame_make_writable(mFrame);
         if (code < 0){
             LOGE("frame make writable error:%s",av_err2str(code));
             return false;
         }
-        mFrame->data[0] = data;
 
-        mFrame->pts = presentationTime;
+        if (numSamples > mFrame->linesize[0]){
+            int linesize = mFrame->linesize[0];
+            int count = numSamples / linesize;
+            int mod = numSamples % linesize;
+            int cur = -1;
+            while (cur++< count){
+                memcpy(mFrame->data[0],data + cur * linesize,linesize);
 
-        return encodeActually(s);
+                mFrame->pts =  av_rescale_q(samples_count, (AVRational){1, mCodecContext->sample_rate}, mCodecContext->time_base);
+                samples_count += 1024;
+
+                if (!encodeActually(s)){
+                    return false;
+                }
+            }
+            if (mod != 0){
+                memcpy(mFrame->data[0],data + (count - 1) * linesize,mod);
+
+                mFrame->pts =  av_rescale_q(samples_count, (AVRational){1, mCodecContext->sample_rate}, mCodecContext->time_base);
+                samples_count += 1024;
+            }
+        }else{
+            memcpy(mFrame->data[0],data,numSamples);
+
+            mFrame->pts =  av_rescale_q(samples_count, (AVRational){1, mCodecContext->sample_rate}, mCodecContext->time_base);
+            samples_count += 1024;
+
+            return encodeActually(s);
+        }
     }
 
     bool initAudio(AVFormatContext *s,const char *fileName);
     struct SwrContext *swr_ctx;
     IAudioEngine *m_audioEngine = nullptr;
+
+    int samples_count = 1024;
+
 };
 
 

@@ -3,6 +3,7 @@
     <string name="wyc_video_back">返回</string>
     <string name="video_related">音视频相关</string>
     <string name="audio">音频功能</string>
+    <string name="drawAudio">绘制音频</string>
     <string name="recording_play">录音回放</string>
     <string name="recording">录音</string>
     <string name="playback">回放</string>

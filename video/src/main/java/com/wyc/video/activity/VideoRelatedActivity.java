@@ -28,7 +28,13 @@ public class VideoRelatedActivity extends BaseActivity implements View.OnClickLi
         showFFmpegInfo();
         showFFmpegCodec();
         showFFmpegMuxer();
+        drawAuto();
         showAuto();
+    }
+
+    private void drawAuto(){
+        final TextView tv = findViewById(R.id.draw_audio);
+        tv.setOnClickListener(v -> AudioDrawnActivity.start(this));
     }
 
     private void showAuto(){

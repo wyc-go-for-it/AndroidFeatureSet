@@ -7,6 +7,9 @@
 
     <application>
         <activity
+            android:name=".activity.AudioDrawnActivity"
+            android:exported="false" />
+        <activity
             android:name=".activity.TreeViewActivity"
             android:exported="false" />
         <activity

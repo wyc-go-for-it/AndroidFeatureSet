@@ -16,6 +16,14 @@
         app:layout_constraintTop_toBottomOf="@id/surfaceView" />
 
     <Button
+        android:id="@+id/draw_audio"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/drawAudio"
+        app:layout_constraintStart_toEndOf="@id/auto"
+        app:layout_constraintTop_toBottomOf="@id/surfaceView" />
+
+    <Button
         android:id="@+id/surfaceView"
         style="@android:style/Widget.Material.Light.Button"
         android:layout_width="wrap_content"

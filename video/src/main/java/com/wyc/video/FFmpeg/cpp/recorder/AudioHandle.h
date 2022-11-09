@@ -72,6 +72,9 @@ private:
 
                 mFrame->pts =  av_rescale_q(samples_count, (AVRational){1, mCodecContext->sample_rate}, mCodecContext->time_base);
                 samples_count += 1024;
+                if (!encodeActually(s)){
+                    return false;
+                }
             }
         }else{
             memcpy(mFrame->data[0],data,numSamples);

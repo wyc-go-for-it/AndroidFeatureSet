@@ -258,7 +258,7 @@ public class LabelTemplate implements Serializable {
         float scaleY = hDot / (float)realHeight;
         List<ItemBase> content = new ArrayList<>();
         LabelPrintSetting.Rotate rotate = setting.getRotate();
-        boolean hasRotate = LabelPrintSetting.getSetting().getRotate() != LabelPrintSetting.Rotate.D_0;
+        boolean hasRotate = rotate != LabelPrintSetting.Rotate.D_0;
         for (ItemBase i:printItem) {
             final ItemBase item = i.clone();
             item.transform(scaleX,scaleY);

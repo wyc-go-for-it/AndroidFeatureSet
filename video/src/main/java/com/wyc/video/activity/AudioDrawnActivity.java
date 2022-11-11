@@ -10,8 +10,10 @@ import android.graphics.Paint;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Choreographer;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.Button;
@@ -21,7 +23,9 @@ import com.wyc.permission.OnPermissionCallback;
 import com.wyc.permission.Permission;
 import com.wyc.permission.XXPermissions;
 import com.wyc.video.R;
+import com.wyc.video.opengl.MyGLRenderer;
 
+import java.nio.FloatBuffer;
 import java.util.List;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -48,8 +52,9 @@ public class AudioDrawnActivity extends BaseActivity {
     private volatile boolean isEmpty = true;
 
 
-    private final int showTimeLen = 5;//(s)
+    private final int showTimeLen = 2;//(s)
     private float showStep = 1.0f;
+    private final MyGLRenderer myGLRenderer = new MyGLRenderer();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +62,12 @@ public class AudioDrawnActivity extends BaseActivity {
         setMiddleText(getString(R.string.tree_menu));
         initStart();
         initDraw();
+        initGlView();
+    }
+    private void initGlView(){
+        final GLSurfaceView glSurfaceView = findViewById(R.id.gl_view);
+        glSurfaceView.setEGLContextClientVersion(3);
+        glSurfaceView.setRenderer(myGLRenderer);
     }
 
     private void initDraw(){
@@ -74,7 +85,7 @@ public class AudioDrawnActivity extends BaseActivity {
                 mHeight = height;
                 mBuffer = new float[sampleRateInHz * showTimeLen];
 
-                showStep = 1f/ ((float)mBuffer.length / (float) mWidth);
+                showStep = 1f/ ((float)mBuffer.length / (float) mWidth) * 2f;
 
                 Logger.d("showStep:%f",showStep);
             }
@@ -113,6 +124,8 @@ public class AudioDrawnActivity extends BaseActivity {
                         mBufferContainer[0] = mBufferContainer[1];
                         mBufferContainer[1] = t;
 
+                        myGLRenderer.updateData(FloatBuffer.wrap(mBufferContainer[0] ));
+
                         isEmpty = false;
                         mEmpty.signalAll();
                     } finally {
@@ -133,7 +146,7 @@ public class AudioDrawnActivity extends BaseActivity {
                 float r_h = h * 0.999f;
 
                 while (isStart){
-                    final Canvas canvas = mSurfaceHolder.lockCanvas();
+                    final Canvas canvas = mSurfaceHolder.lockHardwareCanvas();
                     if (canvas == null)break;
 
                     canvas.drawColor(Color.BLACK );
@@ -149,12 +162,13 @@ public class AudioDrawnActivity extends BaseActivity {
                         index = 0;
 
                         for (int i = 0,l = 0,r = 1;i < (mBuffer.length >> 1);i ++,l+=2,r+=2){
+                            index += showStep;
 
                             paint.setColor(Color.RED);
-                            canvas.drawPoint(index += showStep, l_h + mBuffer[l] * 500, paint);
+                            canvas.drawPoint(index, l_h + mBuffer[l] * 500, paint);
 
                             paint.setColor(Color.GREEN);
-                            canvas.drawPoint(index += showStep, r_h + mBuffer[r] * 500, paint);
+                            canvas.drawPoint(index, r_h + mBuffer[r] * 500, paint);
 
                             if (!isStart) break;
 

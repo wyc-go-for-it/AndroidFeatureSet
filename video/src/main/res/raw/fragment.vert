@@ -3,5 +3,5 @@ precision  mediump float;
 in vec4 outColor;
 out vec4 fraColor;
 void main() {
-    fraColor = outColor;
+    fraColor = vec4(1.0,1.0,1.0,1.0);
 }

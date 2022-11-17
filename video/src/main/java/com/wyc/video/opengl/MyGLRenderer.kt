@@ -10,7 +10,7 @@ class MyGLRenderer:GLSurfaceView.Renderer {
     private val mInstance:IGLDraw = Triangle()
 
 
-    fun updateData(data:FloatBuffer){
+    fun updateData(data:FloatArray){
         mInstance.updateData(data)
     }
 

@@ -45,7 +45,7 @@ class Shader(vertexCode: String, fragCode: String) {
     }
 
     fun delete(){
-        if (mProgramId == -1){
+        if (mProgramId != -1){
             GLES30.glDeleteProgram(mProgramId)
             mProgramId = -1
         }

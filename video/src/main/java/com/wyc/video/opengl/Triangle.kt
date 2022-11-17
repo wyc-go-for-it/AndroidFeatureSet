@@ -1,6 +1,7 @@
 package com.wyc.video.opengl
 
 import android.opengl.GLES30
+import android.util.Log
 import com.wyc.video.R
 import java.nio.*
 
@@ -31,7 +32,7 @@ class Triangle:IGLDraw {
                                      0.2f,0.0f,0.0f,0.0f,
                                      0.0f,0.7f,0.0f,0.0f)
 
-    private val vertexBuffer = ByteBuffer.allocateDirect(2 * 48000).order(ByteOrder.nativeOrder()).asFloatBuffer()
+    private val vertexBuffer = ByteBuffer.allocateDirect(3 * 24000 * bytePerFloat).order(ByteOrder.nativeOrder()).asFloatBuffer()
     private val colorBuffer = ByteBuffer.allocateDirect(color.size * bytePerFloat).order(ByteOrder.nativeOrder()).asFloatBuffer()
 
     private val vertexBufferObject= IntBuffer.allocate(2)
@@ -43,9 +44,10 @@ class Triangle:IGLDraw {
         colorBuffer.put(color).rewind()
 
         GLES30.glGenBuffers(2,vertexBufferObject)
-        GLES30.glGenVertexArrays(1,vertexArrayObject)
 
+        GLES30.glGenVertexArrays(1,vertexArrayObject)
         GLES30.glBindVertexArray(vertexArrayObject[0])
+
 
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER,vertexBufferObject[0])
         GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER,vertex.size * bytePerFloat,vertexBuffer,GLES30.GL_STATIC_DRAW)
@@ -68,29 +70,66 @@ class Triangle:IGLDraw {
 
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
 
-        GLES30.glBindVertexArray(vertexArrayObject[0])
+        //GLES30.glBindVertexArray(vertexArrayObject[0])
 
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER,vertexBufferObject[0])
 
-        var count = 0;
+        var count:Int
         synchronized(this){
+            val prePos = vertexBuffer.position()
+            vertexBuffer.rewind()
+
             count = vertexBuffer.limit()
-            GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER,count,vertexBuffer,GLES30.GL_STATIC_DRAW)
+
+            if (count == 0)return
+
+            val step = (2f / (count.toFloat() / 3f))
+            var xPos = -1f
+            for (i in 0 until count step 3){
+                xPos += step
+                vertexBuffer.put(i,xPos)
+            }
+            Log.e("xPos","$xPos ")
+
+            GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER,count,vertexBuffer,GLES30.GL_DYNAMIC_DRAW)
+
+            vertexBuffer.position(prePos)
         }
-
-        GLES30.glVertexAttribPointer(0,3,GLES30.GL_FLOAT,false,3 * bytePerFloat,0)
-        GLES30.glEnableVertexAttribArray(0)
-
         GLES30.glDrawArrays(GLES30.GL_POINTS,0,count)
     }
 
-    override fun updateData(buffer: FloatBuffer) {
-        if (vertexBuffer.position() == vertexBuffer.limit()){
-            vertexBuffer.rewind()
+    override fun updateData(buffer: FloatArray) {
+
+        val combined  = FloatArray(buffer.size * 3)
+
+        var index = 0
+        buffer.forEach {
+
+            combined[index] = 0f
+            combined[index + 1] = it
+            combined[index + 2] = 0f
+
+            index += 3
         }
+
+        val bSize = combined.size
+
         synchronized(this){
-            vertexBuffer.put(buffer)
-            vertexBuffer.flip()
+
+        val capacity = vertexBuffer.capacity()
+        val prePos = vertexBuffer.position()
+
+        if (bSize >= capacity){
+            vertexBuffer.clear()
+            vertexBuffer.put(combined,0,vertexBuffer.limit())
+        }else{
+            if (prePos + bSize > capacity){
+                vertexBuffer.position(bSize)
+                vertexBuffer.compact()
+            }
+            vertexBuffer.put(combined)
         }
+    }
+
     }
 }

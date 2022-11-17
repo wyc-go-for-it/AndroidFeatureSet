@@ -124,7 +124,7 @@ public class AudioDrawnActivity extends BaseActivity {
                         mBufferContainer[0] = mBufferContainer[1];
                         mBufferContainer[1] = t;
 
-                        myGLRenderer.updateData(FloatBuffer.wrap(mBufferContainer[0] ));
+                        myGLRenderer.updateData(mBufferContainer[0]);
 
                         isEmpty = false;
                         mEmpty.signalAll();

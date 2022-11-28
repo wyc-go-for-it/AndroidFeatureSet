@@ -59,7 +59,7 @@ public class AudioDrawnActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setMiddleText(getString(R.string.tree_menu));
+        setMiddleText(getString(R.string.drawAudio));
         initStart();
         initDraw();
         initGlView();

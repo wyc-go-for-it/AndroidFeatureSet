@@ -3,8 +3,12 @@ package com.wyc.video.opengl
 import android.opengl.GLES30
 import android.opengl.Matrix
 import android.util.Log
+import com.wyc.logger.Logger
 import com.wyc.video.R
 import java.nio.*
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 
 
 /**
@@ -43,6 +47,8 @@ class Audio:IGLDraw {
     private val viewMatrix = FloatArray(16)
     private val modelMatrix = FloatArray(16)
 
+    private var ratio = 1.0f
+
     private fun initBuffer(){
         colorBuffer.put(color).position(0)
 
@@ -67,9 +73,17 @@ class Audio:IGLDraw {
         vProjectionHandle = GLES30.glGetUniformLocation(mShader!!.program(), "projection")
         vViewHandle = GLES30.glGetUniformLocation(mShader!!.program(), "view")
         vModelHandle = GLES30.glGetUniformLocation(mShader!!.program(), "model")
+
+        Logger.d("vProjectionHandle:%d,vViewHandle:%d,vModelHandle:%d",vProjectionHandle,vViewHandle,vModelHandle)
     }
 
+    private var degree = -360f;
+
     override fun draw() {
+        degree += 0.01f
+        Matrix.perspectiveM(projectionMatrix,0,cos(degree) * 45,ratio,0.1f,100f)
+        Matrix.setLookAtM(viewMatrix, 0, 0f, cos(degree) * 5f, sin(degree) * 5f, 0f,0f, 0f, 0f, 1.0f, 0.0f)
+
         GLES30.glUniformMatrix4fv(vProjectionHandle, 1, false, projectionMatrix, 0)
         GLES30.glUniformMatrix4fv(vViewHandle, 1, false, viewMatrix, 0)
         GLES30.glUniformMatrix4fv(vModelHandle, 1, false, modelMatrix, 0)
@@ -107,13 +121,13 @@ class Audio:IGLDraw {
         var r = 1
         val end = buffer.size shr  1
         for (i in 0 until end){
-            combined[index] = 0f
+            combined[index] = Math.random().toFloat()
             combined[index + 1] = buffer[l] + 0.5f
             combined[index + 2] = 0f
 
-            combined[index + 3] = 0.1f
-            combined[index + 4] = buffer[r] - 0.5f
-            combined[index + 5] = 0.2f
+            combined[index + 3] = Math.random().toFloat() - 1f
+            combined[index + 4] =  buffer[r] - 0.5f
+            combined[index + 5] = Math.random().toFloat() - 1f
 
             index += 6
             l += 2
@@ -127,28 +141,28 @@ class Audio:IGLDraw {
         val capacity = vertexBuffer.capacity()
         val prePos = vertexBuffer.position()
 
-        if (bSize >= capacity){
-            vertexBuffer.clear()
-            vertexBuffer.put(combined,0,vertexBuffer.limit())
-        }else{
-            if (prePos + bSize > capacity){
-                vertexBuffer.position(bSize)
-                vertexBuffer.compact()
+            if (bSize >= capacity){
+                vertexBuffer.clear()
+                vertexBuffer.put(combined,0,vertexBuffer.limit())
+            }else{
+                if (prePos + bSize > capacity){
+                    vertexBuffer.position(bSize)
+                    vertexBuffer.compact()
+                }
+                vertexBuffer.put(combined)
             }
-            vertexBuffer.put(combined)
         }
-    }
 
     }
 
     override fun sizeChanged(w: Int, h: Int) {
-        val ratio: Float = w.toFloat() / h.toFloat()
+        ratio = w.toFloat() / h.toFloat()
 
-        Matrix.perspectiveM(projectionMatrix,0,30f,ratio,1f,100f)
+        //Matrix.orthoM(projectionMatrix,0,-2f, 2f,-2f,2f,-0.05f,10f)
 
-        Matrix.setLookAtM(viewMatrix, 0, 0f, 0f, -3f, 0f, 0f, 0f, 0f, 1.0f, 0.0f)
+
 
         Matrix.setIdentityM(modelMatrix,0)
-        Matrix.rotateM(modelMatrix,0,-60f,0.0f,0.0f,0.8f)
+
     }
 }

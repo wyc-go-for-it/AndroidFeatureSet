@@ -1,11 +1,18 @@
 package com.wyc.video.opengl
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.opengl.GLES30
 import android.opengl.Matrix
+import android.os.SystemClock
 import android.util.Log
 import com.wyc.logger.Logger
 import com.wyc.video.R
+import com.wyc.video.VideoApp
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.nio.*
+import java.util.*
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
@@ -31,64 +38,87 @@ class Audio:IGLDraw {
     private val bufferSize = 3 * sampleSize * bytePerFloat
     private var mShader:Shader? = null
 
-    private val color = floatArrayOf(0.0f,1.0f,1.0f,0.0f)
-
     private val vertexBuffer = ByteBuffer.allocateDirect(bufferSize).order(ByteOrder.nativeOrder()).asFloatBuffer()
-    private val colorBuffer = ByteBuffer.allocateDirect(color.size * bytePerFloat).order(ByteOrder.nativeOrder()).asFloatBuffer()
+    private val lColor = floatArrayOf(0.3f,0.6f,0.8f,0f)
+    private var timeValue = 0.01f
 
-    private val vertexBufferObject= IntBuffer.allocate(2)
+    private val vertexBufferObject= IntBuffer.allocate(1)
+    private var colorHandle = -1
+    private var timeValueHandle = -1
+    private var timeValueHandle1 = -1
 
+    private val textureObj = IntBuffer.allocate(1)
+    private var textureHandle = -1
 
-    private var vProjectionHandle: Int = 0
-    private var vViewHandle: Int = 0
-    private var vModelHandle: Int = 0
+    override fun init() {
+        mShader = Shader(R.raw.vertex,R.raw.fragment)
+        mShader!!.use()
 
-    private val projectionMatrix = FloatArray(16)
-    private val viewMatrix = FloatArray(16)
-    private val modelMatrix = FloatArray(16)
+        initBuffer()
 
-    private var ratio = 1.0f
+        initColor()
+
+        initTexture()
+    }
+
+    private fun initTexture(){
+        GLES30.glGenTextures(1,textureObj)
+        GLES30.glActiveTexture(0)
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D,textureObj[0])
+
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D,GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_REPEAT)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_REPEAT)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR)
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR)
+
+        val img = BitmapFactory.decodeResource(VideoApp.getInstance().resources,R.raw.orange)
+
+        val outputStream = ByteArrayOutputStream()
+        img.compress(Bitmap.CompressFormat.JPEG,100,outputStream)
+        val bytes = outputStream.toByteArray()
+        outputStream.close()
+
+        val bBuffer = ByteBuffer.wrap(bytes)
+
+        GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D,0,GLES30.GL_RGB,img.width,img.height,0,GLES30.GL_RGB,GLES30.GL_UNSIGNED_BYTE,bBuffer)
+        GLES30.glGenerateMipmap(GLES30.GL_TEXTURE_2D)
+
+        textureHandle = GLES30.glGetUniformLocation(mShader!!.program(),"ourTexture")
+        GLES30.glUniform1i(textureHandle,0)
+        Logger.d("textureHandle:%d",textureHandle)
+    }
 
     private fun initBuffer(){
-        colorBuffer.put(color).position(0)
-
-        GLES30.glGenBuffers(2,vertexBufferObject)
+        GLES30.glGenBuffers(1,vertexBufferObject)
 
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER,vertexBufferObject[0])
         GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER,bufferSize,vertexBuffer,GLES30.GL_DYNAMIC_DRAW)
         GLES30.glVertexAttribPointer(0,3,GLES30.GL_FLOAT,false,3 * bytePerFloat,0)
         GLES30.glEnableVertexAttribArray(0)
-
-        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER,vertexBufferObject[1])
-        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER,color.size * bytePerFloat,colorBuffer,GLES30.GL_STATIC_DRAW)
-        GLES30.glVertexAttribPointer(1,4,GLES30.GL_FLOAT,false,4 * bytePerFloat,0)
-        GLES30.glEnableVertexAttribArray(1)
     }
 
-    override fun init() {
-        initBuffer()
-        mShader = Shader(R.raw.vertex,R.raw.fragment)
-        mShader!!.use()
+    private fun initColor(){
+        colorHandle = GLES30.glGetUniformLocation(mShader!!.program(),"uColor")
+        GLES30.glUniform4fv(colorHandle,1,lColor,0)
 
-        vProjectionHandle = GLES30.glGetUniformLocation(mShader!!.program(), "projection")
-        vViewHandle = GLES30.glGetUniformLocation(mShader!!.program(), "view")
-        vModelHandle = GLES30.glGetUniformLocation(mShader!!.program(), "model")
+        timeValueHandle = GLES30.glGetUniformLocation(mShader!!.program(),"timeValue")
+        GLES30.glUniform1f(timeValueHandle,timeValue)
 
-        Logger.d("vProjectionHandle:%d,vViewHandle:%d,vModelHandle:%d",vProjectionHandle,vViewHandle,vModelHandle)
+        timeValueHandle1 = GLES30.glGetUniformLocation(mShader!!.program(),"timeValue")
+        GLES30.glUniform1f(timeValueHandle1,timeValue)
+
+        Logger.d("colorHandle:%d,timeValueHandle:%d",colorHandle,timeValueHandle)
     }
 
-    private var degree = -360f;
+    private fun updateColor(){
+        timeValue += 0.01f
+        GLES30.glUniform1f(timeValueHandle,timeValue)
+        GLES30.glUniform1f(timeValueHandle1,timeValue)
+    }
 
     override fun draw() {
-        degree += 0.01f
-        Matrix.perspectiveM(projectionMatrix,0,cos(degree) * 45,ratio,0.1f,100f)
-        Matrix.setLookAtM(viewMatrix, 0, 0f, cos(degree) * 5f, sin(degree) * 5f, 0f,0f, 0f, 0f, 1.0f, 0.0f)
-
-        GLES30.glUniformMatrix4fv(vProjectionHandle, 1, false, projectionMatrix, 0)
-        GLES30.glUniformMatrix4fv(vViewHandle, 1, false, viewMatrix, 0)
-        GLES30.glUniformMatrix4fv(vModelHandle, 1, false, modelMatrix, 0)
-
         var count:Int
+        updateColor()
         synchronized(this){
             val prePos = vertexBuffer.position()
             vertexBuffer.rewind()
@@ -121,13 +151,13 @@ class Audio:IGLDraw {
         var r = 1
         val end = buffer.size shr  1
         for (i in 0 until end){
-            combined[index] = Math.random().toFloat()
+            combined[index] = 0f
             combined[index + 1] = buffer[l] + 0.5f
             combined[index + 2] = 0f
 
-            combined[index + 3] = Math.random().toFloat() - 1f
+            combined[index + 3] = 0f
             combined[index + 4] =  buffer[r] - 0.5f
-            combined[index + 5] = Math.random().toFloat() - 1f
+            combined[index + 5] = 0f
 
             index += 6
             l += 2
@@ -156,13 +186,6 @@ class Audio:IGLDraw {
     }
 
     override fun sizeChanged(w: Int, h: Int) {
-        ratio = w.toFloat() / h.toFloat()
-
-        //Matrix.orthoM(projectionMatrix,0,-2f, 2f,-2f,2f,-0.05f,10f)
-
-
-
-        Matrix.setIdentityM(modelMatrix,0)
 
     }
 }

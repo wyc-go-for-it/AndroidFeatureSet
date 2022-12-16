@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:text="@string/audio"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/surfaceView" />
+        app:layout_constraintTop_toBottomOf="@id/glsurfaceView" />
 
     <Button
         android:id="@+id/draw_audio"
@@ -21,7 +21,7 @@
         android:layout_height="wrap_content"
         android:text="@string/drawAudio"
         app:layout_constraintStart_toEndOf="@id/auto"
-        app:layout_constraintTop_toBottomOf="@id/surfaceView" />
+        app:layout_constraintTop_toBottomOf="@id/glsurfaceView" />
 
     <Button
         android:id="@+id/surfaceView"
@@ -32,6 +32,17 @@
         android:textAllCaps="false"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="SpeakableTextPresentCheck" />
+
+    <Button
+        android:id="@+id/glsurfaceView"
+        style="@android:style/Widget.Material.Light.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/useGlSurfaceView"
+        android:textAllCaps="false"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/surfaceView"
         tools:ignore="SpeakableTextPresentCheck" />
 
     <TextView

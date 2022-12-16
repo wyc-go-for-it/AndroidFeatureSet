@@ -12,5 +12,5 @@ void main() {
     float y = sin(timeValue1);
     float x = colorPos.x;
 
-    fraColor = texture(ourTexture,vec2(x,y));
+    fraColor = mix(color,texture(ourTexture,vec2(x,y)),0.5);
 }

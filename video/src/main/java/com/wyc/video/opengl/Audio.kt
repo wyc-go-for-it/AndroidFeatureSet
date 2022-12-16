@@ -3,19 +3,13 @@ package com.wyc.video.opengl
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.opengl.GLES30
-import android.opengl.Matrix
-import android.os.SystemClock
-import android.util.Log
 import com.wyc.logger.Logger
 import com.wyc.video.R
 import com.wyc.video.VideoApp
-import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.nio.*
-import java.util.*
-import kotlin.math.abs
-import kotlin.math.cos
-import kotlin.math.sin
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.IntBuffer
 
 
 /**
@@ -33,7 +27,7 @@ import kotlin.math.sin
  */
 
 class Audio:IGLDraw {
-    private val bytePerFloat = 4
+    private val bytePerFloat = Float.SIZE_BYTES
     private val sampleSize = 48000
     private val bufferSize = 3 * sampleSize * bytePerFloat
     private var mShader:Shader? = null

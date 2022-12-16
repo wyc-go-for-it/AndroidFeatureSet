@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activity.CameraSurfaceViewActivity">
+
+    <android.opengl.GLSurfaceView
+        android:id="@+id/preview_surface"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+
+    <com.wyc.video.ScrollSelectionView
+        android:id="@+id/mode_selection"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
+        android:padding="12dp"
+        app:layout_constraintBottom_toTopOf="@id/recordBtn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <com.wyc.video.camera.RecordBtn
+        android:id="@+id/recordBtn"
+        android:layout_width="@dimen/record_size"
+        android:layout_height="@dimen/record_size"
+        android:layout_marginBottom="128dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:ignore="SpeakableTextPresentCheck" />
+
+    <Button
+        android:id="@+id/camera_reverse"
+        android:layout_width="@dimen/camera_reverse_btn_size"
+        android:layout_height="@dimen/camera_reverse_btn_size"
+        android:background="@drawable/camera"
+        app:layout_constraintBottom_toBottomOf="@id/recordBtn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/recordBtn"
+        app:layout_constraintTop_toTopOf="@id/recordBtn"
+        tools:ignore="TouchTargetSizeCheck,SpeakableTextPresentCheck" />
+
+    <com.wyc.video.camera.CircleImage
+        android:id="@+id/thumbnails"
+        android:layout_width="@dimen/thumbnail_size"
+        android:layout_height="@dimen/thumbnail_size"
+        app:layout_constraintBottom_toBottomOf="@id/recordBtn"
+        app:layout_constraintEnd_toStartOf="@id/recordBtn"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/recordBtn" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

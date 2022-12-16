@@ -23,21 +23,22 @@ public class VideoRelatedActivity extends BaseActivity implements View.OnClickLi
         super.onCreate(savedInstanceState);
         setMiddleText(getString(R.string.video_related));
         findViewById(R.id.surfaceView).setOnClickListener(this);
+        findViewById(R.id.glsurfaceView).setOnClickListener(this);
 
         test();
         showFFmpegInfo();
         showFFmpegCodec();
         showFFmpegMuxer();
-        drawAuto();
-        showAuto();
+        drawAudio();
+        showAudio();
     }
 
-    private void drawAuto(){
+    private void drawAudio(){
         final TextView tv = findViewById(R.id.draw_audio);
         tv.setOnClickListener(v -> AudioDrawnActivity.start(this));
     }
 
-    private void showAuto(){
+    private void showAudio(){
         final TextView tv = findViewById(R.id.auto);
         tv.setOnClickListener(v -> AudioActivity.start(this));
     }
@@ -101,6 +102,8 @@ public class VideoRelatedActivity extends BaseActivity implements View.OnClickLi
     public void onClick(View v) {
         if (v.getId() == R.id.surfaceView) {
             CameraSurfaceViewActivity.start(this);
+        }else if (v.getId() == R.id.glsurfaceView){
+            CameraGLSurfaceViewActivity.start(this);
         }
     }
 }

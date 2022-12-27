@@ -32,7 +32,7 @@ import java.util.Locale;
 public class FFMediaCoder extends AbstractRecorder {
     private final static int WIDTH = VideoCameraManager.getInstance().getVWidth();
     private final static int HEIGHT = VideoCameraManager.getInstance().getVHeight();
-    private final static int FRAME_RATE = VideoCameraManager.getInstance().getMBestFPSRange().getUpper();
+    private final static int FRAME_RATE = VideoCameraManager.getInstance().getBastFPS();
 
     private long mNativeObj = 0;
 

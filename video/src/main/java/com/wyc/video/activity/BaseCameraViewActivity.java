@@ -24,6 +24,7 @@ import com.wyc.video.R;
 import com.wyc.video.ScrollSelectionView;
 import com.wyc.video.Utils;
 import com.wyc.video.camera.CircleImage;
+import com.wyc.video.camera.ICamera;
 import com.wyc.video.camera.RecordBtn;
 import com.wyc.video.camera.VideoCameraManager;
 import com.wyc.video.recorder.AbstractRecorder;
@@ -48,6 +49,7 @@ import java.util.List;
 public abstract class BaseCameraViewActivity extends BaseActivity {
     private RecordBtn mRecord;
     private CircleImage mThumbnails;
+    protected final ICamera mCamera = generateCamera();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -93,7 +95,7 @@ public abstract class BaseCameraViewActivity extends BaseActivity {
                 startActivity(intent);
             }
         });
-        VideoCameraManager.getInstance().setPicCallback(this::decodeImgFile);
+        mCamera.setPicCallback(this::decodeImgFile);
     }
 
     private Uri getImageContentUri(File imageFile) {
@@ -141,7 +143,7 @@ public abstract class BaseCameraViewActivity extends BaseActivity {
     private void initCameraReverse(){
         final Button camera_reverse = findViewById(R.id.camera_reverse);
         camera_reverse.setOnClickListener(v -> {
-            VideoCameraManager.getInstance().switchCamera();
+            mCamera.switchCamera();
         });
     }
 
@@ -156,7 +158,7 @@ public abstract class BaseCameraViewActivity extends BaseActivity {
                         .request(new OnPermissionCallback() {
                             @Override
                             public void onGranted(List<String> permissions, boolean all) {
-                                VideoCameraManager.getInstance().recodeVideo();
+                                mCamera.recodeVideo();
                             }
                             @Override
                             public void onDenied(List<String> permissions, boolean never) {
@@ -170,13 +172,13 @@ public abstract class BaseCameraViewActivity extends BaseActivity {
             @Override
             public void finishRecord(long recordTime) {
                 Utils.showToast("finishRecord:" + recordTime);
-                VideoCameraManager.getInstance().stopRecord(true);
+                mCamera.stopRecord(true);
                 loadImg();
             }
 
             @Override
             public void takePicture() {
-                VideoCameraManager.getInstance().tackPic();
+                mCamera.tackPic();
             }
         });
     }
@@ -185,13 +187,13 @@ public abstract class BaseCameraViewActivity extends BaseActivity {
     protected void onResume() {
         super.onResume();
         loadImg();
-        VideoCameraManager.getInstance().sycCaptureMode(mRecord.getCurMode());
+        mCamera.sycCaptureMode(mRecord.getCurMode());
     }
 
     private void loadImg(){
         new Thread(() -> {
             File lastVideo = null,lastPic = null;
-            File[] pics = VideoCameraManager.getInstance().getPicDir().listFiles();
+            File[] pics = mCamera.getPicDir().listFiles();
             File[] videos = AbstractRecorder.getVideoDir().listFiles();
 
             if (videos != null && videos.length > 0){
@@ -216,7 +218,7 @@ public abstract class BaseCameraViewActivity extends BaseActivity {
                             bitmap = ThumbnailUtils.createVideoThumbnail(lastVideo.getPath(), MediaStore.Images.Thumbnails.MINI_KIND);
                         }else
                             bitmap = ThumbnailUtils.createVideoThumbnail(lastVideo,
-                                    new Size(VideoCameraManager.getInstance().getVWidth(),VideoCameraManager.getInstance().getVHeight()),new CancellationSignal());
+                                    new Size(mCamera.getVWidth(),mCamera.getVHeight()),new CancellationSignal());
 
                         runOnUiThread(()-> {
                             mThumbnails.setVideo(true);
@@ -272,4 +274,6 @@ public abstract class BaseCameraViewActivity extends BaseActivity {
     protected void onDestroy() {
         super.onDestroy();
     }
+
+    protected abstract ICamera generateCamera();
 }

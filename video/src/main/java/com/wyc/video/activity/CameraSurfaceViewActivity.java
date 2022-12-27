@@ -5,12 +5,19 @@ import android.content.Intent;
 import android.os.Bundle;
 
 import com.wyc.video.R;
+import com.wyc.video.camera.ICamera;
+import com.wyc.video.camera.VideoCameraManager;
 
 public final class CameraSurfaceViewActivity extends BaseCameraViewActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setMiddleText(getString(R.string.useSurfaceView));
+    }
+
+    @Override
+    protected ICamera generateCamera() {
+        return VideoCameraManager.getInstance();
     }
 
     @Override

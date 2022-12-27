@@ -35,9 +35,9 @@ import kotlin.math.max
  */
 
 class VideoMediaCodec:AbstractRecorder() {
-    val WIDTH = getInstance().vWidth
-    val HEIGHT = getInstance().vHeight
-    val FRAME_RATE = getInstance().mBestFPSRange.upper
+    val WIDTH = getInstance().getVWidth()
+    val HEIGHT = getInstance().getVHeight()
+    val FRAME_RATE = getInstance().getBastFPS()
 
     private var mImageReaderYUV : ImageReader? = null
     private var mImageReaderThread:HandlerThread? = null
@@ -316,7 +316,7 @@ class VideoMediaCodec:AbstractRecorder() {
         * */
         videoOutputFormat.setInteger(MediaFormat.KEY_LEVEL,MediaCodecInfo.CodecProfileLevel.AVCProfileHigh)
 
-        val orientation = VideoCameraManager.getInstance().getOrientation()
+        val orientation = getInstance().getOrientation()
         if (orientation == 90 || orientation == 270){
             videoOutputFormat.setInteger(MediaFormat.KEY_WIDTH, HEIGHT)
             videoOutputFormat.setInteger(MediaFormat.KEY_HEIGHT, WIDTH)

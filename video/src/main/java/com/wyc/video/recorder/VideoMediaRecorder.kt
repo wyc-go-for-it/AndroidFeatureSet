@@ -76,7 +76,7 @@ class VideoMediaRecorder :AbstractRecorder() {
                     }
                 }else*/
 
-                setVideoSize(VideoCameraManager.getInstance().vWidth,VideoCameraManager.getInstance().vHeight)
+                setVideoSize(VideoCameraManager.getInstance().getVWidth(),VideoCameraManager.getInstance().getVHeight())
 
                 val  camcorderProfile =  CamcorderProfile.get(VideoCameraManager.getInstance().getValidCameraId().toInt(), CamcorderProfile.QUALITY_720P)
                 setVideoFrameRate(camcorderProfile.videoFrameRate)

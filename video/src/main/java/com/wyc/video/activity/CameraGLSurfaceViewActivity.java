@@ -4,9 +4,13 @@ import android.app.Activity;
 import android.content.Intent;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.view.SurfaceView;
 
 import com.wyc.video.R;
 import com.wyc.video.camera.CameraGLRenderer;
+import com.wyc.video.camera.GLVideoCameraManager;
+import com.wyc.video.camera.ICamera;
+import com.wyc.video.camera.VideoCameraManager;
 
 public class CameraGLSurfaceViewActivity extends BaseCameraViewActivity {
     private CameraGLRenderer mCameraGLRenderer;
@@ -15,6 +19,7 @@ public class CameraGLSurfaceViewActivity extends BaseCameraViewActivity {
         super.onCreate(savedInstanceState);
         setMiddleText(getString(R.string.useGlSurfaceView));
         initGlSurface();
+
     }
 
     private void initGlSurface(){
@@ -23,6 +28,7 @@ public class CameraGLSurfaceViewActivity extends BaseCameraViewActivity {
         preview_surface.setEGLContextClientVersion(3);
         preview_surface.setRenderer(mCameraGLRenderer);
     }
+
 
     @Override
     public int getContentLayoutId() {
@@ -39,5 +45,10 @@ public class CameraGLSurfaceViewActivity extends BaseCameraViewActivity {
         if (mCameraGLRenderer != null){
             mCameraGLRenderer.clear();
         }
+    }
+
+    @Override
+    protected ICamera generateCamera() {
+        return GLVideoCameraManager.getInstance();
     }
 }

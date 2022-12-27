@@ -3,12 +3,10 @@ package com.wyc.video.camera
 import android.content.Context
 import android.graphics.*
 import android.hardware.camera2.*
-import android.hardware.camera2.CameraDevice.StateCallback.*
 import android.hardware.camera2.params.MeteringRectangle
 import android.hardware.camera2.params.OutputConfiguration
 import android.hardware.camera2.params.SessionConfiguration
 import android.media.CamcorderProfile
-import android.media.ImageReader
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
@@ -18,16 +16,10 @@ import android.view.Surface
 import com.wyc.logger.Logger
 import com.wyc.video.Utils
 import com.wyc.video.VideoApp
-import com.wyc.video.recorder.FFMediaCoder
-import com.wyc.video.recorder.IRecorder
-import com.wyc.video.recorder.VideoMediaCodec
-import com.wyc.video.recorder.VideoMediaRecorder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ExecutorService
@@ -39,53 +31,51 @@ import kotlin.math.min
  *
  * @ProjectName:    AndroidFeatureSet
  * @Package:        com.wyc.video.camera
- * @ClassName:      CameraManager
- * @Description:    相机管理
+ * @ClassName:      GLVideoCameraManager
+ * @Description:    gl 照相机
  * @Author:         wyc
- * @CreateDate:     2022/6/1 10:11
+ * @CreateDate:     2022/12/27 14:12
  * @UpdateUser:     更新者：
- * @UpdateDate:     2022/6/1 10:11
+ * @UpdateDate:     2022/12/27 14:12
  * @UpdateRemark:   更新说明：
  * @Version:        1.0
  */
 
-class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICamera {
-
+class GLVideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICamera  {
     private var mCameraFaceId:String = ""
     private var mCameraBackId:String = ""
-    private var mCameraDevice:CameraDevice? = null
-    private var mCameraCaptureSession:CameraCaptureSession? = null
-    private var mBackgroundHandler:Handler? = null
-    private var mBackgroundThread:HandlerThread? = null
+    private var mCameraDevice: CameraDevice? = null
+    private var mCameraFrontDevice: CameraDevice? = null
+    private var mCameraCaptureSession: CameraCaptureSession? = null
+    private var mCameraFrontCaptureSession: CameraCaptureSession? = null
+    private var mBackgroundHandler: Handler? = null
+    private var mBackgroundThread: HandlerThread? = null
     private var hasBack = true
-    private var mPreviewCaptureRequestBuilder:CaptureRequest.Builder? = null
+    private var mPreviewCaptureRequestBuilder: CaptureRequest.Builder? = null
+    private var mPreviewFrontCaptureRequestBuilder: CaptureRequest.Builder? = null
     private var mExecutor: ExecutorService? = null
     private var mAspectRatio = 0.75f
-    private var mPicImageReader : ImageReader? = null
 
-    private var mPicCallback:OnPicture? = null
-    private var mMediaRecorder:IRecorder? = null
     private var mMode = MODE.PICTURE
     private var mRecordStatus = RECORD_STATUS.STOP
 
     private val mPreviewList = mutableListOf<Surface>()
+    private val mPreviewFrontList = mutableListOf<Surface>()
 
     private var mBestFPSRange: Range<Int> =  Range(30,30)
 
     private var vWidth = 1280
-    private var vHeight = 720
-
-
     override fun getVWidth(): Int {
-        return vWidth
+         return vWidth
     }
 
+    private var vHeight = 720
     override fun getVHeight(): Int {
         return vHeight
     }
 
     override fun getBastFPS(): Int {
-        return mBestFPSRange.upper
+         return 30
     }
 
     init {
@@ -97,9 +87,9 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
         @JvmStatic
         fun getInstance():ICamera{
             if (sCameraManager == null){
-                synchronized(VideoCameraManager::class){
+                synchronized(GLVideoCameraManager::class){
                     if (sCameraManager == null){
-                        sCameraManager = VideoCameraManager()
+                        sCameraManager = GLVideoCameraManager()
                     }
                 }
             }
@@ -108,7 +98,6 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
         @JvmStatic
         fun clear(){
             if (sCameraManager != null){
-                sCameraManager!!.clearCallback()
                 sCameraManager!!.releaseResource()
                 sCameraManager = null
             }
@@ -175,16 +164,7 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
                 Logger.d("aspectRatio:%f",mAspectRatio)
             }
 
-/*            camIdList.forEach {
-                val characteristics = cManager.getCameraCharacteristics(it)
-                val value = characteristics.get(LENS_FACING)
-                if (value == CameraMetadata.LENS_FACING_FRONT){
-                    mCameraFaceId = it
-                }else if (value == CameraMetadata.LENS_FACING_BACK){
-                    mCameraBackId = it
-                }
-            }*/
-        }catch (e:CameraAccessException){
+        }catch (e: CameraAccessException){
             Utils.showToast(e.message)
             Utils.logInfo(e.message)
         }catch (e: IllegalArgumentException){
@@ -198,13 +178,13 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
         }
     }
 
-    override fun sycCaptureMode(mode:MODE){
+    fun sycCaptureMode(mode:MODE){
         if (mMode != mode){
             mMode = mode
             openCamera()
         }
     }
-    override fun sycRecordingState(state:RECORD_STATUS){
+    fun sycRecordingState(state:RECORD_STATUS){
         mRecordStatus = state
     }
 
@@ -236,6 +216,11 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
     }
 
     override fun openCamera(){
+        openBackCamera()
+        openFrontCamera()
+    }
+
+    private fun openBackCamera(){
 
         if (mPreviewList.isEmpty()){
             return
@@ -264,20 +249,39 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
         }
     }
 
+    private fun openFrontCamera(){
+        if (mPreviewFrontList.isEmpty()){
+            return
+        }
+
+        if (mCameraFaceId.isBlank()){
+            Utils.logInfo("faceId both are empty.")
+            return
+        }
+
+
+        val cManager = VideoApp.getInstance().getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        try {
+            cManager.openCamera(mCameraFaceId,mStateFrontCallback,mBackgroundHandler)
+        }catch (e:SecurityException){
+            Utils.showToast(e.message)
+            Utils.logInfo(e.message)
+        }catch (e: CameraAccessException){
+            Utils.showToast(e.message)
+            Utils.logInfo(e.message)
+        }catch (e:IllegalArgumentException){
+            Utils.showToast(e.message)
+            Utils.logInfo(e.message)
+        }
+    }
+
     override fun calPreViewAspectRatio():Float{
         return  mAspectRatio
     }
     private val mStateCallback = object  : CameraDevice.StateCallback() {
         override fun onOpened(camera: CameraDevice) {
             mCameraDevice = camera
-            when(mMode){
-                MODE.PICTURE ->{
-                    createPhotographSession()
-                }
-                MODE.RECORD,MODE.SHORT_RECORD ->{
-                    createRecordSession()
-                }
-            }
+            createSession()
         }
 
         override fun onDisconnected(camera: CameraDevice) {
@@ -297,21 +301,38 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
         }
     }
 
-    private fun createPhotographSession(){
+    private val mStateFrontCallback = object  : CameraDevice.StateCallback() {
+        override fun onOpened(camera: CameraDevice) {
+            mCameraFrontDevice = camera
+            createFrontSession()
+        }
+
+        override fun onDisconnected(camera: CameraDevice) {
+            mCameraFrontDevice?.apply {
+                close()
+                mCameraFrontDevice = null
+            }
+            Utils.showToast("camera has disconnected.")
+        }
+
+        override fun onError(camera: CameraDevice, error: Int) {
+            mCameraFrontDevice?.apply {
+                close()
+                mCameraFrontDevice = null
+            }
+            Utils.showToast("camera open error:" + getOpenErrorMsg(error))
+        }
+    }
+
+    private fun createSession(){
         if (mCameraDevice == null){
             return
-        }
-        
-        if (mPicImageReader == null){
-            mPicImageReader = ImageReader.newInstance(4000,3000,ImageFormat.JPEG,1)
-            mPicImageReader!!.setOnImageAvailableListener(mPicImageAvailableListener,mBackgroundHandler)
         }
 
         try {
 
             val listSurface = mutableListOf<Surface>()
             listSurface.addAll(mPreviewList)
-            listSurface.add(mPicImageReader!!.surface)
 
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
                 mCameraDevice!!.createCaptureSession(listSurface,mCaptureSessionCallback,mBackgroundHandler)
@@ -333,32 +354,26 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
         }
     }
 
-    private fun createRecordSession(){
-        if (mCameraDevice == null){
+    private fun createFrontSession(){
+        if (mCameraFrontDevice == null){
             return
         }
 
-        if (mMediaRecorder == null){
-            mMediaRecorder = FFMediaCoder()
-        }
-
-        mMediaRecorder!!.configure()
-
         try {
+
             val listSurface = mutableListOf<Surface>()
-            listSurface.addAll(mPreviewList)
-            listSurface.add(mMediaRecorder!!.getSurface())
+            listSurface.addAll(mPreviewFrontList)
 
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
-                mCameraDevice!!.createCaptureSession(listSurface,mCaptureSessionCallback,mBackgroundHandler)
+                mCameraFrontDevice!!.createCaptureSession(listSurface,mCaptureFrontSessionCallback,mBackgroundHandler)
             }else {
                 val listConfig = mutableListOf<OutputConfiguration>()
                 listSurface.forEach {
                     listConfig.add(OutputConfiguration(it))
                 }
-                val config = SessionConfiguration(SessionConfiguration.SESSION_REGULAR,listConfig,mExecutor!!,mCaptureSessionCallback)
+                val config = SessionConfiguration(SessionConfiguration.SESSION_REGULAR,listConfig,mExecutor!!,mCaptureFrontSessionCallback)
 
-                mCameraDevice!!.createCaptureSession(config)
+                mCameraFrontDevice!!.createCaptureSession(config)
             }
         }catch (e: CameraAccessException){
             Utils.showToast(e.message)
@@ -385,18 +400,37 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
             stopBackgroundThread()
         }
     }
+
+    private val mCaptureFrontSessionCallback = object : CameraCaptureSession.StateCallback(){
+        override fun onConfigured(session: CameraCaptureSession) {
+            if (mCameraFrontDevice == null){
+                return
+            }
+            mCameraFrontCaptureSession = session
+            createFrontPreviewRequest()
+        }
+        override fun onConfigureFailed(session: CameraCaptureSession) {
+            Utils.showToast("CaptureSession configure failure.")
+        }
+
+        override fun onClosed(session: CameraCaptureSession) {
+            stopBackgroundThread()
+        }
+    }
+
     private fun createPreviewRequest(){
         try {
             if (mCameraCaptureSession != null){
                 if (mPreviewCaptureRequestBuilder != null){
                     mCameraCaptureSession!!.setRepeatingRequest(mPreviewCaptureRequestBuilder!!.build(),null,mBackgroundHandler)
                 }else{
-                    mPreviewCaptureRequestBuilder = mCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
+                    mPreviewCaptureRequestBuilder = mCameraDevice!!.createCaptureRequest(
+                        CameraDevice.TEMPLATE_PREVIEW).apply {
                         mPreviewList.forEach {
                             addTarget(it)
                         }
 
-                        set(CaptureRequest.CONTROL_AF_MODE,CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
+                        set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
                         set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
                         set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, mBestFPSRange)
 
@@ -407,7 +441,7 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
         }catch (e:IllegalArgumentException){
             Utils.showToast(e.message)
             Utils.logInfo(e.message)
-        }catch (e:CameraAccessException){
+        }catch (e: CameraAccessException){
             Utils.showToast(e.message)
             Utils.logInfo(e.message)
         }catch (e:IllegalStateException){
@@ -416,43 +450,46 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
         }
     }
 
-    private val mPicImageAvailableListener = ImageReader.OnImageAvailableListener {
-        Utils.logInfo("width:${it.width},height:${it.height},format:${it.imageFormat}")
-
-        val image = it.acquireLatestImage()
-        val byteBuffer = image.planes[0].buffer
-        val bmpBuffer  = ByteArray(byteBuffer.remaining())
-        byteBuffer.get(bmpBuffer)
-
-        Utils.logInfo("width:${it.width},height:${it.height},format:${it.imageFormat},size:${bmpBuffer.size}")
-
-        image.close()
-
+    private fun createFrontPreviewRequest(){
         try {
-            val file = getPicFile();
-            FileOutputStream(file).use { fileOutputStream->
-                var bmp = BitmapFactory.decodeByteArray(bmpBuffer,0,bmpBuffer.size)
-                if (hasBack){
-                    bmp.compress(Bitmap.CompressFormat.JPEG,100,fileOutputStream)
+            if (mCameraFrontCaptureSession != null){
+                if (mPreviewFrontCaptureRequestBuilder != null){
+                    mCameraFrontCaptureSession!!.setRepeatingRequest(mPreviewFrontCaptureRequestBuilder!!.build(),null,mBackgroundHandler)
                 }else{
-                    val matrix = Matrix()
-                    matrix.setScale(-1f,1f)
-                    bmp = Bitmap.createBitmap(bmp,0,0,bmp.width,bmp.height,matrix,false)
-                    bmp.compress(Bitmap.CompressFormat.JPEG,100,fileOutputStream)
+                    mPreviewFrontCaptureRequestBuilder = mCameraFrontDevice!!.createCaptureRequest(
+                        CameraDevice.TEMPLATE_PREVIEW).apply {
+                        mPreviewFrontList.forEach {
+                            addTarget(it)
+                        }
+
+                        set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
+                        set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
+                        set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, mBestFPSRange)
+
+                        mCameraFrontCaptureSession!!.setRepeatingRequest(build(),mCaptureCallback,mBackgroundHandler)
+                    }
                 }
-                bmp.recycle()
             }
-            mPicCallback?.onTaken(file)
-        }catch (e:IOException){
-            Utils.showToast("save file error:" + e.message)
+        }catch (e:IllegalArgumentException){
+            Utils.showToast(e.message)
+            Utils.logInfo(e.message)
+        }catch (e: CameraAccessException){
+            Utils.showToast(e.message)
+            Utils.logInfo(e.message)
+        }catch (e:IllegalStateException){
+            Utils.showToast(e.message)
+            Utils.logInfo(e.message)
         }
     }
+
     private fun getPicFile(): File {
-        val name = String.format(Locale.CHINA, "%s%s%s.jpg", getPicDir().absolutePath, File.separator,SimpleDateFormat("yyyyMMddHHmmssSS", Locale.CHINA).format(Date()))
+        val name = String.format(
+            Locale.CHINA, "%s%s%s.jpg", getPicDir().absolutePath, File.separator,
+            SimpleDateFormat("yyyyMMddHHmmssSS", Locale.CHINA).format(Date()))
         return File(name)
     }
 
-    override fun getPicDir():File{
+    override fun getPicDir(): File {
         return File(VideoApp.getVideoDir() + File.separator +"pic").apply {
             if (!exists()) {
                 mkdirs()
@@ -461,42 +498,15 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
     }
 
     interface OnPicture{
-        fun onTaken(file:File)
-    }
-
-    override fun setPicCallback(callback:OnPicture?){
-        mPicCallback = callback
+        fun onTaken(file: File)
     }
 
     override fun tackPic(){
-        if (mCameraDevice == null){
-            return
-        }
 
-        if (null == mCameraCaptureSession) {
-            return
-        }
+    }
 
-        try {
-            val picCaptureRequestBuilder = mCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE).apply {
-                addTarget(mPicImageReader!!.surface)
-                set(CaptureRequest.JPEG_ORIENTATION,getOrientation())
+    override fun sycCaptureMode(mode: VideoCameraManager.MODE) {
 
-                set(CaptureRequest.CONTROL_AF_MODE,CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
-                set(CaptureRequest.CONTROL_AF_TRIGGER,CameraMetadata.CONTROL_AF_TRIGGER_START)
-                set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
-            }
-            mCameraCaptureSession!!.capture(picCaptureRequestBuilder.build(),mCaptureCallback,mBackgroundHandler)
-        }catch (e:IllegalArgumentException){
-            Utils.showToast(e.message)
-            Utils.logInfo(e.message)
-        }catch (e:CameraAccessException){
-            Utils.showToast(e.message)
-            Utils.logInfo(e.message)
-        }catch (e:IllegalStateException ){
-            Utils.showToast(e.message)
-            Utils.logInfo(e.message)
-        }
     }
 
     override fun recodeVideo(){
@@ -504,45 +514,11 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
             if (mCameraDevice == null){
                 openCamera()
             }
-            mMediaRecorder!!.apply {
-                start()
-                startRecordRequest()
-            }
         }
     }
 
     private fun startRecordRequest(){
-        try {
-            if (mCameraDevice == null){
-                return
-            }
 
-            if (null == mCameraCaptureSession) {
-                return
-            }
-
-            val recordCaptureRequestBuilder = mCameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_RECORD).apply {
-                mPreviewList.forEach {
-                    addTarget(it)
-                }
-
-                addTarget(mMediaRecorder!!.getSurface())
-
-                set(CaptureRequest.CONTROL_AF_MODE,CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
-                set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
-                set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, mBestFPSRange);
-            }
-            mCameraCaptureSession!!.setRepeatingRequest(recordCaptureRequestBuilder.build(),mCaptureCallback,mBackgroundHandler)
-        }catch (e:IllegalArgumentException){
-            Utils.showToast(e.message)
-            Utils.logInfo(e.message)
-        }catch (e:CameraAccessException){
-            Utils.showToast(e.message)
-            Utils.logInfo(e.message)
-        }catch (e:IllegalStateException ){
-            Utils.showToast(e.message)
-            Utils.logInfo(e.message)
-        }
     }
 
     private val mCaptureCallback = object : CameraCaptureSession.CaptureCallback() {
@@ -568,11 +544,10 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
     }
 
     override fun stopRecord(preview:Boolean){
-        if (mMediaRecorder != null && mMode != MODE.PICTURE && mRecordStatus == RECORD_STATUS.START){
+        if (  mMode != MODE.PICTURE && mRecordStatus == RECORD_STATUS.START){
             mRecordStatus = RECORD_STATUS.STOP
             launch {
-                mMediaRecorder!!.stop()
-                if (preview)createPreviewRequest()
+
             }
         }
     }
@@ -581,19 +556,19 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
 
     private fun getOpenErrorMsg(code:Int):String{
         return when(code){
-            ERROR_CAMERA_IN_USE->{
+            CameraDevice.StateCallback.ERROR_CAMERA_IN_USE ->{
                 "camera device is in use already."
             }
-            ERROR_MAX_CAMERAS_IN_USE ->{
+            CameraDevice.StateCallback.ERROR_MAX_CAMERAS_IN_USE ->{
                 "too many other open camera devices."
             }
-            ERROR_CAMERA_DISABLED ->{
+            CameraDevice.StateCallback.ERROR_CAMERA_DISABLED ->{
                 "camera device could not be opened."
             }
-            ERROR_CAMERA_DEVICE ->{
+            CameraDevice.StateCallback.ERROR_CAMERA_DEVICE ->{
                 "camera device has encountered a fatal error."
             }
-            ERROR_CAMERA_SERVICE ->{
+            CameraDevice.StateCallback.ERROR_CAMERA_SERVICE ->{
                 "camera service has encountered a fatal error."
             }
             else -> {
@@ -602,10 +577,14 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
         }
     }
 
-     override fun getValidCameraId():String{
+    override fun getValidCameraId():String{
         return if (hasBack){
             mCameraBackId
         }else mCameraFaceId
+    }
+
+    override fun sycRecordingState(state: VideoCameraManager.RECORD_STATUS) {
+
     }
 
     override fun isBack():Boolean{
@@ -623,7 +602,11 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
     }
 
     override fun clearCallback() {
-         mPicCallback = null
+
+    }
+
+    override fun setPicCallback(callback: VideoCameraManager.OnPicture?) {
+
     }
 
     private fun releaseCamera(){
@@ -634,27 +617,40 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
             mPreviewCaptureRequestBuilder = null
         }
 
+        if (mPreviewFrontCaptureRequestBuilder != null && mPreviewList.isNotEmpty()){
+            mPreviewFrontList.forEach {
+                mPreviewFrontCaptureRequestBuilder!!.removeTarget(it)
+            }
+            mPreviewFrontCaptureRequestBuilder = null
+        }
+
         if (mCameraCaptureSession != null){
             mCameraCaptureSession!!.close()
             mCameraCaptureSession = null
+        }
+
+        if (mCameraFrontCaptureSession != null){
+            mCameraFrontCaptureSession!!.close()
+            mCameraFrontCaptureSession = null
         }
 
         if (mCameraDevice != null){
             mCameraDevice!!.close()
             mCameraDevice = null
         }
-
-        if (mPicImageReader != null){
-            mPicImageReader!!.close()
-            mPicImageReader = null
+        if (mCameraFrontDevice != null){
+            mCameraFrontDevice!!.close()
+            mCameraFrontDevice = null
         }
+
     }
 
     private fun releaseRecorder(){
-        if (mMediaRecorder != null){
-            mMediaRecorder!!.release()
-            mMediaRecorder = null
-        }
+
+    }
+
+    fun addFrontSurface(surface: Surface){
+        mPreviewFrontList.add(surface)
     }
 
     /*
@@ -681,8 +677,8 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
                     }
                     Utils.logInfo("focusRect:$focusRect,cropRegion:$this")
 
-                    set(CaptureRequest.CONTROL_AF_MODE,CameraMetadata.CONTROL_AF_MODE_AUTO)
-                    set(CaptureRequest.CONTROL_AF_TRIGGER,CameraMetadata.CONTROL_AF_TRIGGER_START)
+                    set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_AUTO)
+                    set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START)
                     set(CaptureRequest.CONTROL_AF_REGIONS, arrayOf(MeteringRectangle(focusRect, 1000)))
 
                     mCameraCaptureSession!!.setRepeatingRequest(build(),mCaptureCallback,mBackgroundHandler)
@@ -707,5 +703,4 @@ class VideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),ICam
     enum class RECORD_STATUS {
         START, STOP
     }
-
 }

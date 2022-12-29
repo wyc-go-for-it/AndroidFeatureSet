@@ -45,14 +45,11 @@ class GLVideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),IC
     private var mCameraFaceId:String = ""
     private var mCameraBackId:String = ""
     private var mCameraDevice: CameraDevice? = null
-    private var mCameraFrontDevice: CameraDevice? = null
     private var mCameraCaptureSession: CameraCaptureSession? = null
-    private var mCameraFrontCaptureSession: CameraCaptureSession? = null
     private var mBackgroundHandler: Handler? = null
     private var mBackgroundThread: HandlerThread? = null
     private var hasBack = true
     private var mPreviewCaptureRequestBuilder: CaptureRequest.Builder? = null
-    private var mPreviewFrontCaptureRequestBuilder: CaptureRequest.Builder? = null
     private var mExecutor: ExecutorService? = null
     private var mAspectRatio = 0.75f
 
@@ -60,7 +57,6 @@ class GLVideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),IC
     private var mRecordStatus = RECORD_STATUS.STOP
 
     private val mPreviewList = mutableListOf<Surface>()
-    private val mPreviewFrontList = mutableListOf<Surface>()
 
     private var mBestFPSRange: Range<Int> =  Range(30,30)
 
@@ -217,7 +213,6 @@ class GLVideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),IC
 
     override fun openCamera(){
         openBackCamera()
-        openFrontCamera()
     }
 
     private fun openBackCamera(){
@@ -237,32 +232,6 @@ class GLVideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),IC
         val cManager = VideoApp.getInstance().getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try {
             cManager.openCamera(getValidCameraId(),mStateCallback,mBackgroundHandler)
-        }catch (e:SecurityException){
-            Utils.showToast(e.message)
-            Utils.logInfo(e.message)
-        }catch (e: CameraAccessException){
-            Utils.showToast(e.message)
-            Utils.logInfo(e.message)
-        }catch (e:IllegalArgumentException){
-            Utils.showToast(e.message)
-            Utils.logInfo(e.message)
-        }
-    }
-
-    private fun openFrontCamera(){
-        if (mPreviewFrontList.isEmpty()){
-            return
-        }
-
-        if (mCameraFaceId.isBlank()){
-            Utils.logInfo("faceId both are empty.")
-            return
-        }
-
-
-        val cManager = VideoApp.getInstance().getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        try {
-            cManager.openCamera(mCameraFaceId,mStateFrontCallback,mBackgroundHandler)
         }catch (e:SecurityException){
             Utils.showToast(e.message)
             Utils.logInfo(e.message)
@@ -301,29 +270,6 @@ class GLVideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),IC
         }
     }
 
-    private val mStateFrontCallback = object  : CameraDevice.StateCallback() {
-        override fun onOpened(camera: CameraDevice) {
-            mCameraFrontDevice = camera
-            createFrontSession()
-        }
-
-        override fun onDisconnected(camera: CameraDevice) {
-            mCameraFrontDevice?.apply {
-                close()
-                mCameraFrontDevice = null
-            }
-            Utils.showToast("camera has disconnected.")
-        }
-
-        override fun onError(camera: CameraDevice, error: Int) {
-            mCameraFrontDevice?.apply {
-                close()
-                mCameraFrontDevice = null
-            }
-            Utils.showToast("camera open error:" + getOpenErrorMsg(error))
-        }
-    }
-
     private fun createSession(){
         if (mCameraDevice == null){
             return
@@ -354,36 +300,6 @@ class GLVideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),IC
         }
     }
 
-    private fun createFrontSession(){
-        if (mCameraFrontDevice == null){
-            return
-        }
-
-        try {
-
-            val listSurface = mutableListOf<Surface>()
-            listSurface.addAll(mPreviewFrontList)
-
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
-                mCameraFrontDevice!!.createCaptureSession(listSurface,mCaptureFrontSessionCallback,mBackgroundHandler)
-            }else {
-                val listConfig = mutableListOf<OutputConfiguration>()
-                listSurface.forEach {
-                    listConfig.add(OutputConfiguration(it))
-                }
-                val config = SessionConfiguration(SessionConfiguration.SESSION_REGULAR,listConfig,mExecutor!!,mCaptureFrontSessionCallback)
-
-                mCameraFrontDevice!!.createCaptureSession(config)
-            }
-        }catch (e: CameraAccessException){
-            Utils.showToast(e.message)
-            Utils.logInfo(e.message)
-        }catch (e:IllegalArgumentException){
-            Utils.showToast(e.message)
-            Utils.logInfo(e.message)
-        }
-    }
-
     private val mCaptureSessionCallback = object : CameraCaptureSession.StateCallback(){
         override fun onConfigured(session: CameraCaptureSession) {
             if (mCameraDevice == null){
@@ -391,23 +307,6 @@ class GLVideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),IC
             }
             mCameraCaptureSession = session
             createPreviewRequest()
-        }
-        override fun onConfigureFailed(session: CameraCaptureSession) {
-            Utils.showToast("CaptureSession configure failure.")
-        }
-
-        override fun onClosed(session: CameraCaptureSession) {
-            stopBackgroundThread()
-        }
-    }
-
-    private val mCaptureFrontSessionCallback = object : CameraCaptureSession.StateCallback(){
-        override fun onConfigured(session: CameraCaptureSession) {
-            if (mCameraFrontDevice == null){
-                return
-            }
-            mCameraFrontCaptureSession = session
-            createFrontPreviewRequest()
         }
         override fun onConfigureFailed(session: CameraCaptureSession) {
             Utils.showToast("CaptureSession configure failure.")
@@ -435,38 +334,6 @@ class GLVideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),IC
                         set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, mBestFPSRange)
 
                         mCameraCaptureSession!!.setRepeatingRequest(build(),mCaptureCallback,mBackgroundHandler)
-                    }
-                }
-            }
-        }catch (e:IllegalArgumentException){
-            Utils.showToast(e.message)
-            Utils.logInfo(e.message)
-        }catch (e: CameraAccessException){
-            Utils.showToast(e.message)
-            Utils.logInfo(e.message)
-        }catch (e:IllegalStateException){
-            Utils.showToast(e.message)
-            Utils.logInfo(e.message)
-        }
-    }
-
-    private fun createFrontPreviewRequest(){
-        try {
-            if (mCameraFrontCaptureSession != null){
-                if (mPreviewFrontCaptureRequestBuilder != null){
-                    mCameraFrontCaptureSession!!.setRepeatingRequest(mPreviewFrontCaptureRequestBuilder!!.build(),null,mBackgroundHandler)
-                }else{
-                    mPreviewFrontCaptureRequestBuilder = mCameraFrontDevice!!.createCaptureRequest(
-                        CameraDevice.TEMPLATE_PREVIEW).apply {
-                        mPreviewFrontList.forEach {
-                            addTarget(it)
-                        }
-
-                        set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
-                        set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
-                        set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, mBestFPSRange)
-
-                        mCameraFrontCaptureSession!!.setRepeatingRequest(build(),mCaptureCallback,mBackgroundHandler)
                     }
                 }
             }
@@ -617,40 +484,20 @@ class GLVideoCameraManager : CoroutineScope by CoroutineScope(Dispatchers.IO),IC
             mPreviewCaptureRequestBuilder = null
         }
 
-        if (mPreviewFrontCaptureRequestBuilder != null && mPreviewList.isNotEmpty()){
-            mPreviewFrontList.forEach {
-                mPreviewFrontCaptureRequestBuilder!!.removeTarget(it)
-            }
-            mPreviewFrontCaptureRequestBuilder = null
-        }
-
         if (mCameraCaptureSession != null){
             mCameraCaptureSession!!.close()
             mCameraCaptureSession = null
-        }
-
-        if (mCameraFrontCaptureSession != null){
-            mCameraFrontCaptureSession!!.close()
-            mCameraFrontCaptureSession = null
         }
 
         if (mCameraDevice != null){
             mCameraDevice!!.close()
             mCameraDevice = null
         }
-        if (mCameraFrontDevice != null){
-            mCameraFrontDevice!!.close()
-            mCameraFrontDevice = null
-        }
 
     }
 
     private fun releaseRecorder(){
 
-    }
-
-    fun addFrontSurface(surface: Surface){
-        mPreviewFrontList.add(surface)
     }
 
     /*

@@ -147,7 +147,7 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
                     LabelPrintSetting.Way.BLUETOOTH_PRINT->{
                         var permissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
                         if (Build.VERSION.SDK_INT > 30){
-                            permissions = arrayOf("android.permission.BLUETOOTH_SCAN","android.permission.BLUETOOTH_ADVERTISE","android.permission.BLUETOOTH_CONNECT")
+                            permissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,"android.permission.BLUETOOTH_SCAN","android.permission.BLUETOOTH_ADVERTISE","android.permission.BLUETOOTH_CONNECT")
                         }
                         mPermission?.launch(permissions)
                     }

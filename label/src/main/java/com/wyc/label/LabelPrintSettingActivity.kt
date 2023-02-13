@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.LinearLayout
@@ -22,7 +23,7 @@ import java.util.logging.Level
 
 class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
     private var mLabelTemplateSelector: ActivityResultLauncher<Intent>? = null
-    private var mPermission: ActivityResultLauncher<String>? = null
+    private var mPermission: ActivityResultLauncher<Array<String>>? = null
     private var mSelectDialog:SelectDialog? = null
 
     private var root: View? = null
@@ -144,7 +145,11 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
                 val setting = DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.setting
                 when(setting?.way){
                     LabelPrintSetting.Way.BLUETOOTH_PRINT->{
-                        mPermission?.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                        var permissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+                        if (Build.VERSION.SDK_INT > 30){
+                            permissions = arrayOf("android.permission.BLUETOOTH_SCAN","android.permission.BLUETOOTH_ADVERTISE","android.permission.BLUETOOTH_CONNECT")
+                        }
+                        mPermission?.launch(permissions)
                     }
                     LabelPrintSetting.Way.WIFI_PRINT ->{
                         val ipInputDialog = IPInputDialog(this)
@@ -233,10 +238,10 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
     }
 
     private fun registerPermissionCallback(){
-        mPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-            if (it){
+        mPermission = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()){
+            if(it.all {m->m.value == true }){
                 BluetoothUtils.startBlueToothDiscovery(this)
-            }else Utils.showToast("...")
+            }
         }
     }
 

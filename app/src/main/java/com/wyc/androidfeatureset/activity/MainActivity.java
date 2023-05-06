@@ -21,6 +21,7 @@ import com.wyc.androidfeatureset.provider.ProviderActivity;
 import com.wyc.label.LabelPrintSettingActivity;
 import com.wyc.label.printer.LabelPrintUtils;
 import com.wyc.logger.Logger;
+import com.wyc.plugin.PluginActivity;
 import com.wyc.video.activity.TreeViewActivity;
 import com.wyc.video.activity.VideoRelatedActivity;
 
@@ -195,5 +196,9 @@ public class MainActivity extends AppCompatActivity {
     @OnClick(R.id.tree_menu)
     void tree(){
         TreeViewActivity.start(this);
+    }
+    @OnClick(R.id.plugin)
+    void plugin(){
+        PluginActivity.start(this);
     }
 }

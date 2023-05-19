@@ -37,10 +37,7 @@ class BluetoothUtils {
         }
         @JvmStatic
         fun stopBlueToothDiscovery() {
-            val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-            if (bluetoothAdapter != null) {
-                if (bluetoothAdapter.isDiscovering) bluetoothAdapter.cancelDiscovery()
-            }
+            BluetoothAdapter.getDefaultAdapter()?.cancelDiscovery()
         }
         @JvmStatic
         fun bondBlueTooth(addr: String?) {

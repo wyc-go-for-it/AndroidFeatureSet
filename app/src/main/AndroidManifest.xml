@@ -32,9 +32,10 @@
         android:supportsRtl="true"
         android:requestLegacyExternalStorage="true"
         android:theme="@style/Theme.AndroidFeatureSet">
-        <activity android:name=".provider.ProviderActivity"></activity>
+        <activity android:name=".provider.ProviderActivity" />
         <activity android:name=".camera.CaptureActivity" />
-        <activity android:name=".activity.MainActivity">
+        <activity android:name=".activity.MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

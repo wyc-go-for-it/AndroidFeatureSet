@@ -8,6 +8,7 @@ import androidx.annotation.StringRes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.lang.Exception
 
 
 class Utils {
@@ -62,7 +63,10 @@ class Utils {
                 Toast.makeText(LabelApp.getInstance(),message, Toast.LENGTH_LONG).show()
             } else{
                 CoroutineScope(Dispatchers.Main).launch {
-                    Toast.makeText(LabelApp.getInstance(),message, Toast.LENGTH_LONG).show()
+                    try {
+                        Toast.makeText(LabelApp.getInstance(),message, Toast.LENGTH_LONG).show()
+                    }catch (e:Exception){
+                    }
                 }
             }
         }

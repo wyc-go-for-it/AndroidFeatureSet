@@ -28,6 +28,8 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
 
     private var root: View? = null
 
+    private var action = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         DataBindingUtil.setContentView<ComWycLabelActivityLabelPrintSettingBinding>(this,R.layout.com_wyc_label_activity_label_print_setting)
@@ -145,11 +147,7 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
                 val setting = DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.setting
                 when(setting?.way){
                     LabelPrintSetting.Way.BLUETOOTH_PRINT->{
-                        var permissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
-                        if (Build.VERSION.SDK_INT > 30){
-                            permissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,"android.permission.BLUETOOTH_SCAN","android.permission.BLUETOOTH_ADVERTISE","android.permission.BLUETOOTH_CONNECT")
-                        }
-                        mPermission?.launch(permissions)
+                        requestBluetoothPermission(0)
                     }
                     LabelPrintSetting.Way.WIFI_PRINT ->{
                         val ipInputDialog = IPInputDialog(this)
@@ -240,7 +238,17 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
     private fun registerPermissionCallback(){
         mPermission = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()){
             if(it.all {m->m.value == true }){
-                BluetoothUtils.startBlueToothDiscovery(this)
+                when(action){
+                    0->{
+                        BluetoothUtils.startBlueToothDiscovery(this)
+                    }
+                    1->{
+                        BluetoothUtils.stopBlueToothDiscovery()
+                    }
+                    2->{
+                        BluetoothUtils.bondBlueTooth(LabelPrintSetting.getSetting().getPrinterAddress())
+                    }
+                }
             }
         }
     }
@@ -262,9 +270,9 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
     private fun initParam(){
         val setting = LabelPrintSetting.getSetting()
         DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.setting = setting
-
-        if (setting.way == LabelPrintSetting.Way.BLUETOOTH_PRINT)
-            BluetoothUtils.bondBlueTooth(setting.getPrinterAddress())
+        if (setting.way == LabelPrintSetting.Way.BLUETOOTH_PRINT){
+            requestBluetoothPermission(2)
+        }
     }
 
 
@@ -273,9 +281,18 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
         BluetoothUtils.attachReceiver(this,receiver)
     }
 
-    override fun onPause() {
-        super.onPause()
-        BluetoothUtils.stopBlueToothDiscovery()
+    override fun onStop(){
+        super.onStop()
+        requestBluetoothPermission(1)
+    }
+
+    private fun requestBluetoothPermission(a:Int){
+        var permissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        if (Build.VERSION.SDK_INT > 30){
+            permissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,"android.permission.BLUETOOTH_SCAN","android.permission.BLUETOOTH_ADVERTISE","android.permission.BLUETOOTH_CONNECT")
+        }
+        action = a
+        mPermission?.launch(permissions)
     }
 
     override fun onDestroy() {

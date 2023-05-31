@@ -12,8 +12,11 @@
     <string name="com_wyc_label_font">字&#160;&#160;&#160;体</string>
     <string name="com_wyc_label_not_ean_13">内容长度错误,EAN_13格式长度只能为13位!</string>
     <string name="com_wyc_label_printer_connecting">正在连接打印…</string>
+    <string name="com_wyc_label_printer_printing">正在打印…</string>
     <string name="com_wyc_label_conn_fail">连接失败</string>
     <string name="com_wyc_label_conn_success">连接成功</string>
+    <string name="com_wyc_label_print_success">打印成功</string>
+    <string name="com_wyc_label_print_failure">打印失败</string>
     <string name="com_wyc_label_printer_disconnect">打印机断开</string>
     <string name="com_wyc_label_delete">删除</string>
     <string name="com_wyc_label_shrink">缩小</string>
@@ -64,6 +67,7 @@
     <string name="com_wyc_label_not_connect">打印机未连接…</string>
     <string name="com_wyc_label_bluetooth_way">蓝牙打印</string>
     <string name="com_wyc_label_gp_m322">佳博M-322</string>
+    <string name="com_wyc_label_tp">热敏打印机</string>
     <string name="com_wyc_label_wifi_hprt_ht300">汉印HT300</string>
     <string name="com_wyc_label_wifi_way">网口打印</string>
     <string name="com_wyc_label_not_support_way">不支持此打印方式</string>

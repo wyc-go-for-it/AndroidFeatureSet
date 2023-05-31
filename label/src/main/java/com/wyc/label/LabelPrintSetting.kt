@@ -4,6 +4,7 @@ import com.wyc.label.LabelApp.Companion.getInstance
 import com.wyc.label.Utils.Companion.showToast
 import com.wyc.label.printer.GPPrinter
 import com.wyc.label.printer.HTPrinter
+import com.wyc.label.printer.ThermalPrinter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -35,7 +36,8 @@ internal class LabelPrintSetting:Serializable {
 
     enum class Type(s: String,cls:String)  {
         BT_GP_M322(getInstance().getString(R.string.com_wyc_label_gp_m322),GPPrinter::class.java.simpleName),
-        WIFI_HPRT_HT300(getInstance().getString(R.string.com_wyc_label_wifi_hprt_ht300),HTPrinter::class.java.simpleName),NULL("","");
+        WIFI_HPRT_HT300(getInstance().getString(R.string.com_wyc_label_wifi_hprt_ht300),HTPrinter::class.java.simpleName),NULL("",""),
+        BT_TPrinter(getInstance().getString(R.string.com_wyc_label_tp),ThermalPrinter::class.java.simpleName);
         val description:String = s
         val cls:String = cls
     }

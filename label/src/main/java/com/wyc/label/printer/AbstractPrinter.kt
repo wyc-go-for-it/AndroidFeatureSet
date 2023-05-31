@@ -18,7 +18,7 @@ import androidx.annotation.CallSuper
  * @Version:        1.0
  */
 
-internal abstract class AbstractPrinter:IPrinter {
+abstract class AbstractPrinter:IPrinter {
     protected var mCallback:PrinterStateCallback? = null
 
     override fun setCallback(callback: PrinterStateCallback?) {

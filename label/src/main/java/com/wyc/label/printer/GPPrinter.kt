@@ -105,7 +105,16 @@ internal class GPPrinter: PrinterStateCallback, AbstractPrinter() {
             val offsetX = setting.offsetX
             val offsetY = setting.offsetY
             tsc.addSize(labelTemplate.width, labelTemplate.height)
-            tsc.addGap(5)
+
+            when(setting.paperType){
+                LabelPrintSetting.PaperType.GAP,LabelPrintSetting.PaperType.SEQUENCE->{
+                    tsc.addGap(setting.paperType.value)
+                }
+                LabelPrintSetting.PaperType.BLACK_LABEL->{
+                    tsc.addBline(setting.paperType.value)
+                }
+            }
+
             tsc.addDirection(LabelCommand.DIRECTION.FORWARD, LabelCommand.MIRROR.NORMAL)
             tsc.addReference(offsetX, offsetY)
             tsc.addDensity(fromInt(setting.density))

@@ -93,6 +93,10 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
         findViewById<TextView>(R.id.d_minus).setOnClickListener(this)
         findViewById<TextView>(R.id.d_plus).setOnClickListener(this)
 
+        findViewById<TextView>(R.id.g_minus).setOnClickListener(this)
+        findViewById<TextView>(R.id.g_plus).setOnClickListener(this)
+
+        findViewById<TextView>(R.id.paper_type_tv).setOnClickListener(this)
 
         findViewById<TextView>(R.id.print_template_tv).setOnClickListener(this)
         findViewById<TextView>(R.id.cur_template_tv).setOnClickListener(this)
@@ -226,6 +230,55 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
                 setting?.density  = num - i
                 bind?.invalidateAll()
             }
+            R.id.g_minus, R.id.g_plus->{
+                var i = -1
+                if (v.id == R.id.g_minus){
+                    i = 1
+                }
+                val bind = DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)
+                val setting = bind?.setting
+                val gap = setting?.paperType?.value?:2
+                setting?.paperType?.value  = gap - i
+                bind?.invalidateAll()
+            }
+            R.id.paper_type_tv->{
+                val selectDialog = SelectDialog(this)
+                LabelPrintSetting.PaperType.values().forEach {
+                    val item = SelectDialog.Item(it.name,it.description)
+                    selectDialog.addContent(item)
+                }
+                selectDialog.setSelectListener(object : SelectDialog.OnSelect{
+                    override fun select(content: SelectDialog.Item) {
+                        DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.apply {
+                            val paperType = LabelPrintSetting.PaperType.valueOf(content.id)
+
+                            val paperSetting = findViewById<View>(R.id.paper_setting)
+                            if (paperType == LabelPrintSetting.PaperType.SEQUENCE){
+                                paperSetting.visibility = View.GONE
+                            }else {
+                                paperSetting.visibility = View.VISIBLE
+                                when(paperType){
+                                    LabelPrintSetting.PaperType.BLACK_LABEL->{
+                                        paperSetting.findViewById<TextView>(R.id.paper_name)?.text = getString(R.string.com_wyc_label_black_h)
+                                    }
+                                    LabelPrintSetting.PaperType.GAP->{
+                                        paperSetting.findViewById<TextView>(R.id.paper_name)?.text = getString(R.string.com_wyc_label_label_gap)
+                                    }
+                                    else -> {}
+                                }
+
+                            }
+
+                            setting?.paperType = paperType
+
+                            invalidateAll()
+                            selectDialog.dismiss()
+                        }
+
+                    }
+                })
+                selectDialog.show()
+            }
             R.id.print_template_tv->{
                 LabelDesignActivity.start(this)
             }
@@ -272,6 +325,9 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
         DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.setting = setting
         if (setting.way == LabelPrintSetting.Way.BLUETOOTH_PRINT){
             requestBluetoothPermission(2)
+        }
+        if (setting.paperType == LabelPrintSetting.PaperType.SEQUENCE){
+            findViewById<View>(R.id.paper_setting)?.visibility = View.GONE
         }
     }
 

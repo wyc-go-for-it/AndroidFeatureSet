@@ -58,6 +58,14 @@ internal class LabelPrintSetting:Serializable {
         val description:String = degree.toString()
         val value = degree
     }
+
+    var paperType: PaperType  = PaperType.GAP
+    enum class PaperType(s: String,v:Int){
+        SEQUENCE("连续纸",0),GAP("间隔纸",5),BLACK_LABEL("黑标纸",2);
+        val description:String = s
+        var value = v//单位 mm
+    }
+
     /**
      * 打印偏移 单位mm
      * */
@@ -87,6 +95,14 @@ internal class LabelPrintSetting:Serializable {
             if (field > 15)return 15
             return field
         }
+
+
+    @Throws(ObjectStreamException::class)
+    private fun readResolve(): Any {
+        if (paperType == null)
+            paperType = PaperType.GAP
+        return this
+    }
 
     companion object{
         const val serialVersionUID = 1L
@@ -149,7 +165,8 @@ internal class LabelPrintSetting:Serializable {
     }
 
     override fun toString(): String {
-        return "LabelPrintSetting(way=$way, type=$type, offsetX=$offsetX, offsetY=$offsetY, dpi=$dpi, rotate=$rotate, labelTemplateId=$labelTemplateId, labelTemplateName='$labelTemplateName', printNum=$printNum, printer='$printer', density=$density)"
+        return "LabelPrintSetting(way=$way, type=$type, paperType=$paperType, offsetX=$offsetX, offsetY=$offsetY, dpi=$dpi, rotate=$rotate, labelTemplateId=$labelTemplateId, labelTemplateName='$labelTemplateName', printNum=$printNum, printer='$printer', density=$density)"
     }
+
 
 }

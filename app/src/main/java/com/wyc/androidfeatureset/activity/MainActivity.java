@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
 
-import androidx.annotation.CallSuper;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -18,6 +17,7 @@ import com.wyc.androidfeatureset.SM2.SM2;
 import com.wyc.androidfeatureset.SM2.SM2Demo;
 import com.wyc.androidfeatureset.camera.CaptureActivity;
 import com.wyc.androidfeatureset.provider.ProviderActivity;
+import com.wyc.kotlin.KotlinActivity;
 import com.wyc.label.LabelPrintSettingActivity;
 import com.wyc.label.printer.LabelPrintUtils;
 import com.wyc.logger.Logger;
@@ -157,6 +157,11 @@ public class MainActivity extends AppCompatActivity {
                     ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
                 }
             }
+    }
+
+    @OnClick(R.id.flow)
+    void flow(){
+        KotlinActivity.start(this);
     }
 
     @OnClick(R.id.camera_feature_btn)

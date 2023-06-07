@@ -57,4 +57,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/plugin" />
+
+    <Button
+        android:id="@+id/flow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Flow" />
 </LinearLayout>

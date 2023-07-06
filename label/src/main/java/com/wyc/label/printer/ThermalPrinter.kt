@@ -7,10 +7,7 @@ import android.graphics.*
 import com.wyc.label.*
 import com.wyc.label.DataItem
 import com.wyc.label.LabelPrintSetting
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.io.IOException
 import java.util.*
 
@@ -40,7 +37,9 @@ class ThermalPrinter: AbstractPrinter(){
     }
 
     override fun print(labelTemplate: LabelTemplate, goods: LabelGoods) {
-        CoroutineScope(Dispatchers.IO).launch {
+        CoroutineScope(Dispatchers.IO + CoroutineExceptionHandler{_,e ->
+            Utils.showToast(e.message)
+        }).launch {
             val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
             if (bluetoothAdapter != null) {
                 if (bluetoothAdapter.isEnabled) {

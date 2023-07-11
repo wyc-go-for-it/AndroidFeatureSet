@@ -96,8 +96,6 @@ class ThermalPrinter: AbstractPrinter(){
 
         val itemCopy: MutableList<ItemBase> = labelTemplate.printSingleGoods(labelGoods)
 
-        c.drawCircle(wDot / 2f - 4,hDot / 2f - 4,8f,p)
-
         itemCopy.forEach {
             val b = it.createItemBitmap(Color.TRANSPARENT)
             c.save()

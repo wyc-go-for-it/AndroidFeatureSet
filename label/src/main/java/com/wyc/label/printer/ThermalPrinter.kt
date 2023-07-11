@@ -8,6 +8,8 @@ import com.wyc.label.*
 import com.wyc.label.DataItem
 import com.wyc.label.LabelPrintSetting
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.IOException
 import java.util.*
 
@@ -28,6 +30,7 @@ import java.util.*
 
 class ThermalPrinter: AbstractPrinter(){
     private var mAddress:String = ""
+    private val mutex = Mutex()
     override fun open(arg: String) {
         mAddress = arg
         if (mCallback != null) {
@@ -37,6 +40,9 @@ class ThermalPrinter: AbstractPrinter(){
     }
 
     override fun print(labelTemplate: LabelTemplate, goods: LabelGoods) {
+        synchronized(ThermalPrinter::class.java){
+
+        }
         CoroutineScope(Dispatchers.IO + CoroutineExceptionHandler{_,e ->
             Utils.showToast(e.message)
         }).launch {
@@ -48,32 +54,33 @@ class ThermalPrinter: AbstractPrinter(){
                         draw2PxPoint(printSingleGoodsBitmap(labelTemplate,goods))
                     }
 
-                    val bluetoothDevice: BluetoothDevice =
-                        bluetoothAdapter.getRemoteDevice(mAddress)
-                    try {
-                        if (mCallback != null) {
-                            mCallback!!.onConnecting()
-                        } else
-                            Utils.showToast(R.string.com_wyc_label_printer_printing)
+                    mutex.withLock {
+                        val bluetoothDevice: BluetoothDevice = bluetoothAdapter.getRemoteDevice(mAddress)
+                        try {
+                            if (mCallback != null) {
+                                mCallback!!.onConnecting()
+                            } else
+                                Utils.showToast(R.string.com_wyc_label_printer_printing)
 
-                        bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
-                            .use { socket ->
-                                socket.connect()
-                                socket.outputStream.use {
-                                    it.write(bt.await())
+                            bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
+                                .use { socket ->
+                                    socket.connect()
+                                    socket.outputStream.use {
+                                        it.write(bt.await())
+                                    }
                                 }
-                            }
 
-                        if (mCallback != null) {
-                            mCallback!!.onSuccess(this@ThermalPrinter)
-                        } else
-                            Utils.showToast(R.string.com_wyc_label_print_success)
+                            if (mCallback != null) {
+                                mCallback!!.onSuccess(this@ThermalPrinter)
+                            } else
+                                Utils.showToast(R.string.com_wyc_label_print_success)
 
-                    } catch (e: IOException) {
-                        if (mCallback != null) {
-                            mCallback!!.onFailure()
-                        } else
-                            Utils.showToast(R.string.com_wyc_label_print_failure)
+                        } catch (e: IOException) {
+                            if (mCallback != null) {
+                                mCallback!!.onFailure()
+                            } else
+                                Utils.showToast(R.string.com_wyc_label_print_failure)
+                        }
                     }
                 }
             }

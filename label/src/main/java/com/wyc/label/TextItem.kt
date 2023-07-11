@@ -9,6 +9,8 @@ import android.widget.EditText
 import android.widget.RadioButton
 import android.widget.SeekBar
 import java.io.ObjectStreamException
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 import kotlin.math.abs
 import kotlin.math.min
 
@@ -67,7 +69,7 @@ internal open class TextItem: ItemBase() {
         getBound(mRect)
 
         width = min(mRect.width(),w)
-        height = (min(mRect.height(),h) + 12)
+        height = min(mRect.height(),h)
     }
     private fun updatePaintAttr(){
         mPaint.textSize = mFontSize
@@ -96,7 +98,7 @@ internal open class TextItem: ItemBase() {
 
             val l = left + offsetX
             val t = top + offsetY
-            canvas.clipRect(l,t,l + width ,t + height)
+            canvas.clipRect(l,t - 8,l + width ,t + height)
 
             if (content.contains("\n")){
                 val str = content.split("\n")
@@ -123,7 +125,7 @@ internal open class TextItem: ItemBase() {
                             val w = mRect.width()
                             paint.textSkewX = -0.5f
                             paint.getTextBounds(content,0,content.length,mRect)
-                            width - (mRect.width() - w) * 2
+                            width - (mRect.width() - w) * if (isContainChinese(content)) 1 else 2
                         }else
                             width
                     }else ->{
@@ -137,6 +139,12 @@ internal open class TextItem: ItemBase() {
 
             canvas.restore()
         }
+    }
+
+    private fun isContainChinese(str: String): Boolean {
+        val p: Pattern = Pattern.compile("[\u4e00-\u9fa5]")
+        val m: Matcher = p.matcher(str)
+        return m.find()
     }
 
     override fun shrink() {
@@ -203,7 +211,7 @@ internal open class TextItem: ItemBase() {
             }
         }
         getBound(mRect)
-        height = mRect.height() + 12
+        height = mRect.height()
     }
 
 

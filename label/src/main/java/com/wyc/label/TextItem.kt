@@ -67,7 +67,7 @@ internal open class TextItem: ItemBase() {
         getBound(mRect)
 
         width = min(mRect.width(),w)
-        height = min(mRect.height(),h)
+        height = (min(mRect.height(),h) + 12)
     }
     private fun updatePaintAttr(){
         mPaint.textSize = mFontSize
@@ -107,20 +107,32 @@ internal open class TextItem: ItemBase() {
                     currentY += mRect.height() + paint.fontMetrics.descent + paint.fontMetrics.leading
                 }
             }else{
+                val oldAlign = paint.textAlign
                 val baseLineY = height / 2 + (abs(paint.fontMetrics.ascent) - paint.fontMetrics.descent) / 2
                 val left = when(textAlign){
                     Align.MID ->{
                         paint.getTextBounds(content,0,content.length,mRect)
+                        paint.textAlign = Paint.Align.LEFT
                         (width - mRect.width()) shr 1
                     }
                     Align.RIGHT ->{
-                        paint.getTextBounds(content,0,content.length,mRect)
-                        width - mRect.width()
+                        paint.textAlign = Paint.Align.RIGHT
+                        if (hasItalic){
+                            paint.textSkewX = 0f
+                            paint.getTextBounds(content,0,content.length,mRect)
+                            val w = mRect.width()
+                            paint.textSkewX = -0.5f
+                            paint.getTextBounds(content,0,content.length,mRect)
+                            width - (mRect.width() - w) * 2
+                        }else
+                            width
                     }else ->{
+                        paint.textAlign = Paint.Align.LEFT
                         0
                     }
                 }
                 canvas.drawText(content,l + left,t + baseLineY,paint)
+                paint.textAlign = oldAlign
             }
 
             canvas.restore()
@@ -191,7 +203,7 @@ internal open class TextItem: ItemBase() {
             }
         }
         getBound(mRect)
-        height = mRect.height()
+        height = mRect.height() + 12
     }
 
 
@@ -264,6 +276,7 @@ internal open class TextItem: ItemBase() {
         italic.isChecked = hasItalic
         italic.setOnCheckedChangeListener { _, isChecked ->
             addAttrChange(labelView,"hasItalic",hasItalic,isChecked)
+            getBound(mRect)
             hasItalic = isChecked
             updateNewline()
             labelView.postInvalidate()

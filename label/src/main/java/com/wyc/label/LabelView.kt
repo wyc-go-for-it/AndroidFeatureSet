@@ -785,13 +785,10 @@ class LabelView: View {
         val p = Paint()
         p.style = Paint.Style.STROKE
 
-
         val scaleX = wDot / realWidth.toFloat()
         val scaleY = hDot / realHeight.toFloat()
 
         val itemCopy: MutableList<ItemBase> = ArrayList()
-
-        c.drawCircle(wDot / 2f - 4,hDot / 2f - 4,8f,p)
 
         labelGoods.apply {
             contentList.forEach {

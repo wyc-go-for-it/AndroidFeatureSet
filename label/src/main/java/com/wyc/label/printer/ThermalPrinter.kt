@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
 import android.graphics.*
+import android.util.Log
 import com.wyc.label.*
 import com.wyc.label.DataItem
 import com.wyc.label.LabelPrintSetting
@@ -40,9 +41,6 @@ class ThermalPrinter: AbstractPrinter(){
     }
 
     override fun print(labelTemplate: LabelTemplate, goods: LabelGoods) {
-        synchronized(ThermalPrinter::class.java){
-
-        }
         CoroutineScope(Dispatchers.IO + CoroutineExceptionHandler{_,e ->
             Utils.showToast(e.message)
         }).launch {
@@ -87,70 +85,77 @@ class ThermalPrinter: AbstractPrinter(){
         }
     }
 
-    private fun printSingleGoodsBitmap(labelTemplate: LabelTemplate, labelGoods: LabelGoods):Bitmap{
-        val dpi = LabelPrintSetting.getSetting().dpi
+    companion object{
+        @JvmStatic
+        fun printSingleGoodsBitmap(labelTemplate: LabelTemplate, labelGoods: LabelGoods):Bitmap{
+            val dpi = LabelPrintSetting.getSetting().dpi
 
-        val wDot = labelTemplate.width2Dot(dpi).toFloat()
-        val hDot = labelTemplate.height2Dot(dpi).toFloat()
+            val wDot = labelTemplate.width2Dot(dpi).toFloat()
+            val hDot = labelTemplate.height2Dot(dpi).toFloat()
 
-        val bmp = Bitmap.createBitmap(wDot.toInt(), hDot.toInt(),Bitmap.Config.ARGB_8888)
-        val c = Canvas(bmp)
-        c.drawColor(Color.WHITE)
+            val bmp = Bitmap.createBitmap(wDot.toInt(), hDot.toInt(),Bitmap.Config.ARGB_8888)
+            val c = Canvas(bmp)
+            c.drawColor(Color.WHITE)
 
 
-        val p = Paint()
-        p.style = Paint.Style.STROKE
+            val p = Paint()
+            p.style = Paint.Style.STROKE
 
-        val itemCopy: MutableList<ItemBase> = labelTemplate.printSingleGoods(labelGoods)
+            val itemCopy: MutableList<ItemBase> = labelTemplate.printSingleGoods(labelGoods)
 
-        itemCopy.forEach {
-            val b = it.createItemBitmap(Color.TRANSPARENT)
-            c.save()
+            itemCopy.forEach {
+                val b = it.createItemBitmap(Color.TRANSPARENT)
+                c.save()
 
-            c.translate(it.left.toFloat(), it.top.toFloat())
+                c.translate(it.left.toFloat(), it.top.toFloat())
 
-            c.drawBitmap(b,0f,0f,null)
+                c.drawBitmap(b,0f,0f,null)
 
-            c.restore()
+                c.restore()
+            }
+
+            return bmp
         }
-
-        return bmp
     }
 
 
-    fun draw2PxPoint(bit:Bitmap):ByteArray {
+
+    private fun draw2PxPoint(bit:Bitmap):ByteArray {
         val newBit = compressPic(bit);
         val w = newBit.width;
         val h = newBit.height;
 
-        val data = ByteArray(w * h + h / 24*6 + 8 );//图片大小 + 指令字节 + 留空字节
+        val data = ByteArray(w * h / 24 * 3 + h / 24*8)//数据大小 + 指令字节
         var k = 0
-        val n2 = (w / 256).toByte()
-        val n1 = (w - 256*n2).toByte()
+        val n2 = (w / 256)
+        val n1 = (w % 256)
 
         for (i in 0 until (h / 24)){
-            data[k++] = 0x1B;
-            data[k++] = 0x2A;
-            data[k++] = 33 // m=33时，选择24点双密度打印，分辨率达到200DPI。
-            data[k++] = n1
-            data[k++] = n2
+            data[k++] = 0x1B
+            data[k++] = 0x2A
+            data[k++] = 33
+            data[k++] = n1.toByte()
+            data[k++] = n2.toByte()
 
             for (j in 0 until w){
                 for (p in 0 until 3){
                     for (l in 0 until 8){
-                        val b = px2Binaryzation(j, i * 24 + p * 8 + l,newBit);
+                        val b = px2Binaryzation(j, i * 24 + p * 8 + l,newBit)
                         val t = (data[k] + b).toByte()
                         data[k] = (t + data[k]).toByte()
                     }
                     k++
                 }
             }
-            data[k++] = 10;
+
+            data[k++] = 0x1b
+            data[k++] = 0x33
+            data[k++] = 0x10
         }
         return data
     }
 
-    fun px2Binaryzation(x: Int, y: Int, bit: Bitmap): Byte {
+    private fun px2Binaryzation(x: Int, y: Int, bit: Bitmap): Byte {
         //最高一个字节为alpha;
         val b: Byte
         val pixel = bit.getPixel(x, y)
@@ -166,7 +171,7 @@ class ThermalPrinter: AbstractPrinter(){
         return b
     }
 
-    fun compressPic(bitmapOrg: Bitmap): Bitmap {
+    private fun compressPic(bitmapOrg: Bitmap): Bitmap {
         // 获取这个图片的宽和高
         val width = bitmapOrg.width
         val height = bitmapOrg.height

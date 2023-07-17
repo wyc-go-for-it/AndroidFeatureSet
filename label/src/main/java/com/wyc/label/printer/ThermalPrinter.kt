@@ -2,12 +2,9 @@ package com.wyc.label.printer
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothSocket
 import android.graphics.*
 import android.util.Log
 import com.wyc.label.*
-import com.wyc.label.DataItem
-import com.wyc.label.LabelPrintSetting
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -29,58 +26,103 @@ import java.util.*
  * @Version:        1.0
  */
 
-class ThermalPrinter: AbstractPrinter(){
+class ThermalPrinter: AbstractPrinter(),CoroutineScope by CoroutineScope(Dispatchers.IO + CoroutineExceptionHandler{_,e ->
+    Utils.showToast(e.message)
+}){
     private var mAddress:String = ""
     private val mutex = Mutex()
+    private var mConnect:android.bluetooth.BluetoothSocket? = null
     override fun open(arg: String) {
         mAddress = arg
-        if (mCallback != null) {
-            mCallback!!.onSuccess(this)
-        } else
-            Utils.showToast(R.string.com_wyc_label_conn_success)
+        launch {
+            mutex.withLock {
+                connect()
+            }
+        }
+    }
+
+    private fun connect():Boolean{
+        if (mConnect == null){
+
+            val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+            if (bluetoothAdapter != null) {
+                val bluetoothDevice: BluetoothDevice = bluetoothAdapter.getRemoteDevice(mAddress)
+                if (mCallback != null) {
+                    mCallback!!.onConnecting()
+                } else
+                    Utils.showToast(R.string.com_wyc_label_printer_connecting)
+
+                try {
+                    mConnect = bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
+                    mConnect!!.connect()
+
+                    if (mCallback != null) {
+                        mCallback!!.onSuccess(this@ThermalPrinter)
+                    } else
+                        Utils.showToast(R.string.com_wyc_label_conn_success)
+
+                    return true
+
+                }catch (e:IOException){
+                    if (mCallback != null) {
+                        mCallback!!.onFailure()
+                    } else
+                        Utils.showToast(R.string.com_wyc_label_conn_fail)
+                }
+            }else Utils.showToast(R.string.not_support_bluetooth)
+
+            return false
+        }
+        return true
     }
 
     override fun print(labelTemplate: LabelTemplate, goods: LabelGoods) {
-        CoroutineScope(Dispatchers.IO + CoroutineExceptionHandler{_,e ->
-            Utils.showToast(e.message)
-        }).launch {
-            val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-            if (bluetoothAdapter != null) {
-                if (bluetoothAdapter.isEnabled) {
+        launch {
 
-                    val bt =  async {
-                        draw2PxPoint(printSingleGoodsBitmap(labelTemplate,goods))
+            val bt =  async {
+                draw2PxPoint(printSingleGoodsBitmap(labelTemplate,goods))
+            }
+
+            mutex.withLock {
+                try {
+                    if (!mConnect!!.isConnected){
+                        mConnect!!.connect()
                     }
 
-                    mutex.withLock {
-                        val bluetoothDevice: BluetoothDevice = bluetoothAdapter.getRemoteDevice(mAddress)
-                        try {
-                            if (mCallback != null) {
-                                mCallback!!.onConnecting()
-                            } else
-                                Utils.showToast(R.string.com_wyc_label_printer_printing)
+                    Utils.showToast(R.string.com_wyc_label_printer_printing)
 
-                            bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
-                                .use { socket ->
-                                    socket.connect()
-                                    socket.outputStream.use {
-                                        it.write(bt.await())
-                                    }
-                                }
-
-                            if (mCallback != null) {
-                                mCallback!!.onSuccess(this@ThermalPrinter)
-                            } else
-                                Utils.showToast(R.string.com_wyc_label_print_success)
-
-                        } catch (e: IOException) {
-                            if (mCallback != null) {
-                                mCallback!!.onFailure()
-                            } else
-                                Utils.showToast(R.string.com_wyc_label_print_failure)
+                    val setting = LabelPrintSetting.getSetting()
+                    var gap = setting.paperType.value
+                    val rn = "\n".toByteArray()
+                    mConnect!!.outputStream.apply {
+                        write(bt.await())
+                        write(byteArrayOf(0x1b, 0x40))
+                        while (gap-- > 0){
+                            write(rn)
                         }
                     }
+
+                    if (mCallback != null) {
+                        mCallback!!.onReceive()
+                    } else
+                        Utils.showToast(R.string.com_wyc_label_print_success)
+
+                } catch (e: IOException) {
+                    if (mCallback != null) {
+                        mCallback!!.onFailure()
+                    } else
+                        Utils.showToast(R.string.com_wyc_label_print_failure)
                 }
+            }
+        }
+    }
+
+    override fun close() {
+        super.close()
+        launch {
+            mutex.withLock {
+                mConnect?.close()
+                mConnect = null
             }
         }
     }

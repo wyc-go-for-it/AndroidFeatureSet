@@ -253,20 +253,13 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
                             val paperType = LabelPrintSetting.PaperType.valueOf(content.id)
 
                             val paperSetting = findViewById<View>(R.id.paper_setting)
-                            if (paperType == LabelPrintSetting.PaperType.SEQUENCE){
-                                paperSetting.visibility = View.GONE
-                            }else {
-                                paperSetting.visibility = View.VISIBLE
-                                when(paperType){
-                                    LabelPrintSetting.PaperType.BLACK_LABEL->{
-                                        paperSetting.findViewById<TextView>(R.id.paper_name)?.text = getString(R.string.com_wyc_label_black_h)
-                                    }
-                                    LabelPrintSetting.PaperType.GAP->{
-                                        paperSetting.findViewById<TextView>(R.id.paper_name)?.text = getString(R.string.com_wyc_label_label_gap)
-                                    }
-                                    else -> {}
+                            when(paperType){
+                                LabelPrintSetting.PaperType.BLACK_LABEL->{
+                                    paperSetting.findViewById<TextView>(R.id.paper_name)?.text = getString(R.string.com_wyc_label_black_h)
                                 }
-
+                                else -> {
+                                    paperSetting.findViewById<TextView>(R.id.paper_name)?.text = getString(R.string.com_wyc_label_label_gap)
+                                }
                             }
 
                             setting?.paperType = paperType
@@ -325,9 +318,6 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
         DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.setting = setting
         if (setting.way == LabelPrintSetting.Way.BLUETOOTH_PRINT){
             requestBluetoothPermission(2)
-        }
-        if (setting.paperType == LabelPrintSetting.PaperType.SEQUENCE){
-            findViewById<View>(R.id.paper_setting)?.visibility = View.GONE
         }
     }
 

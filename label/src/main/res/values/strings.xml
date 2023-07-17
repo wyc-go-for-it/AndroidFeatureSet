@@ -11,7 +11,7 @@
     <string name="com_wyc_label_new_barcode_hint">生成条码错误:%1$s</string>
     <string name="com_wyc_label_font">字&#160;&#160;&#160;体</string>
     <string name="com_wyc_label_not_ean_13">内容长度错误,EAN_13格式长度只能为13位!</string>
-    <string name="com_wyc_label_printer_connecting">正在连接打印…</string>
+    <string name="com_wyc_label_printer_connecting">正在连接打印机…</string>
     <string name="com_wyc_label_printer_printing">正在打印…</string>
     <string name="com_wyc_label_conn_fail">连接失败</string>
     <string name="com_wyc_label_conn_success">连接成功</string>
@@ -104,7 +104,8 @@
     <string name="com_wyc_label_modify">修改</string>
     <string name="com_wyc_label_label_empty_hints">标签内容为空,请检查标签是否已设置或当前默认模板已选择…</string>
     <string name="c_label_failure">解析格式错误:%1$s</string>
-    <string name="not_enbel_bluetooth">未开启蓝牙功能…</string>
+    <string name="not_enable_bluetooth">未开启蓝牙功能…</string>
+    <string name="not_support_bluetooth">此设备不支持蓝牙功能…</string>
     <string name="com_wyc_label_export_error">导出标签错误,请检查文件格式或路径是否正确…</string>
     <string name="com_wyc_label_import_error">导入标签错误,请检查文件格式或路径是否正确…</string>
     <string name="com_wyc_label_ip_not_empty_hint">打印机IP不能为空!</string>

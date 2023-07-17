@@ -23,7 +23,7 @@ class BluetoothUtils {
                     bluetoothAdapter.startDiscovery()
                 }
             } else {
-                Utils.showToast(R.string.not_enbel_bluetooth)
+                Utils.showToast(R.string.not_enable_bluetooth)
             } else Utils.showToast("设备不支持蓝牙功能！")
         }
         @JvmStatic
@@ -31,7 +31,7 @@ class BluetoothUtils {
             val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
             val code = bluetoothAdapter != null && bluetoothAdapter.isEnabled
             if (!code) {
-                Utils.showToast(R.string.not_enbel_bluetooth)
+                Utils.showToast(R.string.not_enable_bluetooth)
             }
             return code
         }

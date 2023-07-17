@@ -489,7 +489,7 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
         }
 
         override fun onReceive() {
-
+            showToast(R.string.com_wyc_label_print_success)
         }
 
         override fun onFailure() {

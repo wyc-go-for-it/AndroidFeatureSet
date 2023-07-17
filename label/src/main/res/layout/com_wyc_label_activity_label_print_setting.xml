@@ -303,7 +303,8 @@
             android:layout_marginTop="@dimen/com_wyc_label_margin_5"
             android:layout_marginEnd="@dimen/com_wyc_label_margin_5"
             android:background="@drawable/com_wyc_label_round_style"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:visibility="visible">
 
             <TextView
                 android:id="@+id/paper_name"

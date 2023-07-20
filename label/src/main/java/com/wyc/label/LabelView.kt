@@ -136,6 +136,13 @@ class LabelView: View {
                         mLastY = event.y
 
                         it.moveCurItem(realWidth,realHeight,event.x,event.y,mMoveX,mMoveY)
+                        run loop@{
+                            contentList.forEach { c->
+                                if (c != it){
+                                    if (it.isAlign(c))return@loop
+                                }
+                            }
+                        }
                         invalidate()
                     }
                 };

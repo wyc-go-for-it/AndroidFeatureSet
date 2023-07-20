@@ -11,7 +11,6 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.View
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,7 +18,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import com.wyc.label.databinding.ComWycLabelActivityLabelPrintSettingBinding
 import com.wyc.label.room.BluetoothUtils
-import java.util.logging.Level
 
 class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
     private var mLabelTemplateSelector: ActivityResultLauncher<Intent>? = null
@@ -132,13 +130,13 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
             R.id.type_tv->{
                 val selectDialog = SelectDialog(this)
                 DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.setting?.getValidPrinterType()?.forEach {
-                    val item = SelectDialog.Item(it.name,it.description)
+                    val item = SelectDialog.Item(it.getEnumName(),it.description())
                     selectDialog.addContent(item)
                 }
                 selectDialog.setSelectListener(object : SelectDialog.OnSelect{
                     override fun select(content: SelectDialog.Item) {
                         DataBindingUtil.bind<ComWycLabelActivityLabelPrintSettingBinding>(root!!)?.apply {
-                            setting?.type = LabelPrintSetting.Type.valueOf(content.id)
+                            setting?.type = LabelPrintSetting.valueOf(content.id)
                             invalidateAll()
                             selectDialog.dismiss()
                         }

@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Environment
 import androidx.core.content.ContextCompat
+import com.wyc.label.printer.IType
 import java.io.File
 
 
@@ -27,6 +28,23 @@ class LabelApp {
     companion object{
         private var app:Application? = null
         private var appColor:Int = Color.parseColor("#67B0F8")
+        private val driverList  = mutableListOf<IType>()
+
+        /**
+         * @param name 显示在参数设置选择列表里
+         * @param classPath 实现类名全路径
+         * @param type 0 网口打印机 1蓝牙打印机 2 驱动打印或使用厂家SDK
+         * */
+        @JvmStatic
+        fun <T:IType> register(cls:Class<T>){
+            cls.enumConstants?.forEach {
+                driverList.add(it)
+            }
+        }
+        @JvmStatic
+        internal fun getDriverList():List<IType>{
+            return driverList
+        }
         @JvmStatic
         fun initApp(application: Application){
             app = application

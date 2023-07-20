@@ -74,7 +74,7 @@ public class LabelTemplate implements Serializable {
         templateName = String.format(Locale.CHINA,"%s_%d_%d","未命名",width,height);
     }
 
-    public boolean save(){
+    boolean save(){
         File file = getFile();
         file.delete();
         try{
@@ -87,7 +87,7 @@ public class LabelTemplate implements Serializable {
         return false;
     }
 
-    public boolean saveAs(){
+    boolean saveAs(){
         this.templateId = UUID.randomUUID().toString().hashCode();
 
         File file = getFile();
@@ -145,7 +145,7 @@ public class LabelTemplate implements Serializable {
         return list;
     }
 
-    public boolean deleteLabel(){
+    boolean deleteLabel(){
         return getFile().delete();
     }
 
@@ -198,19 +198,10 @@ public class LabelTemplate implements Serializable {
         return (int) (height * dpi * (1.0f / 25.4f));
     }
 
-    public void generatePrinterDataItem(@Nullable LabelGoods goods){
-        if (goods != null){
-            for(ItemBase item : generatePrintItem()){
-                assignItemValue(item,goods);
-            }
-        }
-    }
-
     public static void assignItemValue(ItemBase item ,LabelGoods goods){
         if (item instanceof DataItem){
             DataItem i = (DataItem)item;
             i.setContent(goods.getValueByField(i.getField()));
-            i.updateNewline();
         }else if (item instanceof CodeItemBase && !((CodeItemBase)item).getField().isEmpty()){
             CodeItemBase i = (CodeItemBase)item;
             i.setHasMark(false);
@@ -279,7 +270,7 @@ public class LabelTemplate implements Serializable {
         return templateId;
     }
 
-    public void setTemplateId(@NonNull Integer templateId) {
+    void setTemplateId(@NonNull Integer templateId) {
         this.templateId = templateId;
     }
 
@@ -287,7 +278,7 @@ public class LabelTemplate implements Serializable {
         return templateName;
     }
 
-    public void setTemplateName(@NonNull String templateName) {
+    void setTemplateName(@NonNull String templateName) {
         this.templateName = templateName;
     }
 
@@ -295,7 +286,7 @@ public class LabelTemplate implements Serializable {
         return width;
     }
 
-    public void setWidth(Integer width) {
+    void setWidth(Integer width) {
         this.width = width;
     }
 
@@ -303,7 +294,7 @@ public class LabelTemplate implements Serializable {
         return height;
     }
 
-    public void setHeight(Integer height) {
+    void setHeight(Integer height) {
         this.height = height;
     }
 
@@ -311,7 +302,7 @@ public class LabelTemplate implements Serializable {
         return realWidth;
     }
 
-    public void setRealWidth(Integer realWidth) {
+    void setRealWidth(Integer realWidth) {
         this.realWidth = realWidth;
     }
 
@@ -319,7 +310,7 @@ public class LabelTemplate implements Serializable {
         return realHeight;
     }
 
-    public void setRealHeight(Integer realHeight) {
+    void setRealHeight(Integer realHeight) {
         this.realHeight = realHeight;
     }
 
@@ -327,7 +318,7 @@ public class LabelTemplate implements Serializable {
         return backgroundImg;
     }
 
-    public void setBackgroundImg(@NonNull String backgroundImg) {
+    void setBackgroundImg(@NonNull String backgroundImg) {
         this.backgroundImg = backgroundImg;
     }
 
@@ -339,7 +330,7 @@ public class LabelTemplate implements Serializable {
         return content;
     }
 
-    public void setPrintItem(List<ItemBase> printItem) {
+    void setPrintItem(List<ItemBase> printItem) {
         this.printItem = printItem;
     }
 
@@ -385,7 +376,7 @@ public class LabelTemplate implements Serializable {
             return rW;
         }
 
-        public void setrW(int rW) {
+        void setrW(int rW) {
             this.rW = rW;
         }
 
@@ -393,7 +384,7 @@ public class LabelTemplate implements Serializable {
             return rH;
         }
 
-        public void setrH(int rH) {
+        void setrH(int rH) {
             this.rH = rH;
         }
 
@@ -401,7 +392,7 @@ public class LabelTemplate implements Serializable {
             return description;
         }
 
-        public void setDescription(String description) {
+        void setDescription(String description) {
             this.description = description;
         }
 

@@ -3,6 +3,7 @@ package com.wyc.label
 import android.app.Dialog
 import android.content.Context
 import android.graphics.*
+import android.util.Log
 import android.view.Display
 import android.view.Gravity
 import android.view.View
@@ -61,10 +62,12 @@ open class ItemBase:Cloneable,Serializable {
 
     @Transient protected var cRECT = RectF()
 
+    @Transient private var mBaseLineColor = BaseLineColor()
 
     @CallSuper
     protected open fun serializableInit(){
         cRECT = RectF()
+        mBaseLineColor = BaseLineColor()
     }
 
     fun draw(offsetX:Float, offsetY:Float, canvas:Canvas, paint: Paint){
@@ -175,14 +178,17 @@ open class ItemBase:Cloneable,Serializable {
         height = min(height, h)
     }
     private fun drawItemBaseLine(offsetX:Float, offsetY:Float, canvas:Canvas, paint: Paint){
-        paint.color = Color.RED
         paint.style = Paint.Style.STROKE
-        paint.pathEffect = DashPathEffect(floatArrayOf(4f,4f),0f)
+        paint.pathEffect = DashPathEffect(floatArrayOf(6f,6f),0f)
 
+        paint.color = mBaseLineColor.top
         canvas.drawLine(offsetX,cRECT.top, canvas.width.toFloat(),cRECT.top,paint)
+        paint.color = mBaseLineColor.bottom
         canvas.drawLine(offsetX,cRECT.top + cRECT.height(),canvas.width.toFloat(),cRECT.top + cRECT.height(),paint)
 
+        paint.color = mBaseLineColor.left
         canvas.drawLine(cRECT.left,offsetY, cRECT.left,canvas.height + offsetY,paint)
+        paint.color = mBaseLineColor.right
         canvas.drawLine(cRECT.left + cRECT.width(),offsetY,  cRECT.left + cRECT.width(),canvas.height + offsetY,paint)
 
         paint.pathEffect = null
@@ -288,6 +294,47 @@ open class ItemBase:Cloneable,Serializable {
         }
     }
 
+    fun isAlign(item: ItemBase):Boolean{
+        mBaseLineColor.left = Color.RED
+        mBaseLineColor.top = Color.RED
+        mBaseLineColor.bottom = Color.RED
+        mBaseLineColor.right = Color.RED
+
+        val bottom = top + height
+        val right = left + width
+
+        val itemBottom = item.top + item.height
+        val itemRight = item.left + item.width
+
+        if (left == item.left){
+            mBaseLineColor.left = Color.GREEN
+        }else if (left == itemRight){
+            mBaseLineColor.left = Color.GREEN
+        }
+
+        if (top == item.top){
+            mBaseLineColor.top = Color.GREEN
+        }else if (top == itemBottom){
+            mBaseLineColor.top = Color.GREEN
+        }
+
+        if (right == itemRight){
+            mBaseLineColor.right = Color.GREEN
+        }else if (right == item.left){
+            mBaseLineColor.right = Color.GREEN
+        }
+
+        if (bottom == itemBottom){
+            mBaseLineColor.bottom = Color.GREEN
+        }else if (bottom == item.top){
+            mBaseLineColor.bottom = Color.GREEN
+        }
+
+        return mBaseLineColor.left == Color.GREEN || mBaseLineColor.top == Color.GREEN
+                || mBaseLineColor.right == Color.GREEN
+                || mBaseLineColor.bottom == Color.GREEN
+    }
+
     fun hasSelect(x:Float, y:Float, offsetX: Int, offsetY: Int):Boolean{
         if (this is LineItem){
             val diameter = ACTION_RADIUS * 2
@@ -386,5 +433,12 @@ open class ItemBase:Cloneable,Serializable {
         var SCALE_DIRECT = 45.0f
         @JvmField
         val MIN_BORDER_WIDTH = LabelApp.getInstance().resources.getDimension(R.dimen.com_wyc_label_size_1)
+    }
+
+    private class BaseLineColor{
+        var left:Int = Color.RED
+        var top:Int = Color.RED
+        var bottom:Int = Color.RED
+        var right:Int = Color.RED
     }
 }

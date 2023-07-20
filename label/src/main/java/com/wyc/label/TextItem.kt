@@ -98,7 +98,7 @@ internal open class TextItem: ItemBase() {
 
             val l = left + offsetX
             val t = top + offsetY
-            canvas.clipRect(l,t - 8,l + width ,t + height)
+            canvas.clipRect(l,t,l + width ,t + height)
 
             if (content.contains("\n")){
                 val str = content.split("\n")
@@ -166,7 +166,7 @@ internal open class TextItem: ItemBase() {
         }
         updateNewline()
     }
-    fun updateNewline(){
+    private fun updateNewline(){
         updatePaintAttr()
         if (hasNewLine){
             if (content.contains("\n")){
@@ -233,6 +233,7 @@ internal open class TextItem: ItemBase() {
         }else{
             mPaint.getTextBounds(content,0,content.length,b)
         }
+        b.inset(-5,-5)
     }
 
     override fun resetAttr(attrName: String) {

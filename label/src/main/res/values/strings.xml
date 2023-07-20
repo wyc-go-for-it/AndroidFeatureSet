@@ -70,6 +70,7 @@
     <string name="com_wyc_label_tp">热敏打印机</string>
     <string name="com_wyc_label_wifi_hprt_ht300">汉印HT300</string>
     <string name="com_wyc_label_wifi_way">网口打印</string>
+    <string name="com_wyc_label_driver_way">驱动打印</string>
     <string name="com_wyc_label_not_support_way">不支持此打印方式</string>
     <string name="com_wyc_label_success">成功</string>
     <string name="com_wyc_label_code_format">编码格式</string>

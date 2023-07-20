@@ -29,12 +29,15 @@ class LabelPrintUtils {
         @JvmStatic
         fun getInstance(): IPrinter? {
             if (sPrinter == null){
-                val cls_id = getSetting().type.cls
+                val cls_id = getSetting().type.cls()
                 try {
                     synchronized(LabelPrintUtils::class){
                         if (sPrinter == null){
-                            val printerClass = Class.forName("com.wyc.label.printer.$cls_id")
-                            sPrinter = printerClass.getConstructor().newInstance() as AbstractPrinter
+                            val printerClass =
+                            if (cls_id.startsWith("com.wyc")){
+                                Class.forName(cls_id)
+                            }else Class.forName("com.wyc.label.printer.$cls_id")
+                            sPrinter = printerClass.getConstructor().newInstance() as IPrinter
                         }
                     }
                 } catch (e: ClassNotFoundException) {

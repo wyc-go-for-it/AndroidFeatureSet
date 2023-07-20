@@ -33,5 +33,7 @@ public class MyApp extends Application {
         VideoApp.initApp(this);
         LeakCanary.install(this);
         Logger.addLogAdapter(new AndroidLogAdapter());
+
+        LabelApp.register(TestEnum.class);
     }
 }

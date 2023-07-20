@@ -18,6 +18,11 @@ class KotlinActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.kotlinactivity_main)
 
+        var name by CustomProperty<String>()
+
+
+        name = "wyc"
+
         testFlow()
     }
 

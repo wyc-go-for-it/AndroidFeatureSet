@@ -4,6 +4,7 @@ import com.wyc.label.LabelApp.Companion.getInstance
 import com.wyc.label.Utils.Companion.showToast
 import com.wyc.label.printer.GPPrinter
 import com.wyc.label.printer.HTPrinter
+import com.wyc.label.printer.IType
 import com.wyc.label.printer.ThermalPrinter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,16 +35,31 @@ internal class LabelPrintSetting:Serializable {
     }
     var way: Way  = Way.BLUETOOTH_PRINT
 
-    enum class Type(s: String,cls:String)  {
+    enum class Type(s: String,c:String) : IType  {
         BT_GP_M322(getInstance().getString(R.string.com_wyc_label_gp_m322),GPPrinter::class.java.simpleName),
         WIFI_HPRT_HT300(getInstance().getString(R.string.com_wyc_label_wifi_hprt_ht300),HTPrinter::class.java.simpleName),NULL("",""),
         BT_TPrinter(getInstance().getString(R.string.com_wyc_label_tp),ThermalPrinter::class.java.simpleName);
-        val description:String = s
-        val cls:String = cls
+        private val description:String = s
+        private val cls:String = c
+
+        override fun getEnumName(): String {
+            return name
+        }
+        override fun description():String{
+            return description
+        }
+        override fun cls():String{
+            return cls
+        }
+        override fun getDeviceType():Int{
+            return 0
+        }
     }
-    var type: Type  = Type.BT_GP_M322
-    fun getValidPrinterType(): List<Type> {
-       return Type.values().filter {
+    var type: IType = Type.BT_GP_M322
+    fun getValidPrinterType(): List<IType> {
+        val l = mutableListOf<IType>()
+
+        l.addAll(Type.values().filter {
             when(way){
                 Way.BLUETOOTH_PRINT->{
                     it.name.startsWith("BT")
@@ -52,7 +68,13 @@ internal class LabelPrintSetting:Serializable {
                     it.name.startsWith("WIFI")
                 }else -> false
             }
-        }
+        })
+
+        l.addAll(LabelApp.getDriverList().filter {
+            Way.BLUETOOTH_PRINT == way && it.getDeviceType() == 0 || Way.WIFI_PRINT == way && it.getDeviceType() == 1
+        })
+
+       return l
     }
 
     enum class Rotate(degree:Int){
@@ -108,6 +130,17 @@ internal class LabelPrintSetting:Serializable {
 
     companion object{
         const val serialVersionUID = 1L
+
+        @JvmStatic
+        fun valueOf(id:String):IType{
+            var i = LabelApp.getDriverList().find { it.getEnumName() == id }
+            if (i == null){
+                i = Type.values().find { it.getEnumName() == id }
+                if (i == null)i = Type.NULL
+            }
+            return i
+        }
+
         @JvmStatic
         private fun getFile(): File {
             val dirPath =String.format("%s%s%s",LabelApp.getDir(), File.separator,"setting")

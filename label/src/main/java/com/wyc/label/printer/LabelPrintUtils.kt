@@ -31,6 +31,10 @@ class LabelPrintUtils {
             if (sPrinter == null){
                 val cls_id = getSetting().type.cls()
                 try {
+                    if (cls_id == null){
+                        Utils.showToast(LabelApp.getInstance().getString(R.string.com_wyc_label_not_support_printer,"null"))
+                        return null
+                    }
                     synchronized(LabelPrintUtils::class){
                         if (sPrinter == null){
                             val printerClass =

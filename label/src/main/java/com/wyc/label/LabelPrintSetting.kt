@@ -125,6 +125,8 @@ internal class LabelPrintSetting:Serializable {
     private fun readResolve(): Any {
         if (paperType == null)
             paperType = PaperType.GAP
+        if (type == null)
+            type = Type.BT_GP_M322
         return this
     }
 

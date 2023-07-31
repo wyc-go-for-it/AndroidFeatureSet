@@ -19,6 +19,7 @@ import com.wyc.androidfeatureset.camera.CaptureActivity;
 import com.wyc.androidfeatureset.provider.ProviderActivity;
 import com.wyc.kotlin.KotlinActivity;
 import com.wyc.label.LabelPrintSettingActivity;
+import com.wyc.label.LabelPrinterRegister;
 import com.wyc.label.printer.LabelPrintUtils;
 import com.wyc.logger.Logger;
 import com.wyc.plugin.PluginActivity;
@@ -174,6 +175,7 @@ public class MainActivity extends AppCompatActivity {
     }
     @OnClick(R.id.label_design)
     void label(){
+        LabelPrinterRegister.register();
         LabelPrintSettingActivity.start(this);
     }
     @OnClick(R.id.sm2)

@@ -55,4 +55,5 @@ dependencies {
     testImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.6'
 
     implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.50'
+    annotationProcessor project(':lib_myProcessor')
 }

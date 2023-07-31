@@ -3,13 +3,16 @@ package com.wyc.androidfeatureset;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.wyc.label.LabelGoods;
 import com.wyc.label.LabelTemplate;
 import com.wyc.label.Utils;
 import com.wyc.label.lib_annotation.Printer;
 import com.wyc.label.printer.AbstractPrinter;
+import com.wyc.label.printer.IPrinter;
 import com.wyc.label.printer.IType;
+import com.wyc.label.printer.PrinterStateCallback;
 
 /**
  * @ProjectName: AndroidFeatureSet
@@ -24,13 +27,10 @@ import com.wyc.label.printer.IType;
  * @Version: 1.0
  */
 @Printer
-public class PrinterTest extends AbstractPrinter implements IType {
+public class PrinterTest implements IType, IPrinter {
     @Override
     public void open(@NonNull String arg) {
-        if (getMCallback() != null){
-            getMCallback().onSuccess(this);
-        }else
-            Utils.showToast(R.string.com_wyc_label_conn_success);
+        Utils.showToast(R.string.com_wyc_label_conn_success);
     }
 
     @Override
@@ -59,5 +59,15 @@ public class PrinterTest extends AbstractPrinter implements IType {
     @Override
     public String cls() {
         return this.getClass().getCanonicalName();
+    }
+
+    @Override
+    public void close() {
+
+    }
+
+    @Override
+    public void setCallback(@Nullable PrinterStateCallback callback) {
+
     }
 }

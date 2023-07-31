@@ -155,19 +155,31 @@ public class PrinterProcessor extends AbstractProcessor {
         if ("com.wyc.label.printer.AbstractPrinter".equals(superclass.toString())){
             hasSuperClass = true;
         }
+        final List<? extends TypeMirror> interfacesList = element.getInterfaces();
         if (!hasSuperClass){
-            final List<? extends TypeMirror> interfacesList = element.getInterfaces();
             for (TypeMirror interfaces : interfacesList){
                 messager.printMessage(Diagnostic.Kind.WARNING,"implement interface" + "---" + name);
-                if ("com.wyc.label.printer.IType".equals(interfaces.toString())){
+                if ("com.wyc.label.printer.IPrinter".equals(interfaces.toString())){
                     hasSuperClass = true;
                     break;
                 }
             }
             if (!hasSuperClass){
-                messager.printMessage(Diagnostic.Kind.ERROR, "Printer class must implement com.wyc.label.printer.IType", element);
+                messager.printMessage(Diagnostic.Kind.ERROR, "Printer class must implement com.wyc.label.printer.IPrinter", element);
             }
         }
+        boolean hasType = false;
+        for (TypeMirror interfaces : interfacesList){
+            if ("com.wyc.label.printer.IType".equals(interfaces.toString())){
+                messager.printMessage(Diagnostic.Kind.WARNING,"implement interface" + "---" + name);
+                hasType = true;
+                break;
+            }
+        }
+        if (!hasType){
+            messager.printMessage(Diagnostic.Kind.ERROR, "Printer class must implement com.wyc.label.printer.IType", element);
+        }
+
         if (!element.getModifiers().contains(Modifier.PUBLIC)) {
             messager.printMessage(Diagnostic.Kind.ERROR, "Printer class must be public", element);
         }

@@ -2,10 +2,10 @@ package com.wyc.label
 
 import android.app.Activity
 import android.app.Dialog
-import android.bluetooth.BluetoothAdapter
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Point
@@ -24,15 +24,13 @@ import android.view.WindowManager
 import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import com.gprinter.bean.PrinterDevices
-import com.gprinter.utils.CallbackListener
 import com.wyc.label.Utils.Companion.showToast
 import com.wyc.label.printer.*
 import kotlinx.coroutines.*
-import tspl.HPRTPrinterHelper
 import java.io.File
+import java.io.FileInputStream
 import java.io.IOException
-import kotlin.concurrent.thread
+import java.util.concurrent.locks.LockSupport
 
 class LabelDesignActivity : BaseActivity(), View.OnClickListener{
     private var mLabelView: LabelView? = null
@@ -41,8 +39,6 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
 
     private val REQ_CROP = 108
     private val CHOOSE_PHOTO = 110
-    private val REQUEST_CAPTURE_IMG = 100
-    private var mImageUri: Uri? = null
 
     private var mOpenDocumentLauncher: ActivityResultLauncher<Array<String>>? = null
     private var mSaveDocumentLauncher: ActivityResultLauncher<String>? = null
@@ -268,15 +264,10 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
     override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
         if (resultCode == RESULT_OK) {
             when (requestCode) {
-                REQUEST_CAPTURE_IMG -> {
-                    crop()
-                }
                 REQ_CROP -> {
                     try {
-                        mImageUri?.let {
-                            contentResolver.openInputStream(it).use { inputStream ->
-                                mLabelView?.setLabelBackground(BitmapFactory.decodeStream(inputStream))
-                            }
+                        FileInputStream(getCropImageFile()).use { inputStream ->
+                            mLabelView?.setLabelBackground(BitmapFactory.decodeStream(inputStream))
                         }
                     } catch (e: IOException) {
                         e.printStackTrace()
@@ -284,18 +275,19 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
                     }
                 }
                 CHOOSE_PHOTO -> {
-                    mImageUri = intent?.data
-                    crop()
+                    intent?.data?.apply {
+                        crop(this)
+                    }
                 }
             }
         }
         super.onActivityResult(requestCode, resultCode, intent)
     }
 
-    private fun crop() {
+    private fun crop(uri: Uri) {
         val intent = Intent("com.android.camera.action.CROP")
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        intent.setDataAndType(mImageUri, "image/*")
+        intent.setDataAndType(uri, "image/*")
 
         intent.putExtra("outputX", mLabelView?.getRealWidth())
         intent.putExtra("outputY", mLabelView?.getRealHeight())
@@ -303,20 +295,14 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
         intent.putExtra("scale", true)
         intent.putExtra("return-data", false)
 
-        val imgCropUri = createCropImageFile()
-
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, imgCropUri)
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, createCropImageFile())
         intent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString())
         intent.putExtra("noFaceDetection", false)
-        mImageUri = imgCropUri
         startActivityForResult(intent, REQ_CROP)
     }
     private fun createCropImageFile(): Uri? {
-        val imageFileName = "clip_wyc_." + Bitmap.CompressFormat.JPEG.toString()
-        val storageDir: String = getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath ?:"wyc"
+        val paramFile = getCropImageFile()
         return if (Build.VERSION.SDK_INT >= 30) {
-
-            val paramFile = File(storageDir + imageFileName)
             val localContentValues = ContentValues()
             localContentValues.put(MediaStore.Images.ImageColumns.TITLE, paramFile.name)
             localContentValues.put(MediaStore.Images.ImageColumns.DISPLAY_NAME, paramFile.name)
@@ -331,12 +317,23 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
             localContentValues.put(MediaStore.Images.ImageColumns.DATA, paramFile.absolutePath)
             localContentValues.put(MediaStore.Images.ImageColumns.SIZE, paramFile.length())
 
-            LabelApp.getInstance().contentResolver.insert(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                localContentValues
-            )
+            val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    MediaStore.Images.Media.getContentUri(
+                        MediaStore.VOLUME_EXTERNAL_PRIMARY
+                    )
+                } else {
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                }
 
-        } else Uri.parse("file://" + File.separator + storageDir + File.separator + imageFileName)
+            contentResolver.insert(collection,localContentValues)
+
+        } else Uri.parse("file://" + paramFile.absolutePath)
+    }
+
+    private fun getCropImageFile():File{
+        val imageFileName = "clip_wyc_." + Bitmap.CompressFormat.JPEG.toString()
+        val storageDir: String = getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath ?:"wyc"
+        return File(storageDir + File.separator  + imageFileName)
     }
 
     private fun openAlbum() {

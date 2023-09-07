@@ -56,4 +56,6 @@ dependencies {
 
     implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.50'
     annotationProcessor project(':lib_myProcessor')
+
+    implementation project(path:':wycMqtt')
 }

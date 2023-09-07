@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.example.wycmqtt.MqttActivity;
 import com.wyc.androidfeatureset.R;
 import com.wyc.androidfeatureset.SM2.SM2;
 import com.wyc.androidfeatureset.SM2.SM2Demo;
@@ -207,5 +208,10 @@ public class MainActivity extends AppCompatActivity {
     @OnClick(R.id.plugin)
     void plugin(){
         PluginActivity.start(this);
+    }
+
+    @OnClick(R.id.mqtt)
+    void mqtt(){
+        MqttActivity.start(this);
     }
 }

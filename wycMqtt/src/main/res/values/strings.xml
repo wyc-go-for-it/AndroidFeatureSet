@@ -1,0 +1,5 @@
+<resources>
+    <string name="subscribe">订阅</string>
+    <string name="publish">发布</string>
+    <string name="c_server">连接服务器</string>
+</resources>

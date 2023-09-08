@@ -10,6 +10,7 @@ import android.widget.EditText
 import android.widget.TextView
 import org.eclipse.paho.client.mqttv3.*
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
+import java.util.*
 
 class MqttActivity : AppCompatActivity() {
 
@@ -43,7 +44,7 @@ class MqttActivity : AppCompatActivity() {
         findViewById<Button>(R.id.publish_btn)?.let {
             it.setOnClickListener {
                 try {
-                    mqttPublishClient?.publish(topic, MqttMessage(publishMsg!!.text.toString().toByteArray()))
+                    mqttPublishClient?.publish(topic, MqttMessage((publishMsg!!.text.toString()+ Date().time).toByteArray()))
                 }catch (e:MqttException){
                     e.printStackTrace()
                 }
@@ -139,8 +140,12 @@ class MqttActivity : AppCompatActivity() {
 
         hasNotExit = true
 
-        initPublishClient()
-        initSubscribeClient()
+        try {
+            initPublishClient()
+            initSubscribeClient()
+        }catch (e:MqttException){
+            e.printStackTrace()
+        }
     }
 
     companion object{

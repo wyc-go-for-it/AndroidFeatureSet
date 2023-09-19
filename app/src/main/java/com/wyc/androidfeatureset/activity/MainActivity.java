@@ -18,6 +18,7 @@ import com.wyc.androidfeatureset.SM2.SM2;
 import com.wyc.androidfeatureset.SM2.SM2Demo;
 import com.wyc.androidfeatureset.camera.CaptureActivity;
 import com.wyc.androidfeatureset.provider.ProviderActivity;
+import com.wyc.androidfeatureset.view.LayoutRecycleViewActivity;
 import com.wyc.kotlin.KotlinActivity;
 import com.wyc.label.LabelPrintSettingActivity;
 import com.wyc.label.LabelPrinterRegister;
@@ -159,6 +160,11 @@ public class MainActivity extends AppCompatActivity {
                     ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
                 }
             }
+    }
+
+    @OnClick(R.id.layout)
+    void layout(){
+        LayoutRecycleViewActivity.start(this);
     }
 
     @OnClick(R.id.flow)

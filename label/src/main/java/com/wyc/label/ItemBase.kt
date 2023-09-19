@@ -263,13 +263,27 @@ open class ItemBase:Cloneable,Serializable {
         height += scaleY.toInt()
     }
 
-    fun getFieldByName(item: ItemBase, name:String): Field?{
-        item::class.memberProperties.forEach {
-            if (it.name == name){
-                return it.javaField
-            }
-        }
-        return null
+    private fun getFieldByName(item: ItemBase, name:String): Field?{
+        return item::class.memberProperties.find { it.name == name }?.javaField
+    }
+
+    fun getWidthField():Field?{
+        return getFieldByName(this,"width")
+    }
+    fun getHeightField():Field?{
+        return getFieldByName(this,"height")
+    }
+    fun getTopField():Field?{
+        return getFieldByName(this,"top")
+    }
+    fun getRadiaField():Field?{
+        return getFieldByName(this,"radian")
+    }
+    fun getLeftField():Field?{
+        return getFieldByName(this,"left")
+    }
+    fun getFontSizeField():Field?{
+        return getFieldByName(this,"mFontSize")
     }
 
     protected fun addAttrChange(labelView: LabelView, attrName:String, oldValue:Any, newValue:Any){

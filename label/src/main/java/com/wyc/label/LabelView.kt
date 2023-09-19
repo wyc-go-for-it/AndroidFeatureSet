@@ -482,19 +482,15 @@ class LabelView: View {
             if (index < 0)index = mMaxAttrIndex - 1
             val oldActionObject = mItemAttrList[index]
 
-            var changed = true
-            if (oldActionObject != null && oldActionObject.action == ActionObject.Action.ACTIVE && oldActionObject.actionObj == this){
-                changed = false
-            }
-            if (changed){
-                val w = ActionObject.FieldObject(getFieldByName(this,"width"),width,width)
-                val h = ActionObject.FieldObject(getFieldByName(this,"height"),height,height)
-                val l = ActionObject.FieldObject(getFieldByName(this,"left"),left,left)
-                val r = ActionObject.FieldObject(getFieldByName(this,"top"),top,top)
+            if (!(oldActionObject != null && oldActionObject.action == ActionObject.Action.ACTIVE && oldActionObject.actionObj == this)){
+                val w = ActionObject.FieldObject(getWidthField(),width,width)
+                val h = ActionObject.FieldObject(getHeightField(),height,height)
+                val l = ActionObject.FieldObject(getLeftField(),left,left)
+                val r = ActionObject.FieldObject(getTopField(),top,top)
 
                 mItemAttrList[mCurAttrIndex++] = if (this is TextItem){
                     ActionObject(this,ActionObject.Action.ACTIVE, mutableListOf(w,h,l,r,
-                        ActionObject.FieldObject(getFieldByName(this,"mFontSize"),mFontSize,mFontSize)))
+                        ActionObject.FieldObject(getFontSizeField(),mFontSize,mFontSize)))
                 }else ActionObject(this,ActionObject.Action.ACTIVE, mutableListOf(w,h,l,r))
             }
         }
@@ -514,27 +510,27 @@ class LabelView: View {
                             when(it.field?.name){
                                 "width" ->{
                                     if (it.oldValue != this.width){
-                                        fieldList.add(ActionObject.FieldObject(getFieldByName(this,"width"),it.oldValue,this.width))
+                                        fieldList.add(ActionObject.FieldObject(getWidthField(),it.oldValue,this.width))
                                     }
                                 }
                                 "height" ->{
                                     if (it.oldValue != this.height){
-                                        fieldList.add(ActionObject.FieldObject(getFieldByName(this,"height"),it.oldValue,this.height))
+                                        fieldList.add(ActionObject.FieldObject(getHeightField(),it.oldValue,this.height))
                                     }
                                 }
                                 "left" ->{
                                     if (it.oldValue != this.left){
-                                        fieldList.add(ActionObject.FieldObject(getFieldByName(this,"left"),it.oldValue,this.left))
+                                        fieldList.add(ActionObject.FieldObject(getLeftField(),it.oldValue,this.left))
                                     }
                                 }
                                 "top" ->{
                                     if (it.oldValue != this.top){
-                                        fieldList.add(ActionObject.FieldObject(getFieldByName(this,"top"),it.oldValue,this.top))
+                                        fieldList.add(ActionObject.FieldObject(getTopField(),it.oldValue,this.top))
                                     }
                                 }
                                 "mFontSize" ->{
                                     if (this is TextItem && it.oldValue != this.mFontSize){
-                                        fieldList.add(ActionObject.FieldObject(getFieldByName(this,"mFontSize"),it.oldValue,this.mFontSize))
+                                        fieldList.add(ActionObject.FieldObject(getFontSizeField(),it.oldValue,this.mFontSize))
                                     }
                                 }
                             }
@@ -669,11 +665,11 @@ class LabelView: View {
 
             shrink()
 
-            val w = ActionObject.FieldObject(getFieldByName(this,"width"),oldW,width)
-            val h = ActionObject.FieldObject(getFieldByName(this,"height"),oldH,height)
+            val w = ActionObject.FieldObject(getWidthField(),oldW,width)
+            val h = ActionObject.FieldObject(getHeightField(),oldH,height)
 
             if (this is TextItem){
-                addModifyAction(this,w,h,ActionObject.FieldObject(getFieldByName(this,"mFontSize"),oldFont,mFontSize))
+                addModifyAction(this,w,h,ActionObject.FieldObject(getFontSizeField(),oldFont,mFontSize))
             }else
                 addModifyAction(this,w,h)
 
@@ -689,11 +685,11 @@ class LabelView: View {
 
             zoom()
 
-            val w = ActionObject.FieldObject(getFieldByName(this,"width"),oldW,width)
-            val h = ActionObject.FieldObject(getFieldByName(this,"height"),oldH,height)
+            val w = ActionObject.FieldObject(getWidthField(),oldW,width)
+            val h = ActionObject.FieldObject(getHeightField(),oldH,height)
 
             if (this is TextItem){
-                addModifyAction(this,w,h,ActionObject.FieldObject(getFieldByName(this,"mFontSize"),oldFont,mFontSize))
+                addModifyAction(this,w,h,ActionObject.FieldObject(getFontSizeField(),oldFont,mFontSize))
             }else
                 addModifyAction(this,w,h)
 
@@ -705,7 +701,7 @@ class LabelView: View {
         mCurItem?.apply {
             radian += 15
 
-            addModifyAction(this,ActionObject.FieldObject(getFieldByName(this,"radian"),radian - 15,radian))
+            addModifyAction(this,ActionObject.FieldObject(getRadiaField(),radian - 15,radian))
 
             invalidate()
         }

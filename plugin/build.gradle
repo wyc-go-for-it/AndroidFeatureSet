@@ -23,7 +23,53 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+
 }
+
+
+class YechaoaPluginExtension {
+    String title
+    int chapter
+    SubExtension subExtension
+
+    YechaoaPluginExtension(Project project) {
+        subExtension = project.extensions.create('sub', SubExtension.class)
+    }
+}
+class SubExtension {
+    String author
+}
+
+class YechaoaPlugin implements Plugin<Project> {
+
+    @Override
+    void apply(Project project) {
+        println("这是插件：${this.class.name}")
+        def extension = project.extensions.create("yechaoa", YechaoaPluginExtension,project)
+        // 设置默认值 可以定义set()方法 然后在这里set
+        project.task("YechaoaPluginTask") { task ->
+            task.doLast {
+                println("这是插件${this.class.name}，它创建了一个Task：${task.name}")
+                println("title = ${extension.title}")
+                println("chapter = ${extension.chapter}")
+                println("author = ${extension.subExtension.author}")
+            }
+        }
+    }
+}
+
+apply plugin: YechaoaPlugin
+
+yechaoa {
+    title = "【Gradle-8】Gradle插件开发指南"
+    chapter = 8
+    sub {
+        author = "yechaoa"
+    }
+}
+
+apply plugin: YechaoaPlugin
 
 dependencies {
 

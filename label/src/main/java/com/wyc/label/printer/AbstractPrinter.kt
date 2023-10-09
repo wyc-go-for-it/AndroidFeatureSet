@@ -27,6 +27,7 @@ abstract class AbstractPrinter:IPrinter {
     @CallSuper
     override fun close() {
         if (mCallback != null){
+            mCallback!!.onDisconnect()
             mCallback = null
         }
     }

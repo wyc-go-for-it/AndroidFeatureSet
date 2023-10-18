@@ -65,16 +65,6 @@ class LabelPrintUtils {
         }
 
         @JvmStatic
-        private fun hasSupportBluetooth(): Boolean {
-            val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-            val code = bluetoothAdapter != null && bluetoothAdapter.isEnabled
-            if (!code) {
-                Utils.showToast("未开启蓝牙功能...")
-            }
-            return code
-        }
-
-        @JvmStatic
         fun print(goods: LabelGoods){
             val labelTemplate = getLabelTemplate()
             if (labelTemplate != null && labelTemplate.hasItem()){
@@ -88,8 +78,7 @@ class LabelPrintUtils {
                 val setting = getSetting()
                 when(setting.way){
                     LabelPrintSetting.Way.BLUETOOTH_PRINT->{
-                        if (BluetoothUtils.hasSupportBluetooth())
-                             open(setting.getPrinterAddress())
+                        open(setting.getPrinterAddress())
                     }
                     LabelPrintSetting.Way.WIFI_PRINT->{
                         val printer = setting.printer.split("@")

@@ -69,7 +69,10 @@ class ThermalPrinter: AbstractPrinter(),CoroutineScope by CoroutineScope(Dispatc
                     } else
                         Utils.showToast(R.string.com_wyc_label_conn_fail)
                 }
-            }else Utils.showToast(R.string.not_support_bluetooth)
+            }else {
+                Utils.showToast(R.string.not_support_bluetooth)
+                mCallback?.onDisconnect()
+            }
 
             return false
         }

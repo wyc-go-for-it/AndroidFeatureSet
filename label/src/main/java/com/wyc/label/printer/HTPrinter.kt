@@ -77,11 +77,15 @@ internal class HTPrinter: AbstractPrinter() {
             Utils.showToast(R.string.com_wyc_label_not_connect)
             return
         }
+        var code: Int
+
         val setting = LabelPrintSetting.getSetting()
         val width = labelTemplate.width.toString()
         val height = labelTemplate.height.toString()
 
-        HPRTPrinterHelper.printAreaSize(width,height)
+        code = HPRTPrinterHelper.printAreaSize(width,height)
+        printerStatus("printAreaSize",code)
+
         HPRTPrinterHelper.CLS()
 
         HPRTPrinterHelper.Density(setting.density.toString())
@@ -91,8 +95,6 @@ internal class HTPrinter: AbstractPrinter() {
         val offY = LabelTemplate.mm2Pixel(setting.offsetY.toFloat())
 
         HPRTPrinterHelper.Reference("0","0")
-
-        var code: Int
 
         val data = labelTemplate.printSingleGoods(goods)
         for (it in data) {
@@ -104,31 +106,61 @@ internal class HTPrinter: AbstractPrinter() {
                     "EAN13"
                 }else "128"
 
-                code = if (it.radian != 0f)
+                if (it.radian != 0f)
                     HPRTPrinterHelper.printBarcode((left+ it.width).toString(),(top + it.height).toString(),type, it.height.toString(),"1",it.radian.toInt().toString(),"2","2",it.content.trim())
                 else
                     HPRTPrinterHelper.printBarcode(left.toString(),top.toString(),type, it.height.toString(),"1","0","2","2",it.content.trim())
-
-                Log.e("printBarcode","code:$code")
             }else {
-                code = HPRTPrinterHelper.printImage(left.toString(),top.toString(), b, true, false, 1)
-                Log.e("printImage","code:$code")
+                HPRTPrinterHelper.printImage(left.toString(),top.toString(), b, true, false, 1)
             }
         }
         code = HPRTPrinterHelper.Print("1","1")
         if (code < 0){
+
             if (mCallback != null){
                 mCallback!!.onFailure()
             }else
                 Utils.showToast(R.string.com_wyc_label_conn_fail)
         }
-        Log.e("Print","code:$code")
+        printerStatus("Print",code)
+    }
+
+    private fun printerStatus(tag:String,code:Int){
+        var s = ""
+        when(HPRTPrinterHelper.getPrinterStatus()){
+            HPRTPrinterHelper.STATUS_DISCONNECT ->{
+                s = "断开连接"
+                state = PRINTER_STATE.CLOSE
+                mCallback?.onDisconnect()
+            }
+            HPRTPrinterHelper.STATUS_TIMEOUT ->{
+                s = "查询超时"
+            }
+            HPRTPrinterHelper.STATUS_COVER_OPENED ->{
+                s = "开盖"
+            }
+            HPRTPrinterHelper.STATUS_NOPAPER ->{
+                s = "缺纸"
+            }
+            HPRTPrinterHelper.STATUS_OVER_HEATING ->{
+                s = "过热"
+            }
+            HPRTPrinterHelper.STATUS_PRINTING ->{
+                s = "打印中"
+            }
+            HPRTPrinterHelper.STATUS_OK ->{
+                s = "打印机正常"
+                state = PRINTER_STATE.OPEN
+            }
+        }
+        Log.e(tag,"code:$code,state:$s")
     }
 
     override fun close() {
-        super.close()
-        HPRTPrinterHelper.PortClose()
+        val code = HPRTPrinterHelper.PortClose()
+        Log.e("close","code:$code")
         state = PRINTER_STATE.CLOSE
         isExit = true
+        super.close()
     }
 }

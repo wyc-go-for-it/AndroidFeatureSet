@@ -1,7 +1,5 @@
 package com.wyc.label.printer
 
-import com.gprinter.bean.PrinterDevices
-
 
 /**
  *

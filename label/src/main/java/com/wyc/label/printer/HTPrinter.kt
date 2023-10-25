@@ -126,31 +126,32 @@ internal class HTPrinter: AbstractPrinter() {
     }
 
     private fun printerStatus(tag:String,code:Int){
-        var s = ""
-        when(HPRTPrinterHelper.getPrinterStatus()){
-            HPRTPrinterHelper.STATUS_DISCONNECT ->{
-                s = "断开连接"
-                state = PRINTER_STATE.CLOSE
-                mCallback?.onDisconnect()
-            }
-            HPRTPrinterHelper.STATUS_TIMEOUT ->{
-                s = "查询超时"
-            }
-            HPRTPrinterHelper.STATUS_COVER_OPENED ->{
-                s = "开盖"
-            }
-            HPRTPrinterHelper.STATUS_NOPAPER ->{
-                s = "缺纸"
-            }
-            HPRTPrinterHelper.STATUS_OVER_HEATING ->{
-                s = "过热"
-            }
-            HPRTPrinterHelper.STATUS_PRINTING ->{
-                s = "打印中"
-            }
-            HPRTPrinterHelper.STATUS_OK ->{
-                s = "打印机正常"
-                state = PRINTER_STATE.OPEN
+        var s = "打印机正常"
+        if (code < 0){
+            when(HPRTPrinterHelper.getPrinterStatus()){
+                HPRTPrinterHelper.STATUS_DISCONNECT ->{
+                    s = "断开连接"
+                    state = PRINTER_STATE.CLOSE
+                    mCallback?.onDisconnect()
+                }
+                HPRTPrinterHelper.STATUS_TIMEOUT ->{
+                    s = "查询超时"
+                }
+                HPRTPrinterHelper.STATUS_COVER_OPENED ->{
+                    s = "开盖"
+                }
+                HPRTPrinterHelper.STATUS_NOPAPER ->{
+                    s = "缺纸"
+                }
+                HPRTPrinterHelper.STATUS_OVER_HEATING ->{
+                    s = "过热"
+                }
+                HPRTPrinterHelper.STATUS_PRINTING ->{
+                    s = "打印中"
+                }
+                HPRTPrinterHelper.STATUS_OK ->{
+                    state = PRINTER_STATE.OPEN
+                }
             }
         }
         Log.e(tag,"code:$code,state:$s")

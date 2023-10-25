@@ -106,5 +106,14 @@ class LabelPrintUtils {
         fun getLabelTemplate(): LabelTemplate? {
             return LabelTemplate.getLabelById(getSetting().labelTemplateId)
         }
+
+        @JvmStatic
+        fun wifiPrint():Boolean{
+            return getSetting().way == LabelPrintSetting.Way.WIFI_PRINT
+        }
+        @JvmStatic
+        fun bluetoothPrint():Boolean{
+            return getSetting().way == LabelPrintSetting.Way.BLUETOOTH_PRINT
+        }
     }
 }

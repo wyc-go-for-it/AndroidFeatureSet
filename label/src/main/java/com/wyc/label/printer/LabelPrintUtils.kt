@@ -1,9 +1,9 @@
 package com.wyc.label.printer
 
-import android.bluetooth.BluetoothAdapter
+import android.content.Context
+import android.content.Intent
 import com.wyc.label.*
 import com.wyc.label.LabelPrintSetting.Companion.getSetting
-import com.wyc.label.room.BluetoothUtils
 import java.lang.reflect.InvocationTargetException
 
 
@@ -114,6 +114,18 @@ class LabelPrintUtils {
         @JvmStatic
         fun bluetoothPrint():Boolean{
             return getSetting().way == LabelPrintSetting.Way.BLUETOOTH_PRINT
+        }
+
+        @JvmStatic
+        fun startSetting(c:Context){
+            c.startActivity(Intent(c, LabelPrintSettingActivity::class.java))
+        }
+
+        @JvmStatic
+        fun startDesign(c:Context,templateId:Int = -1){
+            val intent = Intent(c, LabelDesignActivity::class.java)
+            if (templateId != -1)intent.putExtra(BrowseLabelActivity.LABEL_KEY,templateId)
+            c.startActivity(intent)
         }
     }
 }

@@ -42,6 +42,7 @@ class LabelApp {
         @JvmStatic
         fun initApp(application: Application){
             app = application
+            Check.c(application)
         }
         @JvmStatic
         fun getInstance():Application{

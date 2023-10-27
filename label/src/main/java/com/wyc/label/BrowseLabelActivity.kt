@@ -1,10 +1,8 @@
 package com.wyc.label
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.os.Parcelable
 import android.view.ContextMenu
 import android.view.ContextMenu.ContextMenuInfo
 import android.view.MenuItem
@@ -14,6 +12,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.wyc.label.printer.LabelPrintUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -107,7 +106,7 @@ internal class BrowseLabelActivity : BaseActivity() {
             }
             2 -> {
                 mCurLabel?.let {
-                    LabelDesignActivity.start(this,it.templateId)
+                    LabelPrintUtils.startDesign(this,it.templateId)
                     finish()
                 }
             }

@@ -1,12 +1,10 @@
 package com.wyc.label;
 
 import android.content.res.AssetManager;
-import android.graphics.RectF;
 import android.util.Log;
 import android.util.TypedValue;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -89,7 +87,6 @@ public class LabelTemplate implements Serializable {
 
     boolean saveAs(){
         this.templateId = UUID.randomUUID().toString().hashCode();
-
         File file = getFile();
         file.delete();
         try{
@@ -102,16 +99,15 @@ public class LabelTemplate implements Serializable {
         return false;
     }
 
-    public static List<LabelTemplate> getLabelList(){
+    protected static List<LabelTemplate> getLabelList(){
         final List<LabelTemplate> list = new ArrayList<>();
         File dir = new File(mLabelDir);
         File[] names = dir.listFiles();
         if (names != null){
             for (File f : names){
                 if (f.isDirectory())continue;
-                try (ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(f))){
-                    final Object obj = objectInputStream.readObject();
-                    if (obj instanceof LabelTemplate)list.add((LabelTemplate)obj );
+                try{
+                    list.add(read(new FileInputStream(f)));
                 } catch (IOException | ClassNotFoundException e) {
                     e.printStackTrace();
                     Utils.showToast(e.getMessage());
@@ -122,7 +118,7 @@ public class LabelTemplate implements Serializable {
         return list;
     }
 
-    public static List<LabelTemplate> getAssetsLabelList(){
+    protected static List<LabelTemplate> getAssetsLabelList(){
         final List<LabelTemplate> list = new ArrayList<>();
         try {
             final String dirFile = "label";
@@ -130,16 +126,9 @@ public class LabelTemplate implements Serializable {
             final String[] dir = assetManager.list(dirFile);
             Log.e("dir", Arrays.toString(dir));
             for (String f : dir){
-                try (ObjectInputStream objectInputStream = new ObjectInputStream(assetManager.open(dirFile + File.separator + f))){
-                    final Object obj = objectInputStream.readObject();
-                    if (obj instanceof LabelTemplate)list.add((LabelTemplate)obj );
-                } catch (IOException | ClassNotFoundException e) {
-                    e.printStackTrace();
-                    Utils.showToast(e.getMessage());
-                    break;
-                }
+                list.add(read(assetManager.open(dirFile + File.separator + f)));
             }
-        }catch (IOException e){
+        }catch (IOException | ClassNotFoundException e){
             Utils.showToast(e.getMessage());
         }
         return list;

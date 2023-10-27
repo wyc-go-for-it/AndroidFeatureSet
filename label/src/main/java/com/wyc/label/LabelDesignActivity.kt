@@ -32,7 +32,7 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.util.concurrent.locks.LockSupport
 
-class LabelDesignActivity : BaseActivity(), View.OnClickListener{
+internal class LabelDesignActivity : BaseActivity(), View.OnClickListener{
     private var mLabelView: LabelView? = null
     private var mCurBtn:TopDrawableTextView? = null
     private var newFlag = false
@@ -372,14 +372,6 @@ class LabelDesignActivity : BaseActivity(), View.OnClickListener{
         pop.show()
     }
 
-    companion object{
-        @JvmStatic
-        fun start(context: Activity,templateId:Int = -1){
-            val intent = Intent(context, LabelDesignActivity::class.java)
-            if (templateId != -1)intent.putExtra("label",templateId)
-            context.startActivity(intent)
-        }
-    }
     private fun swapCurBtn(v: View){
         if (mCurBtn != null){
             mCurBtn!!.triggerAnimation(false)

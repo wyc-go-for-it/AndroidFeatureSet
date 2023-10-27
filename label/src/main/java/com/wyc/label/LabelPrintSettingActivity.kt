@@ -17,9 +17,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import com.wyc.label.databinding.ComWycLabelActivityLabelPrintSettingBinding
+import com.wyc.label.printer.LabelPrintUtils
 import com.wyc.label.room.BluetoothUtils
 
-class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
+internal class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
     private var mLabelTemplateSelector: ActivityResultLauncher<Intent>? = null
     private var mPermission: ActivityResultLauncher<Array<String>>? = null
     private var mSelectDialog:SelectDialog? = null
@@ -271,7 +272,7 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
                 selectDialog.show()
             }
             R.id.print_template_tv->{
-                LabelDesignActivity.start(this)
+                LabelPrintUtils.startDesign(this)
             }
             R.id.cur_template_tv->{
                 mLabelTemplateSelector?.launch(Intent(this,BrowseLabelActivity::class.java))
@@ -384,11 +385,4 @@ class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListener {
         }
         return super.onBackPressed()
     }
-    companion object{
-        @JvmStatic
-        fun start(context: Activity ){
-            context.startActivity(Intent(context, LabelPrintSettingActivity::class.java))
-        }
-    }
-
 }

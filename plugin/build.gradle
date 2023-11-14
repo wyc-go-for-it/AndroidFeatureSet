@@ -23,17 +23,15 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-
-
 }
 
 
-class YechaoaPluginExtension {
+class WycPluginExtension {
     String title
     int chapter
     SubExtension subExtension
 
-    YechaoaPluginExtension(Project project) {
+    WycPluginExtension(Project project) {
         subExtension = project.extensions.create('sub', SubExtension.class)
     }
 }
@@ -41,14 +39,14 @@ class SubExtension {
     String author
 }
 
-class YechaoaPlugin implements Plugin<Project> {
+class WycPlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
         println("这是插件：${this.class.name}")
-        def extension = project.extensions.create("yechaoa", YechaoaPluginExtension,project)
+        def extension = project.extensions.create("wycPluginExtension", WycPluginExtension,project)
         // 设置默认值 可以定义set()方法 然后在这里set
-        project.task("YechaoaPluginTask") { task ->
+        project.task("WycPluginTask") { task ->
             task.doLast {
                 println("这是插件${this.class.name}，它创建了一个Task：${task.name}")
                 println("title = ${extension.title}")
@@ -56,20 +54,23 @@ class YechaoaPlugin implements Plugin<Project> {
                 println("author = ${extension.subExtension.author}")
             }
         }
+
+        project.afterEvaluate {
+            def ext  = project.getExtensions().getByName("wycPluginExtension")
+            println("getExtensions：${ext}")
+        }
     }
 }
 
-apply plugin: YechaoaPlugin
+apply plugin: WycPlugin
 
-yechaoa {
+wycPluginExtension {
     title = "【Gradle-8】Gradle插件开发指南"
     chapter = 8
     sub {
-        author = "yechaoa"
+        author = "wyc"
     }
 }
-
-apply plugin: YechaoaPlugin
 
 dependencies {
 

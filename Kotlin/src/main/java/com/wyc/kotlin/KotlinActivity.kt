@@ -33,6 +33,7 @@ class KotlinActivity : AppCompatActivity() {
             flow {
                 //上游
                 emit("hello world ${Thread.currentThread()}")
+                emit("hello world ${Thread.currentThread()}")
             }.transform {
                 emit("$it 1")
             }.transform {

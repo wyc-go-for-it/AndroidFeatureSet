@@ -72,6 +72,11 @@ public final class Logger {
   public static final int WARN = 5;
   public static final int ERROR = 6;
   public static final int ASSERT = 7;
+  public static boolean debug = true;
+
+  public static void debug(boolean b){
+    debug = b;
+  }
 
   @NonNull private static com.wyc.logger.Printer printer = new LoggerPrinter();
 
@@ -108,12 +113,12 @@ public final class Logger {
   }
 
   public static void d(@NonNull String message, @Nullable Object... args) {
-    if (BuildConfig.DEBUG)
+    if (debug)
       printer.d(message, args);
   }
 
   public static void d(@Nullable Object object) {
-    if (BuildConfig.DEBUG)
+    if (debug)
         printer.d(object);
   }
 
@@ -153,12 +158,12 @@ public final class Logger {
   }
 
   public static void d_json(@Nullable String json) {
-    if (BuildConfig.DEBUG)
+    if (debug)
       printer.json(json);
   }
 
   public static void d_json(@Nullable Object json) {
-    if (BuildConfig.DEBUG){
+    if (debug){
       if (null != json)
         printer.json(json.toString());
       else

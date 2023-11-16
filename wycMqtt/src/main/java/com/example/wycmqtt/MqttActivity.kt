@@ -72,7 +72,7 @@ class MqttActivity : AppCompatActivity() {
         mqttPublishClient  = MqttAsyncClient(server, publishClientId,MemoryPersistence())
         val options = MqttConnectOptions()
         options.userName = "wyc"
-        options.password = "aa168168".toCharArray()
+        options.password = "aa16816".toCharArray()
 
         mqttPublishClient!!.setCallback(object :MqttCallback{
             override fun connectionLost(cause: Throwable?) {
@@ -83,7 +83,7 @@ class MqttActivity : AppCompatActivity() {
             }
 
             override fun messageArrived(topic: String?, message: MqttMessage?) {
-                Log.e("publish messageArrived", "topic:$topic,message:$message")
+                Log.e("publish messageArrived", "topic:$topic,message:$message,isRetained:${message?.isRetained}")
             }
 
             override fun deliveryComplete(token: IMqttDeliveryToken?) {
@@ -100,6 +100,7 @@ class MqttActivity : AppCompatActivity() {
         val options = MqttConnectOptions()
         options.userName = "wyc"
         options.password = "aa168168".toCharArray()
+        options.isCleanSession = false
 
         mqttSubscribeClient!!.setCallback(object :MqttCallback{
             override fun connectionLost(cause: Throwable?) {
@@ -110,7 +111,8 @@ class MqttActivity : AppCompatActivity() {
             }
 
             override fun messageArrived(topic: String?, message: MqttMessage?) {
-                subscribeMsg!!.text = String.format("topic:%s,message:%s",topic,message)
+                Log.e("publish messageArrived", "topic:$topic,message:$message,isRetained:${message?.isRetained}")
+                subscribeMsg!!.text = String.format("topic:%s,message:%s,isRetained:%s,isDuplicate:%s",topic,message,message?.isRetained,message?.isDuplicate)
             }
 
             override fun deliveryComplete(token: IMqttDeliveryToken?) {
@@ -128,8 +130,12 @@ class MqttActivity : AppCompatActivity() {
             mqttPublishClient?.disconnect()
             mqttSubscribeClient?.disconnect()
 
+            mqttSubscribeClient?.setCallback(null)
+            mqttPublishClient?.setCallback(null)
+
             mqttPublishClient?.close(true)
             mqttSubscribeClient?.close(true)
+
         }catch (e:MqttException){
             e.printStackTrace()
         }

@@ -10,6 +10,7 @@ import com.wyc.video.FFmpeg.ffmpegApi.FFMediaPlayer;
 import com.wyc.video.R;
 import com.wyc.video.ScrollSelectionView;
 import com.wyc.video.Utils;
+import com.wyc.video.record.ShareMainActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +32,11 @@ public class VideoRelatedActivity extends BaseActivity implements View.OnClickLi
         showFFmpegMuxer();
         drawAudio();
         showAudio();
+        share();
+    }
+
+    private void share(){
+        findViewById(R.id.share).setOnClickListener(this);
     }
 
     private void drawAudio(){
@@ -104,6 +110,8 @@ public class VideoRelatedActivity extends BaseActivity implements View.OnClickLi
             CameraSurfaceViewActivity.start(this);
         }else if (v.getId() == R.id.glsurfaceView){
             CameraGLSurfaceViewActivity.start(this);
+        }else if (v.getId() == R.id.share){
+            ShareMainActivity.start(this);
         }
     }
 }

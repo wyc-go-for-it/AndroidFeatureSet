@@ -8,8 +8,18 @@
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application>
+        <service
+            android:name=".record.ShareService"
+            android:enabled="true"
+            android:foregroundServiceType="mediaProjection"
+            android:exported="true" />
+
+        <activity
+            android:name=".record.ShareMainActivity"
+            android:exported="false" />
         <activity
             android:name=".activity.CameraGLSurfaceViewActivity"
             android:exported="false" />

@@ -85,4 +85,13 @@
         app:layout_constraintStart_toEndOf="@id/surfaceView"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <Button
+        android:id="@+id/share"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="18dp"
+        android:text="屏幕分享"
+        app:layout_constraintStart_toEndOf="@id/glsurfaceView"
+        app:layout_constraintTop_toTopOf="@id/glsurfaceView" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

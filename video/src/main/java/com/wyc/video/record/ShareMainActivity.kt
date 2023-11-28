@@ -26,7 +26,7 @@ class ShareMainActivity : BaseActivity(),SurfaceHolder.Callback {
 
     override fun onDestroy() {
         super.onDestroy()
-        stopService(Intent(this,ShareService::class.java))
+        //stopService(Intent(this,ShareService::class.java))
     }
 
     override fun getContentLayoutId(): Int {
@@ -54,6 +54,7 @@ class ShareMainActivity : BaseActivity(),SurfaceHolder.Callback {
             val intent = Intent(this,ShareService::class.java)
             intent.putExtra("resultCode",resultCode)
             intent.putExtra("data",data)
+            intent.putExtra("surface",mSurface)
 
             val metrics = DisplayMetrics()
             windowManager.defaultDisplay.getMetrics(metrics)

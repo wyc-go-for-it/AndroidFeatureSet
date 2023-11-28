@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.wyc.androidfeatureset">
+    package="com.wyc.androidfeatureset" >
 
     <uses-feature
         android:glEsVersion="0x00030000"
@@ -35,7 +35,10 @@
         android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AndroidFeatureSet">
+        android:theme="@style/Theme.AndroidFeatureSet" >
+        <activity
+            android:name=".activity.DisplayScreen"
+            android:exported="false" />
         <activity
             android:name=".view.LayoutRecycleViewActivity"
             android:exported="false" />
@@ -43,7 +46,7 @@
         <activity android:name=".camera.CaptureActivity" />
         <activity
             android:name=".activity.MainActivity"
-            android:exported="true">
+            android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -55,7 +58,7 @@
             android:name=".service.WycAccessibilityService"
             android:enabled="true"
             android:exported="true"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>

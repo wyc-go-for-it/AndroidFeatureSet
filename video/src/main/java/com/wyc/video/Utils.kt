@@ -5,6 +5,7 @@ import android.graphics.Path
 import android.graphics.PointF
 import android.os.Build
 import android.os.Looper
+import android.view.Display
 import android.view.Surface
 import android.view.WindowManager
 import android.widget.Toast
@@ -34,6 +35,17 @@ import kotlin.math.tan
 
 class Utils {
     companion object{
+
+        @JvmStatic
+        fun intToByteArray(c:Int):ByteArray{
+            val byteArray = ByteArray(4)
+            byteArray[0] = ((c shr 24) and 0xff).toByte()
+            byteArray[1] = ((c shr 16) and 0xff).toByte()
+            byteArray[2] = ((c shr 8) and 0xff).toByte()
+            byteArray[3] = (c and 0xff).toByte()
+            return byteArray
+        }
+
         @JvmStatic
         fun showToast(message: String?) {
             if (Looper.myLooper() == Looper.getMainLooper()) {
@@ -41,6 +53,16 @@ class Utils {
             } else{
                 CoroutineScope(Dispatchers.Main).launch {
                     Toast.makeText(VideoApp.getInstance(),message, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+        @JvmStatic
+        fun showToast(c:Context,message: String?) {
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                Toast.makeText(c,message, Toast.LENGTH_LONG).show()
+            } else{
+                CoroutineScope(Dispatchers.Main).launch {
+                    Toast.makeText(c,message, Toast.LENGTH_LONG).show()
                 }
             }
         }

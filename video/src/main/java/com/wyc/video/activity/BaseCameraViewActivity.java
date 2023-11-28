@@ -152,7 +152,7 @@ public abstract class BaseCameraViewActivity extends BaseActivity {
         mRecord.setCallback(new RecordBtn.ActionCallback() {
             @Override
             public void startRecord() {
-                Utils.showToast("startRecord");
+                Utils.showToast(mRecord.getContext(),"startRecord");
                 XXPermissions.with(BaseCameraViewActivity.this)
                         .permission(Permission.RECORD_AUDIO)
                         .request(new OnPermissionCallback() {
@@ -171,7 +171,7 @@ public abstract class BaseCameraViewActivity extends BaseActivity {
 
             @Override
             public void finishRecord(long recordTime) {
-                Utils.showToast("finishRecord:" + recordTime);
+                Utils.showToast(mRecord.getContext(),"finishRecord:" + recordTime);
                 mCamera.stopRecord(true);
                 loadImg();
             }

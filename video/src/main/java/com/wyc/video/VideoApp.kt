@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Application
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.os.Build
 import android.os.Environment
 import androidx.core.content.ContextCompat
 import java.io.File
@@ -37,7 +38,7 @@ class VideoApp {
         }
         @JvmStatic
         fun getVideoDir():String{
-            return if (ContextCompat.checkSelfPermission(app!!, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            return if (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) Environment.isExternalStorageManager() else ContextCompat.checkSelfPermission(app!!, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                 String.format(
                     "%s%s%s%s",
                     Environment.getExternalStorageDirectory().absolutePath,

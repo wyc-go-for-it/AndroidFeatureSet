@@ -7,6 +7,7 @@ import com.squareup.leakcanary.LeakCanary;
 import com.wyc.label.LabelApp;
 import com.wyc.logger.AndroidLogAdapter;
 import com.wyc.logger.Logger;
+import com.wyc.table_recognition.App;
 import com.wyc.video.VideoApp;
 
 /**
@@ -29,6 +30,7 @@ public class MyApp extends Application {
             StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().detectAll().penaltyLog().build());
             StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder().detectAll().penaltyLog().build());
         }
+        App.initApp(this);
         LabelApp.initApp(this);
         VideoApp.initApp(this);
         LeakCanary.install(this);

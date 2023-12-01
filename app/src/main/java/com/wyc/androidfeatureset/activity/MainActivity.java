@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
 
+import androidx.annotation.CallSuper;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -24,6 +26,8 @@ import com.wyc.label.LabelPrinterRegister;
 import com.wyc.label.printer.LabelPrintUtils;
 import com.wyc.logger.Logger;
 import com.wyc.plugin.PluginActivity;
+import com.wyc.table_recognition.RecognitionActivity;
+import com.wyc.table_recognition.bean.RecognizingData;
 import com.wyc.video.activity.TreeViewActivity;
 import com.wyc.video.activity.VideoRelatedActivity;
 
@@ -34,6 +38,7 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
+import java.util.ArrayList;
 import java.util.Enumeration;
 
 import butterknife.ButterKnife;
@@ -218,5 +223,22 @@ public class MainActivity extends AppCompatActivity {
     @OnClick(R.id.mqtt)
     void mqtt(){
         MqttActivity.start(this);
+    }
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK){
+            if (requestCode == RecognitionActivity.REQUEST_CODE){
+                ArrayList<RecognizingData> recognizingData = data.getParcelableArrayListExtra(RecognitionActivity.DATA_KEY);
+                Logger.d(recognizingData.toArray(new RecognizingData[0]));
+            }
+        }
+    }
+
+    @OnClick(R.id.recognition)
+    void recognition(){
+        RecognitionActivity.startForResult(this);
     }
 }

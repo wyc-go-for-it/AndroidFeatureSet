@@ -4,82 +4,100 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:orientation="horizontal"
     tools:context=".activity.MainActivity">
 
-    <Button
-        android:id="@+id/camera_feature_btn"
+    <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/camera_feature_sz"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-    <Button
-        android:id="@+id/provider_btn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/provider" />
+        <Button
+            android:id="@+id/camera_feature_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/camera_feature_sz"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/label_design"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/label_design" />
+        <Button
+            android:id="@+id/provider_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/provider" />
 
-    <Button
-        android:id="@+id/label_print"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/label_print" />
+        <Button
+            android:id="@+id/sm2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="sm2" />
 
-    <Button
-        android:id="@+id/sm2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="sm2" />
+        <Button
+            android:id="@+id/tree_menu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tree_menu" />
 
-    <Button
-        android:id="@+id/video"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="video" />
+        <Button
+            android:id="@+id/label_print"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/label_print" />
 
-    <Button
-        android:id="@+id/tree_menu"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/tree_menu" />
+        <Button
+            android:id="@+id/label_design"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/label_design" />
 
-    <Button
-        android:id="@+id/plugin"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/plugin" />
+        <Button
+            android:id="@+id/plugin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/plugin" />
 
-    <Button
-        android:id="@+id/flow"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Flow" />
+        <Button
+            android:id="@+id/layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="layout" />
 
-    <Button
-        android:id="@+id/mqtt"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="mqtt" />
+        <Button
+            android:id="@+id/flow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Flow" />
 
-    <Button
-        android:id="@+id/layout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="layout" />
+        <Button
+            android:id="@+id/video"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="video" />
 
-    <Button
-        android:id="@+id/recognition"
+        <Button
+            android:id="@+id/mqtt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="mqtt" />
+
+        <Button
+            android:id="@+id/recognition"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="recognition" />
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="recognition" />
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/_map"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="map" />
+    </LinearLayout>
 
 </LinearLayout>

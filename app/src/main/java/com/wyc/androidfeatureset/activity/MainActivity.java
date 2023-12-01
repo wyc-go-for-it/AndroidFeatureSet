@@ -25,6 +25,7 @@ import com.wyc.kotlin.KotlinActivity;
 import com.wyc.label.LabelPrinterRegister;
 import com.wyc.label.printer.LabelPrintUtils;
 import com.wyc.logger.Logger;
+import com.wyc.map.MapMainActivity;
 import com.wyc.plugin.PluginActivity;
 import com.wyc.table_recognition.RecognitionActivity;
 import com.wyc.table_recognition.bean.RecognizingData;
@@ -225,6 +226,10 @@ public class MainActivity extends AppCompatActivity {
         MqttActivity.start(this);
     }
 
+    @OnClick(R.id._map)
+    void map(){
+        MapMainActivity.start(this);
+    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {

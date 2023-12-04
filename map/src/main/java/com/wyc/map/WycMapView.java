@@ -19,7 +19,6 @@ import java.util.List;
 
 public class WycMapView extends View {
     private List<SvgItem> list = new ArrayList<>();
-    private List<SvgItem> _list = new ArrayList<>();
     private Paint paint;
     private int vectorWidth = -1;
     private Matrix matrix = new Matrix();
@@ -167,11 +166,6 @@ public class WycMapView extends View {
                 list.clear();
                 list.addAll(svgInfo.getSvgItems());
             }
-            svgInfo.setRawId(R.raw.chongqingsvg);
-            if (Utils.parseVector(getContext(),svgInfo)){
-                _list.clear();
-                _list.addAll(svgInfo.getSvgItems());
-            }
             initFinish = true;
             postInvalidate();
         }
@@ -210,14 +204,7 @@ public class WycMapView extends View {
             for (SvgItem item : list) {
                 item.onDraw(canvas, paint);
             }
-
-            matrix.postTranslate(offsetX, offsetY + 20);
-            canvas.setMatrix(matrix);
-            for (SvgItem item : _list) {
-                item.onDraw(canvas, paint);
-            }
         }
-
         showDebugInfo(canvas);
     }
 

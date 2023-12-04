@@ -35,8 +35,9 @@ public class Utils {
             for (int i = 1; i < items.getLength(); i++) {
                 Element element = (Element) items.item(i);
                 String pathData = element.getAttribute("d");
+                String name = element.getAttribute("id");
                 Path path = PathParser.createPathFromPathData(pathData);
-                SvgItem item = new SvgItem(path, i);
+                SvgItem item = new SvgItem(path, name);
                 itemList.add(item);
             }
             return true;
@@ -65,7 +66,7 @@ public class Utils {
                 Element element = (Element) items.item(i);
                 String pathData = element.getAttribute("pathData");
                 Path path = PathParser.createPathFromPathData(pathData);
-                SvgItem item = new SvgItem(path, i);
+                SvgItem item = new SvgItem(path, "");
                 itemList.add(item);
             }
             return true;

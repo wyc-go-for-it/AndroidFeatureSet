@@ -10,7 +10,7 @@ class MapMainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_map_main)
         val mapView = findViewById<WycMapView>(R.id.map_)
-        mapView.setMapId(R.raw.cq)
+        mapView.setMapId(R.raw.chnia)
     }
 
     companion object {

@@ -18,11 +18,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WycMapView extends View {
-    private List<SvgItem> list = new ArrayList<>();
+    private final List<SvgItem> list = new ArrayList<>();
     private Paint paint;
     private int vectorWidth = -1;
-    private Matrix matrix = new Matrix();
-    private Matrix invertMatrix = new Matrix();
+    private final Matrix matrix = new Matrix();
+    private final Matrix invertMatrix = new Matrix();
     private float viewScale = -1f;
     private float userScale = 1.0f;
     private boolean initFinish = false;
@@ -45,7 +45,7 @@ public class WycMapView extends View {
     }
 
     private void init() {
-        bgColor = Color.parseColor("#f5f5f5");
+        bgColor = Color.parseColor("#504F4F");
         paint = new Paint();
         paint.setAntiAlias(true);
         paint.setColor(Color.GRAY);
@@ -159,9 +159,8 @@ public class WycMapView extends View {
     private class  DecodeRunnable implements Runnable {
         @Override
         public void run() {
-            final SvgInfo svgInfo = new SvgInfo();
-            svgInfo.setRawId(mapId);
-            if (Utils.parseSvg(getContext(),svgInfo)){
+            final SvgInfo svgInfo = new SvgInfo(mapId);
+            if (Utils.parseMap(getContext(),svgInfo)){
                 vectorWidth = svgInfo.getWidth();
                 list.clear();
                 list.addAll(svgInfo.getSvgItems());

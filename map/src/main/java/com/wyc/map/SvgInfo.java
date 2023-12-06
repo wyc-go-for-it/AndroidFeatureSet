@@ -4,7 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SvgInfo {
-    private int rawId;
+    public SvgInfo(int rId){
+        rawId = rId;
+    }
+    private final int rawId;
+
     private int width;
     private int height;
     private List<SvgItem> svgItems = new ArrayList<>();
@@ -36,9 +40,5 @@ public class SvgInfo {
 
     public int getRawId() {
         return rawId;
-    }
-
-    public void setRawId(int rawId) {
-        this.rawId = rawId;
     }
 }

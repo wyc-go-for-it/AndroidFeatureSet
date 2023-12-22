@@ -24,10 +24,7 @@ import com.wyc.video.Utils.Companion.intToByteArray
 import com.wyc.video.recorder.AbstractRecorder
 import com.wyc.video.recorder.VideoMediaCodec
 import kotlinx.coroutines.*
-import java.io.DataInputStream
-import java.io.File
-import java.io.IOException
-import java.io.OutputStream
+import java.io.*
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
@@ -121,7 +118,7 @@ class ShareService : Service(),CoroutineScope by CoroutineScope(Dispatchers.IO) 
             WIDTH = intent.getIntExtra("width",0)/2
             HEIGHT = intent.getIntExtra("height",0)/2
             Log.e("onStartCommand", String.format("width:%d,height:%d",WIDTH,HEIGHT))
-            //mOutputSurface = intent.getParcelableExtra("surface")
+            mOutputSurface = intent.getParcelableExtra("surface")
             val density = intent.getIntExtra("density",0)
 
             initRenderConnect()
@@ -146,7 +143,7 @@ class ShareService : Service(),CoroutineScope by CoroutineScope(Dispatchers.IO) 
     private fun initRenderConnect(){
         launch {
             try {
-                mSocket = Socket(InetAddress.getByName("192.168.0.27"),9999)
+                mSocket = Socket(InetAddress.getByName("192.168.0.254"),9999)
                 mOutputStream = mSocket!!.getOutputStream()
             }catch (e:IOException){
                 e.printStackTrace()
@@ -165,12 +162,22 @@ class ShareService : Service(),CoroutineScope by CoroutineScope(Dispatchers.IO) 
                 }else {
                     configure(format, mOutputSurface, 0, null)
                 }
-                launch {
+                launch(CoroutineExceptionHandler { _, throwable ->
+                    run {
+                        throwable.printStackTrace();
+                        stopSelf();
+                    }
+                }) {
                     val bufferInfo = MediaCodec.BufferInfo()
                     while (isActive){
                         val byteArray = YUVQueue.poll(100, TimeUnit.MILLISECONDS)
                         if (byteArray != null){
-                            sendFrame(byteArray)
+                            try {
+                                sendFrame(byteArray)
+                            }catch (e:IOException){
+                                e.printStackTrace()
+                            }
+
                             val inputIndex = dequeueInputBuffer(1000 * 100)
                             if (inputIndex > -1){
                                 getInputBuffer(inputIndex)?.apply {
@@ -180,7 +187,7 @@ class ShareService : Service(),CoroutineScope by CoroutineScope(Dispatchers.IO) 
                                 queueInputBuffer(inputIndex,0,byteArray.size,0,0)
                             }
                             val  outputIndex = dequeueOutputBuffer(bufferInfo,1000 * 100)
-                            if (outputIndex > -1) releaseOutputBuffer(outputIndex,false)
+                            if (outputIndex > -1) releaseOutputBuffer(outputIndex,true)
                         }
                     }
                 }
@@ -198,13 +205,12 @@ class ShareService : Service(),CoroutineScope by CoroutineScope(Dispatchers.IO) 
         val sendData = ByteArray(headerLen + size)
         header.copyInto(sendData,0,0,headerLen)
         data.copyInto(sendData,4,0,size)
+        Log.d("sendFrame", "header:$headerLen,size:$size");
         mOutputStream?.apply {
             write(sendData)
             flush()
         }
     }
-
-
 
     private fun initInputCodec(){
         if (mInputCodec != null)return
@@ -289,10 +295,10 @@ class ShareService : Service(),CoroutineScope by CoroutineScope(Dispatchers.IO) 
         return videoOutputFormat
     }
 
-    private fun createVideoFile(): File {
+    private fun createH264File(): File {
         val file = AbstractRecorder.getVideoDir()
         val name = String.format(
-            Locale.CHINA, "%s%s%s.mp4", file.absolutePath, File.separator,
+            Locale.CHINA, "%s%s%s.h264", file.absolutePath, File.separator,
             SimpleDateFormat("yyyyMMddHHmmssSS", Locale.CHINA).format(Date()))
         return File(name)
     }
@@ -351,7 +357,7 @@ class ShareService : Service(),CoroutineScope by CoroutineScope(Dispatchers.IO) 
         super.onDestroy()
         cancel()
 
-        startCodeThread()
+        stopCodecThread()
 
         if (mImageReaderYUV != null){
             mImageReaderYUV!!.close()

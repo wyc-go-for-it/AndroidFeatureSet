@@ -129,15 +129,18 @@ public abstract class BaseCameraViewActivity extends BaseActivity {
                 Uri baseUri = Uri.parse("content://media/external/images/media");
                 return Uri.withAppendedPath(baseUri, "" + id);
             } else {
-                if (imageFile.exists()) {
-                    ContentValues values = new ContentValues();
-                    values.put(MediaStore.Video.Media.DATA, filePath);
-                    return getContentResolver().insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values);
-                } else {
-                    return null;
+                try {
+                    if (imageFile.exists()) {
+                        ContentValues values = new ContentValues();
+                        values.put(MediaStore.Video.Media.DATA, filePath);
+                        return getContentResolver().insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values);
+                    }
+                }catch (Exception e){
+                    e.printStackTrace();
                 }
             }
         }
+        return null;
     }
 
     private void initCameraReverse(){

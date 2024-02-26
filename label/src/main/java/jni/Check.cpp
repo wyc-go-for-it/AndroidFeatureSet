@@ -55,20 +55,20 @@ static std::string  jstring2string(JNIEnv *env,jstring s){
 JNIEXPORT void JNICALL checkPackageName(JNIEnv *env,jobject thiz,jobject context){
     const jclass cls = env->GetObjectClass(context);
     if (!cls){
-        LOGD("GetObjectClass failure");
+        LOGE("GetObjectClass failure");
         return;
     }
     const jmethodID methodId = env->GetMethodID(cls,"getPackageName","()Ljava/lang/String;");
     if (!methodId){
-        LOGD("GetMethodID failure");
+        LOGE("GetMethodID failure");
         return;
     }
     auto name = jstring2string(env,(jstring)env->CallObjectMethod(context, methodId));
     const size_t code = name.find("com.wyc");
     if ((int)code < 0){
-        LOGD("checkPackageName %s",name.c_str());
+        LOGE("checkPackageName %s",name.c_str());
         const int pid = getpid();
-        LOGD("code:%d,pid:%d",code,pid);
+        LOGE("code:%d,pid:%d",code,pid);
         kill(pid,SIGKILL);
     }
 }
@@ -78,7 +78,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm,void * r){
     JNIEnv* env = nullptr;
     jint result = -1;
     if (vm->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK) {
-        LOGD("JNI_OnLoad failure");
+        LOGE("JNI_OnLoad failure");
         return result;
     }
 
@@ -88,12 +88,12 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm,void * r){
 
     jclass cls = env->FindClass("com/wyc/label/Check");
     if (!cls){
-        LOGD("FindClass failure");
+        LOGE("FindClass failure");
         return result;
     }
 
     if (env->RegisterNatives(cls,methods,sizeof (methods)/sizeof (methods[0])) < 0){
-        LOGD("RegisterNatives failure");
+        LOGE("RegisterNatives failure");
         return result;
     }
 

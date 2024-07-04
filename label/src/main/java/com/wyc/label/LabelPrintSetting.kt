@@ -26,7 +26,7 @@ import java.util.*
  * @Version:        1.0
  */
 
-internal class LabelPrintSetting:Serializable {
+class LabelPrintSetting:Serializable {
     @Transient private var change = false
 
     enum class Way(s: String)  {

@@ -352,7 +352,7 @@ internal class LabelPrintSettingActivity : AppCompatActivity(),View.OnClickListe
                     val bluetoothDevice_found: BluetoothDevice? = intent.getParcelableExtra(
                             BluetoothDevice.EXTRA_DEVICE)
                     bluetoothDevice_found?.let {
-                        val device_style = it.bluetoothClass.majorDeviceClass
+                        val device_style = it.bluetoothClass?.majorDeviceClass
                         if (device_style == BluetoothClass.Device.Major.IMAGING || device_style == BluetoothClass.Device.Major.MISC) {
                             mSelectDialog?.addContent(it.address,it.name)
                         }

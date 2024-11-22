@@ -31,6 +31,7 @@
         android:id="@+id/sel_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:checked="true"
         app:layout_constraintBottom_toBottomOf="@id/name"
         app:layout_constraintEnd_toStartOf="@+id/name"
         app:layout_constraintHorizontal_chainStyle="packed"
@@ -47,6 +48,50 @@
         app:layout_constraintEnd_toStartOf="@+id/sel_num"
         app:layout_constraintStart_toEndOf="@id/sel_name"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <CheckBox
+        android:id="@+id/sel_spec"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:checked="true"
+        app:layout_constraintBottom_toBottomOf="@id/spec"
+        app:layout_constraintEnd_toStartOf="@id/spec"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="@id/sel_name"
+        app:layout_constraintTop_toTopOf="@id/spec" />
+
+    <EditText
+        android:id="@+id/spec"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="textPersonName"
+        android:minEms="4"
+        android:text="规格"
+        app:layout_constraintEnd_toEndOf="@id/name"
+        app:layout_constraintStart_toEndOf="@id/sel_spec"
+        app:layout_constraintTop_toTopOf="@id/price" />
+
+    <CheckBox
+        android:id="@+id/sel_sellprice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:checked="true"
+        app:layout_constraintBottom_toBottomOf="@id/sellprice"
+        app:layout_constraintEnd_toStartOf="@id/sellprice"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="@id/sel_spec"
+        app:layout_constraintTop_toTopOf="@id/sellprice" />
+
+    <EditText
+        android:id="@+id/sellprice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="textPersonName"
+        android:minEms="4"
+        android:text="售价"
+        app:layout_constraintEnd_toEndOf="@id/spec"
+        app:layout_constraintStart_toEndOf="@id/sel_sellprice"
+        app:layout_constraintTop_toTopOf="@id/buyingprice" />
 
     <CheckBox
         android:id="@+id/sel_num"
@@ -68,6 +113,25 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <CheckBox
+        android:id="@+id/sel_unit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:checked="true"
+        app:layout_constraintBottom_toBottomOf="@id/spec"
+        app:layout_constraintEnd_toStartOf="@+id/num"
+        app:layout_constraintTop_toTopOf="@id/spec" />
+
+    <EditText
+        android:id="@+id/unit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="textPersonName"
+        android:minEms="4"
+        android:text="单位"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/spec" />
+
+    <CheckBox
         android:id="@+id/sel_price"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -86,6 +150,25 @@
         app:layout_constraintStart_toEndOf="@id/sel_barcode"
         app:layout_constraintTop_toBottomOf="@id/barcode" />
 
+    <CheckBox
+        android:id="@+id/sel_buyingprice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:checked="true"
+        app:layout_constraintBottom_toBottomOf="@id/buyingprice"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/buyingprice" />
+
+    <EditText
+        android:id="@+id/buyingprice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="textPersonName"
+        android:minEms="3"
+        android:text="进价"
+        app:layout_constraintStart_toEndOf="@id/sel_barcode"
+        app:layout_constraintTop_toBottomOf="@id/price" />
+
     <TextView
         android:id="@+id/info"
         android:layout_width="wrap_content"
@@ -97,7 +180,7 @@
         android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/price" />
+        app:layout_constraintTop_toBottomOf="@id/buyingprice" />
 
     <Button
         android:id="@+id/_default"

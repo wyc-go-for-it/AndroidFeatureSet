@@ -225,6 +225,12 @@ class RecognitionActivity : BaseActivity(),VideoCameraManager.OnPicture {
                 val nameEnable = setting.nameEnable
                 val numEnable = setting.numEnable
                 val priceEnable = setting.priceEnable
+
+                val specEnable = setting.specEnable
+                val unitEnable = setting.unitEnable
+                val buyingPriceEnable = setting.buyingEnable
+                val sellPriceEnable = setting.sellPriceEnable
+
                 if (barcodeEnable){
                     mColIndex["barcode"] = col1.indexOfFirst { setting.barcodeFiled == it }
                 }
@@ -236,6 +242,19 @@ class RecognitionActivity : BaseActivity(),VideoCameraManager.OnPicture {
                 }
                 if (priceEnable){
                     mColIndex["price"] = col1.indexOfFirst { setting.priceFiled == it }
+                }
+
+                if (specEnable){
+                    mColIndex["spec"] = col1.indexOfFirst { setting.specFiled == it }
+                }
+                if (unitEnable){
+                    mColIndex["unit"] = col1.indexOfFirst { setting.unitFiled == it }
+                }
+                if (buyingPriceEnable){
+                    mColIndex["buyingPrice"] = col1.indexOfFirst { setting.buyingPriceFiled == it }
+                }
+                if (sellPriceEnable){
+                    mColIndex["sellPrice"] = col1.indexOfFirst { setting.sellPriceFiled == it }
                 }
             }
 
@@ -264,6 +283,28 @@ class RecognitionActivity : BaseActivity(),VideoCameraManager.OnPicture {
                     if (data.priceEnable){
                         data.price = c[index!!].toDoubleOrNull()?:0.0
                     }
+
+                    index = mColIndex["spec"]
+                    data.specEnable = index !=null && index > -1
+                    if (index !=null && index > -1){
+                        data.spec = c[index]
+                    }
+                    index = mColIndex["unit"]
+                    data.unitEnable = index !=null && index > -1
+                    if (data.unitEnable){
+                        data.unit = c[index!!]
+                    }
+                    index = mColIndex["buyingPrice"]
+                    data.buyingPriceEnable = index !=null && index > -1
+                    if (data.buyingPriceEnable){
+                        data.buyingPrice = c[index!!].toDoubleOrNull()?:0.0
+                    }
+                    index = mColIndex["sellPrice"]
+                    data.sellPriceEnable = index !=null && index > -1
+                    if (data.sellPriceEnable){
+                        data.sellPrice = c[index!!].toDoubleOrNull()?:0.0
+                    }
+
                     mRecognizingInfo.add(data)
                 }
             }

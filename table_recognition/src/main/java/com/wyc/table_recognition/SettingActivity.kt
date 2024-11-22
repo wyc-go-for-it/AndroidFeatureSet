@@ -57,6 +57,31 @@ internal class SettingActivity : BaseActivity() {
             }
         }
 
+        findViewById<CheckBox>(R.id.sel_spec).let {
+            it.isChecked = setting.specEnable
+            it.setOnCheckedChangeListener { _, isChecked ->
+                setting.specEnable = isChecked
+            }
+        }
+        findViewById<CheckBox>(R.id.sel_unit).let {
+            it.isChecked = setting.unitEnable
+            it.setOnCheckedChangeListener { _, isChecked ->
+                setting.unitEnable = isChecked
+            }
+        }
+        findViewById<CheckBox>(R.id.sel_buyingprice).let {
+            it.isChecked = setting.buyingEnable
+            it.setOnCheckedChangeListener { _, isChecked ->
+                setting.buyingEnable = isChecked
+            }
+        }
+        findViewById<CheckBox>(R.id.sel_sellprice).let {
+            it.isChecked = setting.sellPriceEnable
+            it.setOnCheckedChangeListener { _, isChecked ->
+                setting.sellPriceEnable = isChecked
+            }
+        }
+
         findViewById<EditText>(R.id.barcode).let {
             it.setText(setting.barcodeFiled)
             it.addTextChangedListener(object :TextWatcher{
@@ -139,6 +164,94 @@ internal class SettingActivity : BaseActivity() {
 
                 override fun afterTextChanged(s: Editable?) {
                     setting.priceFiled = s.toString()
+                }
+            })
+        }
+
+        findViewById<EditText>(R.id.spec).let {
+            it.setText(setting.specFiled)
+            it.addTextChangedListener(object :TextWatcher{
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int
+                ) {
+
+                }
+
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+
+                }
+
+                override fun afterTextChanged(s: Editable?) {
+                    setting.specFiled = s.toString()
+                }
+            })
+        }
+
+        findViewById<EditText>(R.id.unit).let {
+            it.setText(setting.unitFiled)
+            it.addTextChangedListener(object :TextWatcher{
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int
+                ) {
+
+                }
+
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+
+                }
+
+                override fun afterTextChanged(s: Editable?) {
+                    setting.unitFiled = s.toString()
+                }
+            })
+        }
+
+        findViewById<EditText>(R.id.buyingprice).let {
+            it.setText(setting.buyingPriceFiled)
+            it.addTextChangedListener(object :TextWatcher{
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int
+                ) {
+
+                }
+
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+
+                }
+
+                override fun afterTextChanged(s: Editable?) {
+                    setting.buyingPriceFiled = s.toString()
+                }
+            })
+        }
+
+        findViewById<EditText>(R.id.sellprice).let {
+            it.setText(setting.sellPriceFiled)
+            it.addTextChangedListener(object :TextWatcher{
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int
+                ) {
+
+                }
+
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+
+                }
+
+                override fun afterTextChanged(s: Editable?) {
+                    setting.sellPriceFiled = s.toString()
                 }
             })
         }

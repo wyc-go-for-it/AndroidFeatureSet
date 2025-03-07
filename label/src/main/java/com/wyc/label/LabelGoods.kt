@@ -34,6 +34,11 @@ class LabelGoods(): Parcelable {
     var retail_price:Double = 0.0
     var only_coding:String? = null
     var special_price:Double = 0.0
+    var specifi_attr:String? = null
+        get() {
+            if (field.isNullOrEmpty())return ""
+            return field
+        }
 
     constructor(parcel: Parcel) : this() {
         barcodeId = parcel.readString()
@@ -47,6 +52,7 @@ class LabelGoods(): Parcelable {
         retail_price = parcel.readDouble()
         only_coding= parcel.readString()
         special_price = parcel.readDouble()
+        specifi_attr = parcel.readString()
     }
 
     fun getValueByField(field: String):String{
@@ -81,6 +87,9 @@ class LabelGoods(): Parcelable {
             DataItem.FIELD.SpecialPrice.field  ->{
                 return  String.format("%.2f", special_price)
             }
+            DataItem.FIELD.SpeciAtrr.field  ->{
+                return specifi_attr?:""
+            }
         }
         return ""
     }
@@ -113,6 +122,7 @@ class LabelGoods(): Parcelable {
         parcel.writeDouble(retail_price)
         parcel.writeString(only_coding)
         parcel.writeDouble(special_price)
+        parcel.writeString(specifi_attr)
     }
 
     override fun describeContents(): Int {
@@ -120,7 +130,7 @@ class LabelGoods(): Parcelable {
     }
 
     override fun toString(): String {
-        return "LabelGoods(barcodeId=$barcodeId, goodsTitle=$goodsTitle, barcode=$barcode, unit=$unit, spec=$spec, origin=$origin, level=$level, yh_price=$yh_price, retail_price=$retail_price, only_coding=$only_coding, special_price=$special_price)"
+        return "LabelGoods(barcodeId=$barcodeId, goodsTitle=$goodsTitle, barcode=$barcode, unit=$unit, origin=$origin, level=$level, yh_price=$yh_price, retail_price=$retail_price, only_coding=$only_coding, special_price=$special_price, spec=$spec, specifi_attr=$specifi_attr)"
     }
 
 

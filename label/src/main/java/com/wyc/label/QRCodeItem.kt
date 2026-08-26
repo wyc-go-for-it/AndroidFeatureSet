@@ -8,6 +8,7 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
 import android.widget.*
+import androidx.constraintlayout.widget.Group
 import java.io.ObjectStreamException
 import kotlin.math.min
 
@@ -120,27 +121,33 @@ internal class QRCodeItem: CodeItemBase()  {
         val view = View.inflate(labelView.context, R.layout.com_wyc_label_qrcode_item_attr,null)
         showEditDialog(labelView.context,view)
 
+        val group = view.findViewById<Group>(R.id.group)
         val font: MySeekBar = view.findViewById(R.id.font)
-        font.minValue = minFontSize.toInt()
-        font.max = 98 - minFontSize.toInt()
-        font.progress = fontSize.toInt() - 30
-        font.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener{
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                fontSize = progress.toFloat() + minFontSize
-                labelView.postInvalidate()
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar) {
-                seekBar.tag = fontSize
-            }
-
-            override fun onStopTrackingTouch(seekBar: SeekBar) {
-                val oldSize = seekBar.tag as? Float ?: fontSize
-                if (fontSize != oldSize){
-                    addAttrChange(labelView,"fontSize",oldSize,fontSize)
+        if (cBarcodeFormat == BAROMETER.SongTi){
+            font.minValue = minFontSize.toInt()
+            font.max = 98 - minFontSize.toInt()
+            font.progress = fontSize.toInt() - 30
+            font.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener{
+                override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                    fontSize = progress.toFloat() + minFontSize
+                    labelView.postInvalidate()
                 }
-            }
-        })
+
+                override fun onStartTrackingTouch(seekBar: SeekBar) {
+                    seekBar.tag = fontSize
+                }
+
+                override fun onStopTrackingTouch(seekBar: SeekBar) {
+                    val oldSize = seekBar.tag as? Float ?: fontSize
+                    if (fontSize != oldSize){
+                        addAttrChange(labelView,"fontSize",oldSize,fontSize)
+                    }
+                }
+            })
+        }else{
+            group.visibility = View.GONE
+        }
+
 
         val et: EditText = view.findViewById(R.id.content)
         et.setText(content)
@@ -194,6 +201,9 @@ internal class QRCodeItem: CodeItemBase()  {
                             cBarcodeFormat = it
                             generateBitmap()
                             labelView.postInvalidate()
+
+                            group.visibility = if (cBarcodeFormat == BAROMETER.SongTi) View.VISIBLE else View.GONE
+
                             return
                         }
                     }

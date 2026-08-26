@@ -59,12 +59,16 @@ internal class DataItem: TextItem() {
             goods.goodsTitle = "test内容"
             goods.level = "高级"
             goods.origin = "长沙"
-            goods.spec = "箱"
+            goods.spec_str = "箱"
             goods.unit = "件"
             goods.retail_price = 18.68
             goods.yh_price = 12.08
             goods.special_price = goods.retail_price * 0.5
             goods.specifi_attr = "红色,40码"
+            goods.discount_type = "8折"
+            goods.discount_barcode = "82080000185000680888882"
+            goods.xnum = 1.0
+            goods.amt = goods.xnum * goods.retail_price
             return goods
         }
     }
@@ -72,7 +76,8 @@ internal class DataItem: TextItem() {
     enum class FIELD(f:String,n:String){
         Title("goodsTitle","商品名称"),ProductionPlace("origin","产地"),Unit("unit","单位"),
         Spec("spec_str","规格"),Level("level","等级"),Barcode("barcode","条码"),OnlyCoding("only_coding","货号"),
-        VipPrice("yh_price","会员价"),RetailPrice("retail_price","零售价"),SpecialPrice("special_price","零售特价"),SpeciAtrr("speci_atrr","存货属性");
+        VipPrice("yh_price","会员价"),RetailPrice("retail_price","零售价"),Xnum("xnum","数量"),Amt("amt","金额"),SpecialPrice("special_price","零售特价"),
+        SpeciAtrr("speci_atrr","存货属性"),DiscountType("discount_type","折扣类型"),DiscountBarcode("discount_barcode","折扣条码");
         val field = f
         val description = n
     }

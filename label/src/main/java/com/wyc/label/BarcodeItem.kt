@@ -73,7 +73,7 @@ internal class BarcodeItem: CodeItemBase() {
 
     override fun drawItem(offsetX: Float, offsetY: Float, canvas: Canvas, paint: Paint) {
         super.drawItem(offsetX, offsetY, canvas, paint)
-        if (mBitmap != null)drawContent(left + offsetX,top + offsetY,canvas,paint)
+        if (mBitmap != null || getRealBarcodeFormat() == BAROMETER.SongTi)drawContent(left + offsetX,top + offsetY,canvas,paint)
     }
 
     override fun transform(scaleX: Float, scaleY: Float) {
@@ -162,10 +162,11 @@ internal class BarcodeItem: CodeItemBase() {
     }
 
     override fun generateBitmap(){
-        if (content.isNotEmpty()){
+        val code = getDrawBarcodeFormat()
+        if (content.isNotEmpty() && code != BarcodeFormat.PDF_417){
             val writer = MultiFormatWriter()
             try {
-                val result: BitMatrix = writer.encode(content,getDrawBarcodeFormat(), width,height,hashMapOf(Pair(
+                val result: BitMatrix = writer.encode(content,code, width,height,hashMapOf(Pair(
                     EncodeHintType.MARGIN,18)) )
 
                 var start = 0
@@ -326,11 +327,11 @@ internal class BarcodeItem: CodeItemBase() {
         view.findViewById<Spinner>(R.id.format)?.apply {
             val adapter = ArrayAdapter<String>(labelView.context, R.layout.com_wyc_label_drop_down_style)
             adapter.setDropDownViewResource(R.layout.com_wyc_label_drop_down_style)
-            adapter.add(cBarcodeFormat.name)
+            adapter.add(cBarcodeFormat.description)
 
             cSupportFormatList.forEach {
                 if (it == cBarcodeFormat)return@forEach
-                adapter.add(it.name)
+                adapter.add(it.description)
             }
             setAdapter(adapter)
 
@@ -342,7 +343,7 @@ internal class BarcodeItem: CodeItemBase() {
                     id: Long
                 ) {
                     cSupportFormatList.forEach {
-                        if (it.name == adapter.getItem(position)){
+                        if (it.description == adapter.getItem(position)){
                             if (it  == BAROMETER.EAN13 && content.length != 13){
                                 Utils.showToast(R.string.com_wyc_label_not_ean_13)
                                 setSelection(cSupportFormatList.indexOf(cBarcodeFormat))

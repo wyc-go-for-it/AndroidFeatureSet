@@ -635,6 +635,11 @@ class LabelView: View {
                     val item = BarcodeItem()
                     item.field = content.id
                     addItem(item)
+                } else if (DataItem.FIELD.DiscountBarcode.field == content.id){
+                    val item = QRCodeItem()
+                    item.field = content.id
+                    item.content = "82080000185000680001212"
+                    addItem(item)
                 }else{
                     val item = DataItem()
                     item.field = content.id

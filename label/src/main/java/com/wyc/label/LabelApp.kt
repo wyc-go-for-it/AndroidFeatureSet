@@ -29,6 +29,7 @@ class LabelApp {
         private var app:Application? = null
         private var appColor:Int = Color.parseColor("#67B0F8")
         private val driverList  = mutableListOf<IType>()
+        private var filePre:String? = null
 
         @JvmStatic
         fun <T:IType> registerClass(cls:Class<T>){
@@ -62,6 +63,18 @@ class LabelApp {
                 String.format("%s%s%s%s", app!!.filesDir, File.separator, "template", File.separator)
             }
         }
+
+        @JvmStatic
+        internal fun getFilePre():String?{
+            return filePre
+        }
+
+        @JvmStatic
+        fun setFilePre(pre:String?){
+             filePre = pre
+        }
+
+
         @JvmStatic
         fun initThemeColor(c:Int){
             appColor = c

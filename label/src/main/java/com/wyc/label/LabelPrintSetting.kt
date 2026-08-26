@@ -144,13 +144,17 @@ class LabelPrintSetting:Serializable {
         }
 
         @JvmStatic
-        private fun getFile(): File {
+        private fun getFile(pre:String? = ""): File {
             val dirPath =String.format("%s%s%s",LabelApp.getDir(), File.separator,"setting")
             val dir = File(dirPath)
             if (!dir.exists()) {
                 dir.mkdirs()
             }
-            val name = String.format(Locale.CHINA, "%s%s%s", dir.absolutePath, File.separator,"setting")
+            val name = if(pre.isNullOrEmpty())
+                String.format(Locale.CHINA, "%s%s%s", dir.absolutePath, File.separator,"setting")
+            else{
+                String.format(Locale.CHINA, "%s%s%s", dir.absolutePath, File.separator,"${pre}_setting")
+            }
             return File(name)
         }
         @JvmStatic
@@ -160,7 +164,7 @@ class LabelPrintSetting:Serializable {
         @JvmStatic
         fun getSetting(): LabelPrintSetting {
             try {
-                ObjectInputStream(FileInputStream(getFile())).use {
+                ObjectInputStream(FileInputStream(getFile(LabelApp.getFilePre()))).use {
                     val obj = it.readObject()
                     if (obj is LabelPrintSetting) return obj
                 }
@@ -181,7 +185,7 @@ class LabelPrintSetting:Serializable {
             return
         }
         CoroutineScope(Dispatchers.IO).launch {
-            val file = getFile()
+            val file = getFile(LabelApp.getFilePre())
             file.delete()
             try {
                 ObjectOutputStream(FileOutputStream(file)).use { fileOutputStream ->

@@ -27,7 +27,7 @@ class LabelPrintUtils {
         private var sPrinter: IPrinter? = null
 
         @JvmStatic
-        fun getInstance(): IPrinter? {
+        private fun getInstance(): IPrinter? {
             if (sPrinter == null){
                 val cls_id = getSetting().type.cls()
                 try {

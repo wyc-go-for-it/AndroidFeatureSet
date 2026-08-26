@@ -2,6 +2,7 @@ package com.wyc.label
 
 import android.os.Parcel
 import android.os.Parcelable
+import java.util.Locale
 
 
 /**
@@ -23,7 +24,7 @@ class LabelGoods(): Parcelable {
     var goodsTitle:String? = null
     var barcode:String? = null
     var unit:String? = null
-    var spec:String? = null
+    var spec_str:String? = null
         get() {
             if (field.isNullOrEmpty())return "无"
             return field
@@ -40,12 +41,28 @@ class LabelGoods(): Parcelable {
             return field
         }
 
+    var discount_type:String? = null
+        get() {
+            if (field.isNullOrEmpty())return "8折"
+            return field
+        }
+
+    var discount_barcode:String? = null
+        get() {
+            if (field.isNullOrEmpty())return "82080000185000680001212"
+            return field
+        }
+
+    var xnum:Double = 0.0
+
+    var amt:Double = 0.0
+
     constructor(parcel: Parcel) : this() {
         barcodeId = parcel.readString()
         goodsTitle = parcel.readString()
         barcode = parcel.readString()
         unit = parcel.readString()
-        spec = parcel.readString()
+        spec_str = parcel.readString()
         origin = parcel.readString()
         level = parcel.readString()
         yh_price = parcel.readDouble()
@@ -53,44 +70,27 @@ class LabelGoods(): Parcelable {
         only_coding= parcel.readString()
         special_price = parcel.readDouble()
         specifi_attr = parcel.readString()
+        discount_type = parcel.readString()
+        discount_barcode = parcel.readString()
+        xnum = parcel.readDouble()
+        amt = parcel.readDouble()
     }
 
     fun getValueByField(field: String):String{
-        when(field){
-            DataItem.FIELD.Title.field ->{
-                return goodsTitle?:""
+        val clazz = this.javaClass
+        try {
+            val field = clazz.getDeclaredField(field).apply { isAccessible = true }
+            val value = field.get(this)
+            val type = field.type
+
+            return if (type == Double::class.java  || type == Double::class.javaPrimitiveType){
+                String.format(Locale.CHINA,"%.2f", value as Double)
+            }else{
+                value?.toString() ?: ""
             }
-            DataItem.FIELD.ProductionPlace.field  ->{
-                return origin?:""
-            }
-            DataItem.FIELD.Unit.field  ->{
-                return unit?:""
-            }
-            DataItem.FIELD.Spec.field  ->{
-                return spec?:""
-            }
-            DataItem.FIELD.Level.field  ->{
-                return level?:""
-            }
-            DataItem.FIELD.Barcode.field  ->{
-                return barcode?:""
-            }
-            DataItem.FIELD.OnlyCoding.field  ->{
-                return only_coding?:""
-            }
-            DataItem.FIELD.VipPrice.field  ->{
-                return String.format("%.2f", yh_price)
-            }
-            DataItem.FIELD.RetailPrice.field  ->{
-                return  String.format("%.2f", retail_price)
-            }
-            DataItem.FIELD.SpecialPrice.field  ->{
-                return  String.format("%.2f", special_price)
-            }
-            DataItem.FIELD.SpeciAtrr.field  ->{
-                return specifi_attr?:""
-            }
+        }catch (_:NoSuchFieldException){
         }
+
         return ""
     }
 
@@ -100,9 +100,7 @@ class LabelGoods(): Parcelable {
 
         other as LabelGoods
 
-        if (barcodeId != other.barcodeId) return false
-
-        return true
+        return barcodeId == other.barcodeId
     }
 
     override fun hashCode(): Int {
@@ -115,7 +113,7 @@ class LabelGoods(): Parcelable {
         parcel.writeString(goodsTitle)
         parcel.writeString(barcode)
         parcel.writeString(unit)
-        parcel.writeString(spec)
+        parcel.writeString(spec_str)
         parcel.writeString(origin)
         parcel.writeString(level)
         parcel.writeDouble(yh_price)
@@ -123,6 +121,10 @@ class LabelGoods(): Parcelable {
         parcel.writeString(only_coding)
         parcel.writeDouble(special_price)
         parcel.writeString(specifi_attr)
+        parcel.writeString(discount_type)
+        parcel.writeString(discount_barcode)
+        parcel.writeDouble(xnum)
+        parcel.writeDouble(amt)
     }
 
     override fun describeContents(): Int {
@@ -130,7 +132,7 @@ class LabelGoods(): Parcelable {
     }
 
     override fun toString(): String {
-        return "LabelGoods(barcodeId=$barcodeId, goodsTitle=$goodsTitle, barcode=$barcode, unit=$unit, origin=$origin, level=$level, yh_price=$yh_price, retail_price=$retail_price, only_coding=$only_coding, special_price=$special_price, spec=$spec, specifi_attr=$specifi_attr)"
+        return "LabelGoods(barcodeId=$barcodeId, goodsTitle=$goodsTitle, barcode=$barcode, unit=$unit, spec=$spec_str, origin=$origin, level=$level, yh_price=$yh_price, retail_price=$retail_price, only_coding=$only_coding, special_price=$special_price, specifi_attr=$specifi_attr, discount_type=$discount_type, discount_barcode=$discount_barcode, xnum=$xnum, amt=$amt)"
     }
 
 

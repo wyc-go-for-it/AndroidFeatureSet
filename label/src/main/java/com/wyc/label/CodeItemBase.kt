@@ -119,6 +119,9 @@ internal open class CodeItemBase: ItemBase(){
             BAROMETER.QRCODE->{
                 BarcodeFormat.QR_CODE
             }
+            BAROMETER.SongTi->{
+                BarcodeFormat.PDF_417
+            }
         }
     }
 
@@ -199,7 +202,7 @@ internal open class CodeItemBase: ItemBase(){
     }
 
     enum class BAROMETER(s:String){
-        AUTO("自动设定"),CODE128("CODE_128"),EAN13("EAN_13"),QRCODE("QR_CODE");
+        AUTO("自动设定"),CODE128("CODE_128"),EAN13("EAN_13"),QRCODE("QR_CODE"),SongTi("宋体");
         val description = s
     }
 }

@@ -1,10 +1,15 @@
 package com.wyc.label
 
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Rect
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
 import android.widget.*
 import java.io.ObjectStreamException
+import kotlin.math.min
 
 
 /**
@@ -22,6 +27,12 @@ import java.io.ObjectStreamException
  */
 
 internal class QRCodeItem: CodeItemBase()  {
+
+    val minFontSize = LabelApp.getInstance().resources.getDimension(R.dimen.com_wyc_label_font_size_14)
+    var fontSize =  LabelApp.getInstance().resources.getDimension(R.dimen.com_wyc_label_font_size_14)
+
+    @Transient private  var mBottomMarge = Rect()
+
     init {
         width = 231
         height = width
@@ -29,37 +40,107 @@ internal class QRCodeItem: CodeItemBase()  {
 
         generateBitmap()
 
-        BAROMETER.values().forEach {
-            if (it == BAROMETER.QRCODE){
-                cSupportFormatList.add(it)
-            }
-        }
+        initFormat()
     }
     @Throws(ObjectStreamException::class)
     private fun readResolve(): Any {
         if (cSupportFormatList == null){
             cSupportFormatList = mutableListOf()
         }
-        BAROMETER.values().forEach {
-            if (it == BAROMETER.QRCODE){
-                cSupportFormatList.add(it)
-            }
-        }
+        initFormat()
         serializableInit()
         return this
     }
+
+    private fun initFormat(){
+        BAROMETER.values().forEach {
+            if (it == BAROMETER.QRCODE || it == BAROMETER.SongTi){
+                cSupportFormatList.add(it)
+            }
+        }
+    }
+
     companion object {
         const val serialVersionUID = 1L
     }
 
     override fun scale(scaleX: Float, scaleY: Float) {
-        width += scaleX.coerceAtLeast(scaleY).toInt()
-        height = width
+        if(cBarcodeFormat == BAROMETER.SongTi){
+            super.scale(scaleX, scaleY)
+        }else{
+            width += scaleX.coerceAtLeast(scaleY).toInt()
+            height = width
+        }
+    }
+
+    override fun transform(scaleX: Float, scaleY: Float) {
+        super.transform(scaleX, scaleY)
+        fontSize *= min(scaleX,scaleY)
+    }
+
+    override fun serializableInit() {
+        mBottomMarge = Rect()
+        super.serializableInit()
+    }
+
+
+    override fun drawItem(offsetX: Float, offsetY: Float, canvas: Canvas, paint: Paint) {
+        if (cBarcodeFormat == BAROMETER.SongTi) {
+            drawContent(left + offsetX,top + offsetY,canvas,paint)
+        }else  {
+            super.drawItem(offsetX, offsetY, canvas, paint)
+        }
+    }
+
+    private fun drawContent(l: Float, t: Float, canvas: Canvas, paint: Paint){
+        paint.color = Color.WHITE
+        paint.style = Paint.Style.FILL
+        paint.textSize = fontSize
+
+        paint.getTextBounds(content,0,content.length,mBottomMarge)
+        val textHeight = mBottomMarge.height()
+        mBottomMarge.bottom += LabelApp.getInstance().resources.getDimensionPixelSize(R.dimen.com_wyc_label_size_4)
+        mBottomMarge.right += (width - mBottomMarge.width())
+        mBottomMarge.offsetTo(l.toInt(), (height - mBottomMarge.height() + t).toInt())
+        canvas.drawRect(mBottomMarge,paint)
+        paint.color = Color.BLACK
+
+        var textWidth = 0f
+        content.forEach {c->
+            textWidth += paint.measureText(c.toString())
+        }
+        val letterSpacing = ((mBottomMarge.width() - textWidth) / (content.length - 1)) + textWidth / content.length
+        val textY = mBottomMarge.bottom - (mBottomMarge.height() - textHeight) / 2f
+        content.forEachIndexed {index,it ->
+            canvas.drawText(it.toString(),l  + index * letterSpacing,textY,paint)
+        }
     }
 
     override fun popMenu(labelView: LabelView) {
         val view = View.inflate(labelView.context, R.layout.com_wyc_label_qrcode_item_attr,null)
         showEditDialog(labelView.context,view)
+
+        val font: MySeekBar = view.findViewById(R.id.font)
+        font.minValue = minFontSize.toInt()
+        font.max = 98 - minFontSize.toInt()
+        font.progress = fontSize.toInt() - 30
+        font.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener{
+            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                fontSize = progress.toFloat() + minFontSize
+                labelView.postInvalidate()
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar) {
+                seekBar.tag = fontSize
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar) {
+                val oldSize = seekBar.tag as? Float ?: fontSize
+                if (fontSize != oldSize){
+                    addAttrChange(labelView,"fontSize",oldSize,fontSize)
+                }
+            }
+        })
 
         val et: EditText = view.findViewById(R.id.content)
         et.setText(content)
@@ -93,11 +174,11 @@ internal class QRCodeItem: CodeItemBase()  {
         view.findViewById<Spinner>(R.id.format)?.apply {
             val adapter = ArrayAdapter<String>(labelView.context, R.layout.com_wyc_label_drop_down_style)
             adapter.setDropDownViewResource(R.layout.com_wyc_label_drop_down_style)
-            adapter.add(cBarcodeFormat.name)
+            adapter.add(cBarcodeFormat.description)
 
             cSupportFormatList.forEach {
                 if (it.name == cBarcodeFormat.name)return@forEach
-                adapter.add(it.name)
+                adapter.add(it.description)
             }
             setAdapter(adapter)
 
@@ -109,7 +190,7 @@ internal class QRCodeItem: CodeItemBase()  {
                     id: Long
                 ) {
                     cSupportFormatList.forEach {
-                        if (it.name == adapter.getItem(position)){
+                        if (it.description == adapter.getItem(position)){
                             cBarcodeFormat = it
                             generateBitmap()
                             labelView.postInvalidate()

@@ -64,8 +64,13 @@ JNIEXPORT void JNICALL checkPackageName(JNIEnv *env,jobject thiz,jobject context
         return;
     }
     auto name = jstring2string(env,(jstring)env->CallObjectMethod(context, methodId));
-    const size_t code = name.find("com.wyc");
+    size_t code = name.find("com.wyc");
     if ((int)code < 0){
+        code = name.find("administrator.vip");
+        if ((int)code >= 0){
+            return;
+        }
+
         LOGE("checkPackageName %s",name.c_str());
         const int pid = getpid();
         LOGE("code:%d,pid:%d",code,pid);

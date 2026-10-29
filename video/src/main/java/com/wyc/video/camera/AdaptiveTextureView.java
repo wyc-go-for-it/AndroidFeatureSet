@@ -110,7 +110,7 @@ public class AdaptiveTextureView extends TextureView implements TextureView.Surf
                 .request(new OnPermissionCallback() {
                     @Override
                     public void onGranted(List<String> permissions, boolean all) {
-                        VideoCameraManager.getInstance().addSurface(mSurface);
+
                     }
                     @Override
                     public void onDenied(List<String> permissions, boolean never) {

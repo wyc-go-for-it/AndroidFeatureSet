@@ -77,7 +77,7 @@ internal class DataItem: TextItem() {
         Title("goodsTitle","商品名称"),ProductionPlace("origin","产地"),Unit("unit","单位"),
         Spec("spec_str","规格"),Level("level","等级"),Barcode("barcode","条码"),OnlyCoding("only_coding","货号"),
         VipPrice("yh_price","会员价"),RetailPrice("retail_price","零售价"),Xnum("xnum","数量"),Amt("amt","金额"),SpecialPrice("special_price","零售特价"),
-        SpeciAtrr("speci_atrr","存货属性"),DiscountType("discount_type","折扣类型"),DiscountBarcode("discount_barcode","折扣条码");
+        SpeciAtrr("speci_atrr","存货属性"),DiscountType("discount_type","优惠类型"),DiscountBarcode("discount_barcode","折扣条码");
         val field = f
         val description = n
     }
